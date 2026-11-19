@@ -5,6 +5,24 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.2.2 — 19 November 2026 (built-in S.A.L.T reference fixes)
+
+- **Fixed: "salt tu apa?" got an invented answer** ("System for Advanced Learning and Testing"). The built-in reference was only used for "S.A.L.T", "salt ci", "teras" and similar, not for the plain word "salt".
+  - It now also triggers on "salt" as a word, except in cooking talk ("garam", "sugar", "pepper", "resipi" and similar).
+  - It looks at the last three questions, so follow-ups like "siapa pemiliknya?" keep the reference.
+- **One fixed fact is always given to the model:** what S.A.L.T stands for, its owner and its distributor, and "never invent other meanings for S.A.L.T". Even questions that don't trigger the full reference can't produce a made-up meaning.
+- **Wrong answers earlier in a chat are corrected.** The reference tells the model that anything different said earlier in the chat was wrong.
+- Tested on the build machine with Qwen 3.5 2B:
+  - "salt tu apa ?" with a co-brand set;
+  - the follow-up "siapa pemiliknya dan siapa pengedarnya?";
+  - "Berapa harga TERAS?" (answered as not in the reference);
+  - a chat that already held the invented answer.
+
+  All four answered from the reference.
+- Install over 0.2.1 directly. Everything is kept. Old chats keep their earlier answers; start a new chat to test.
+
+---
+
 ## 0.2.1 — 19 November 2026 (simpler main screen, Settings panel, model per chat)
 
 - **Cleaner main screen.**

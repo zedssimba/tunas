@@ -68,9 +68,21 @@ const TRIGGERS: &[&str] = &[
     "warkah", "pentas", "kembara", "mom studio", "capt zeds", "central intelligence",
 ];
 
+const FOOD: &[&str] = &[
+    "garam", "gula", "lada", "masak", "resipi", "recipe", "sugar", "pepper", "cook", "bake", "taste", "rasa", "sea salt",
+    "salt water", "air garam", "teaspoon", "tsp", "sudu",
+];
+
 pub fn wants_reference(text: &str) -> bool {
     let t = text.to_lowercase();
-    TRIGGERS.iter().any(|k| t.contains(k)) || (t.contains("nexus") && (t.contains("salt") || t.contains("app")))
+    if TRIGGERS.iter().any(|k| t.contains(k)) || (t.contains("nexus") && (t.contains("salt") || t.contains("app"))) {
+        return true;
+    }
+    // "salt" on its own as a word (e.g. "salt tu apa?"), but not in cooking talk.
+    let has_word = t
+        .split(|c: char| !c.is_alphanumeric() && c != '.')
+        .any(|w| w.trim_matches('.') == "salt" || w == "s.a.l.t");
+    has_word && !FOOD.iter().any(|f| t.contains(f))
 }
 
 /// The base instruction plus the assistant's persona (same text the chat has always used).
@@ -87,7 +99,8 @@ pub fn system_prompt(app: &AppHandle, a: Option<&crate::db::Assistant>, last_use
         "You are {name}{}.\nYou run privately on this machine in TUNAS, powered by S.A.L.T CI.\n\
          Always reply in the language of the user's latest message: English if they write in English, Malay (Bahasa Melayu) if they write in Malay, and natural mixed Malay-English if they mix both. If they ask for a specific language, use it.\n\
          Be clear, accurate and well organised. Use Markdown for headings, lists and tables when it helps. If you are not sure, say so instead of guessing.\n\
-         Today is {today}.",
+         Today is {today}.\n\
+         Fact (always true): S.A.L.T CI (S.A.L.T Central Intelligence; S.A.L.T = Scalable, Advanced AI, Local, Trustworthy) is a Malaysian sovereign AI platform, owned by S.A.L.T. CI TECHNOLOGY and distributed by Pemangkin Teknologi; TUNAS is its free personal AI app. Never invent other meanings for S.A.L.T.",
         if !brand.is_empty() && brand != name { format!(", the AI assistant of {brand}") } else { String::new() }
     );
     if let Some(a) = a {
@@ -228,13 +241,16 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
     // Messages: add the system prompt (persona, language rule, built-in reference) unless raw.
     let mut messages: Vec<Value> = body.get("messages").and_then(|m| m.as_array()).cloned().unwrap_or_default();
     if !raw {
+        // The latest three user messages, so follow-up questions ("siapa pemiliknya?") keep the reference.
         let last_user = messages
             .iter()
             .rev()
-            .find(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"))
-            .and_then(|m| m.get("content"))
-            .map(|c| if let Some(s) = c.as_str() { s.to_string() } else { c.to_string() })
-            .unwrap_or_default();
+            .filter(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"))
+            .take(3)
+            .filter_map(|m| m.get("content"))
+            .map(|c| if let Some(s) = c.as_str() { s.chars().take(2000).collect::<String>() } else { c.to_string() })
+            .collect::<Vec<_>>()
+            .join("\n");
         let sys = system_prompt(&app, assistant.as_ref(), &last_user);
         // Keep an app's own system message after ours.
         messages.insert(0, json!({"role": "system", "content": sys}));
@@ -351,4 +367,18 @@ pub async fn set_external(app: AppHandle, enabled: bool, port: u16) -> anyhow::R
 
 pub fn external_port(app: &AppHandle) -> Option<u16> {
     app.state::<crate::AppState>().gateway.external.lock().as_ref().map(|(p, _)| *p)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::wants_reference;
+    #[test]
+    fn triggers() {
+        for q in ["salt tu apa ?", "SALT tu apa", "Apa itu S.A.L.T?", "siapa pemilik salt ci", "Tell me about TERAS", "what is salt?", "pemangkin teknologi"] {
+            assert!(wants_reference(q), "should trigger: {q}");
+        }
+        for q in ["add a pinch of salt and pepper", "berapa sudu garam dan salt", "how do I write a letter", "salty food is bad"] {
+            assert!(!wants_reference(q), "should not trigger: {q}");
+        }
+    }
 }
