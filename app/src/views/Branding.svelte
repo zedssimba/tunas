@@ -1,4 +1,5 @@
 <script>
+  import PoweredBy from '../lib/PoweredBy.svelte';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
   import { api, pickFile, saveFile } from '../lib/api.js';
@@ -34,6 +35,7 @@
       name: b.name || '', assistant_name: b.assistant_name || '', welcome: b.welcome || '',
       color1: b.color1 || '', color2: b.color2 || '', letterhead_org: b.letterhead_org || '',
       letterhead_address: b.letterhead_address || '', issuer: b.issuer || '', logo_file: b.logo_file || '', updated: '',
+      logo_bg: b.logo_bg || '', logo_shape: b.logo_shape || 'square',
     };
   }
 
@@ -134,7 +136,7 @@
     {#each ['personal', 'org', 'oem'] as l}
       {@const v = lv(l)}
       <button class="layer" class:sel={layer === l} onclick={() => selectLayer(l)}>
-        <BrandLogo src={v?.logo_data_url} size={28} />
+        <BrandLogo src={v?.logo_data_url} size={28} bg={v?.brand?.logo_bg} shape={v?.brand?.logo_shape} />
         <div class="grow" style="text-align:left">
           <div class="small faint">{LAYER_LABEL[l]}</div>
           <div class="ellipsis"><b>{v?.brand?.name || (v?.brand ? '(logo only)' : 'Not set')}</b></div>
@@ -145,7 +147,7 @@
     <div class="layer salt">
       <div class="grow" style="text-align:left">
         <div class="small faint">Always shown</div>
-        <div class="salt-credit" style="font-size:13px">Powered by <b>S.A.L.T CI</b></div>
+        <PoweredBy size={13} logo={26} />
       </div>
     </div>
   </div>
@@ -174,10 +176,29 @@
           <div class="field grow">Logo
             <span class="hint">PNG or SVG. A square logo works best for the icon.</span>
             <div class="row" style="margin-top:4px">
-              <div class="logo-box"><BrandLogo src={previewLogo} size={52} rounded={false} /></div>
+              <div class="logo-box"><BrandLogo src={previewLogo} size={52} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></div>
               <button class="btn sm" onclick={chooseLogo}><Icon name="upload" size={14} /> Choose logo…</button>
               {#if previewLogo}<button class="btn sm ghost" onclick={() => { removeLogo = true; logoPath = null; logoCheck = null; }}>Remove</button>{/if}
             </div>
+            {#if previewLogo}
+              <div class="plate-opts">
+                <span class="small mute">Background</span>
+                <div class="seg">
+                  {#each [['', 'None'], ['light', 'Light'], ['dark', 'Dark']] as [v, l]}
+                    <button class:sel={form.logo_bg === v} onclick={() => (form.logo_bg = v)}>{l}</button>
+                  {/each}
+                </div>
+                {#if form.logo_bg}
+                  <span class="small mute">Shape</span>
+                  <div class="seg">
+                    {#each [['square', 'Rounded square'], ['circle', 'Circle']] as [v, l]}
+                      <button class:sel={form.logo_shape === v} onclick={() => (form.logo_shape = v)}>{l}</button>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+              <span class="hint">A white logo disappears on light screens and a dark logo on dark ones. A light or dark background keeps it visible everywhere, including the icon.</span>
+            {/if}
             {#each logoCheck?.warnings || [] as w}<div class="small" style="color:var(--warn)"><Icon name="warn" size={13} /> {w}</div>{/each}
           </div>
         </div>
@@ -221,20 +242,20 @@
       <div class="small faint" style="margin-bottom:8px">Live preview</div>
       <div class="win">
         <div class="titlebar">
-          <span class="tb-ic"><BrandLogo src={previewLogo} size={16} rounded={false} /></span>
+          <span class="tb-ic"><BrandLogo src={previewLogo} size={16} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></span>
           <span class="ellipsis">{previewName}</span>
           <span class="spacer"></span><span class="dots"><i></i><i></i><i></i></span>
         </div>
         <div class="win-body">
           <div class="mini-side">
-            <div class="row"><BrandLogo src={previewLogo} size={22} /><b class="ellipsis small">{previewName}</b></div>
+            <div class="row"><BrandLogo src={previewLogo} size={22} bg={form.logo_bg} shape={form.logo_shape} /><b class="ellipsis small">{previewName}</b></div>
             <div class="mini-new" style="background:linear-gradient(120deg,{c1},{c2})">New chat</div>
             <div class="mini-line"></div><div class="mini-line short"></div><div class="mini-line"></div>
             <div class="spacer"></div>
-            <div class="salt-credit" style="font-size:9px">Powered by <b>S.A.L.T CI</b></div>
+            <PoweredBy size={9} logo={14} />
           </div>
           <div class="mini-main">
-            <BrandLogo src={previewLogo} size={40} />
+            <BrandLogo src={previewLogo} size={40} bg={form.logo_bg} shape={form.logo_shape} />
             <div class="mini-welcome">{previewWelcome}</div>
             <div class="mini-input"><span class="faint">Message {previewAssistant}…</span><span class="mini-send" style="background:linear-gradient(120deg,{c1},{c2})"></span></div>
           </div>
@@ -243,8 +264,8 @@
 
       <div class="small faint" style="margin:16px 0 8px">Desktop and Start menu</div>
       <div class="desk">
-        <div class="dicon"><div class="dic"><BrandLogo src={previewLogo} size={44} rounded={false} /></div><span>{previewName}</span></div>
-        <div class="taskbar"><BrandLogo src={previewLogo} size={22} rounded={false} /></div>
+        <div class="dicon"><div class="dic"><BrandLogo src={previewLogo} size={44} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></div><span>{previewName}</span></div>
+        <div class="taskbar"><BrandLogo src={previewLogo} size={22} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></div>
       </div>
     </div>
   </div>
@@ -313,6 +334,10 @@
   .custom { display: inline-flex; gap: 2px; align-items: center; padding: 0 4px; border: 1px solid var(--line); border-radius: 8px; height: 28px; cursor: pointer; }
   .custom input { width: 22px; height: 20px; border: 0; padding: 0; background: none; cursor: pointer; }
   details summary { cursor: pointer; color: var(--mute); }
+  .plate-opts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; font-weight: 400; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 2px; gap: 2px; background: var(--bg); }
+  .seg button { padding: 4px 10px; border-radius: 7px; font-size: 12.5px; font-weight: 600; color: var(--mute); }
+  .seg button.sel { background: var(--panel); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .preview-col { position: sticky; top: 0; }
   .win { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--panel); }
   .titlebar { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; font-size: 12px; background: var(--soft); border-bottom: 1px solid var(--line); }

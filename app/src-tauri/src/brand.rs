@@ -22,6 +22,10 @@ pub struct Brand {
     pub letterhead_address: String,
     pub issuer: String,
     pub updated: String,
+    /// '' (transparent, default) | 'light' | 'dark'
+    pub logo_bg: String,
+    /// 'square' (rounded) | 'circle'
+    pub logo_shape: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -66,6 +70,8 @@ pub struct BrandState {
     pub color1: String,
     pub color2: String,
     pub logo_data_url: String,
+    pub logo_bg: String,
+    pub logo_shape: String,
     pub letterhead_org: String,
     pub policy: Policy,
 }
@@ -162,12 +168,13 @@ pub fn state() -> BrandState {
             .find(|s| !s.trim().is_empty())
             .unwrap_or_default()
     };
-    let logo = layers
+    let logo_layer = layers
         .iter()
         .filter(|l| l.layer != "personal" || pol.allow_personal_brand)
-        .map(|l| l.logo_data_url.clone())
-        .find(|s| !s.is_empty())
-        .unwrap_or_default();
+        .find(|l| !l.logo_data_url.is_empty());
+    let logo = logo_layer.map(|l| l.logo_data_url.clone()).unwrap_or_default();
+    let logo_bg = logo_layer.and_then(|l| l.brand.as_ref()).map(|b| b.logo_bg.clone()).unwrap_or_default();
+    let logo_shape = logo_layer.and_then(|l| l.brand.as_ref()).map(|b| b.logo_shape.clone()).unwrap_or_default();
     let name = pick(&|b| b.name.clone());
     let c1 = pick(&|b| b.color1.clone());
     let c2 = pick(&|b| b.color2.clone());
@@ -178,6 +185,8 @@ pub fn state() -> BrandState {
         color1: if c1.is_empty() { DEFAULT_C1.into() } else { c1 },
         color2: if c2.is_empty() { DEFAULT_C2.into() } else { c2 },
         logo_data_url: logo,
+        logo_bg,
+        logo_shape,
         letterhead_org: pick(&|b| b.letterhead_org.clone()),
         layers,
         policy: pol,
@@ -250,6 +259,47 @@ fn png_data_url(img: &image::RgbaImage) -> String {
     let mut buf = std::io::Cursor::new(vec![]);
     let _ = image::DynamicImage::ImageRgba8(img.clone()).write_to(&mut buf, image::ImageFormat::Png);
     format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(buf.into_inner()))
+}
+
+/// Put the icon on a light or dark plate (rounded square or circle) so it stays visible on any background.
+fn on_plate(icon: &image::RgbaImage, size: u32, bg: &str, shape: &str) -> image::RgbaImage {
+    use resvg::tiny_skia::{FillRule, Paint, PathBuilder, Pixmap, Rect, Transform};
+    let (r, g, b) = if bg == "dark" { (0x0B, 0x10, 0x22) } else { (0xFF, 0xFF, 0xFF) };
+    let mut pm = Pixmap::new(size, size).unwrap();
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(r, g, b, 255);
+    paint.anti_alias = true;
+    let s = size as f32;
+    let path = if shape == "circle" {
+        PathBuilder::from_circle(s / 2.0, s / 2.0, s / 2.0)
+    } else {
+        let rad = s * 0.22;
+        let mut pb = PathBuilder::new();
+        pb.move_to(rad, 0.0);
+        pb.line_to(s - rad, 0.0);
+        pb.quad_to(s, 0.0, s, rad);
+        pb.line_to(s, s - rad);
+        pb.quad_to(s, s, s - rad, s);
+        pb.line_to(rad, s);
+        pb.quad_to(0.0, s, 0.0, s - rad);
+        pb.line_to(0.0, rad);
+        pb.quad_to(0.0, 0.0, rad, 0.0);
+        pb.close();
+        pb.finish()
+    };
+    if let Some(p) = path {
+        pm.fill_path(&p, &paint, FillRule::Winding, Transform::identity(), None);
+    }
+    let _ = Rect::from_xywh(0.0, 0.0, s, s);
+    let mut out = image::RgbaImage::new(size, size);
+    for (i, px) in pm.pixels().iter().enumerate() {
+        let c = px.demultiply();
+        out.put_pixel(i as u32 % size, i as u32 / size, image::Rgba([c.red(), c.green(), c.blue(), c.alpha()]));
+    }
+    let inner = ((size as f64) * if shape == "circle" { 0.66 } else { 0.74 }).round() as u32;
+    let small = image::imageops::resize(icon, inner.max(1), inner.max(1), image::imageops::FilterType::Lanczos3);
+    image::imageops::overlay(&mut out, &small, ((size - inner) / 2) as i64, ((size - inner) / 2) as i64);
+    out
 }
 
 pub fn check_logo(path: &Path) -> LogoCheck {
@@ -465,14 +515,15 @@ pub fn apply_to_system(app: &tauri::AppHandle) -> Result<()> {
             if b.logo_file.is_empty() {
                 return None;
             }
-            Some(layer_dir(&l.layer).0.join(&b.logo_file))
+            Some((layer_dir(&l.layer).0.join(&b.logo_file), b.logo_bg.clone(), b.logo_shape.clone()))
         });
 
-    if let Some(lp) = logo_path {
+    if let Some((lp, bg, shape)) = logo_path {
         let img = load_logo(&lp)?;
         let mut frames = vec![];
         for s in [16u32, 24, 32, 48, 64, 128, 256] {
             let sq = square_icon(&img, s);
+            let sq = if bg == "light" || bg == "dark" { on_plate(&square_icon(&img, 256), s, &bg, &shape) } else { sq };
             frames.push(image::codecs::ico::IcoFrame::as_png(sq.as_raw(), s, s, image::ExtendedColorType::Rgba8)?);
             if s == 256 {
                 window_png = Some(sq);

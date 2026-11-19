@@ -302,7 +302,7 @@
     <div class="thread">
       {#if !messages.length && !streaming}
         <div class="welcome">
-          <BrandLogo src={app.brand?.logo_data_url} size={72} />
+          <BrandLogo src={app.brand?.logo_data_url} bg={app.brand?.logo_bg} shape={app.brand?.logo_shape} size={72} />
           <h1>{app.brand?.effective_welcome || `Hello, I'm ${assistantName(assistant)}.`}</h1>
           <p class="mute">{app.brand?.effective_welcome ? `I'm ${assistantName(assistant)}. ` : ''}Ask me anything in English or Bahasa Melayu, or drop a PDF, Word, Excel or PowerPoint file here.</p>
           {#if noModels}

@@ -1,4 +1,5 @@
 <script>
+  import PoweredBy from '../lib/PoweredBy.svelte';
   import { onMount } from 'svelte';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
@@ -104,7 +105,7 @@
     <div class="content">
       {#if step === 0}
         <div class="center">
-          <BrandLogo src={app.brand?.logo_data_url} size={84} />
+          <BrandLogo src={app.brand?.logo_data_url} bg={app.brand?.logo_bg} shape={app.brand?.logo_shape} size={84} />
           <h1>{oem?.name ? `Welcome to ${app.brand.effective_name}` : 'Welcome to TUNAS'}</h1>
           <p class="mute lead">Your own AI, running privately on this machine. It works offline, reads your documents and speaks English and Bahasa Melayu.</p>
           <p class="mute small">This takes a few minutes: we check your machine, get one or two AI models, and you can add your organisation's name and logo.</p>
@@ -169,13 +170,13 @@
           </div>
           <div class="mini">
             <div class="mt"><BrandLogo src={logoPreview || app.brand?.logo_data_url} size={14} rounded={false} /><span class="ellipsis">{bname || app.brand?.effective_name || 'TUNAS'}</span></div>
-            <div class="mb"><BrandLogo src={logoPreview || app.brand?.logo_data_url} size={46} /><b>Hello, I'm {bname || app.brand?.effective_assistant_name || 'your assistant'}.</b><span class="salt-credit" style="font-size:10px">Powered by <b>S.A.L.T CI</b></span></div>
+            <div class="mb"><BrandLogo src={logoPreview || app.brand?.logo_data_url} size={46} /><b>Hello, I'm {bname || app.brand?.effective_assistant_name || 'your assistant'}.</b><PoweredBy size={10} logo={16} /></div>
           </div>
         </div>
         <div class="nav"><button class="btn" onclick={back}>Back</button><div class="spacer"></div><button class="btn ghost" onclick={next}>Skip</button><button class="btn primary" disabled={savingBrand} onclick={saveBrand}>Save and continue</button></div>
       {:else}
         <div class="center">
-          <BrandLogo src={app.brand?.logo_data_url} size={72} />
+          <BrandLogo src={app.brand?.logo_data_url} bg={app.brand?.logo_bg} shape={app.brand?.logo_shape} size={72} />
           <h1>{hasModel ? "You're ready" : 'Almost ready'}</h1>
           {#if active.length}
             <div class="dl">

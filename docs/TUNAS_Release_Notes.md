@@ -5,6 +5,20 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.1.4 — 19 November 2026 (cosmetic fixes from the .76 test)
+
+- **Fixed: blue buttons turned white when the mouse was over them**, so they seemed to disappear. They now stay blue and brighten slightly.
+- **Logo background for co-brands.** On the Branding page, a logo can sit on a **light** or **dark** background, as a **rounded square** or a **circle**.
+  - The default is still none (transparent).
+  - Use it when a white logo vanishes on light screens, or a dark logo on dark ones.
+  - The background is used everywhere the logo appears: the sidebar, the welcome screen, the About page, the window icon, and the desktop and Start menu icons.
+- **"Powered by S.A.L.T CI" now shows the gold S.A.L.T logo** beside the text: in the sidebar, the Branding page, the setup screens and the About page.
+- **"Notebook" is now "machine"** everywhere in the app and installer ("Check my machine", "runs privately on this machine"), since TUNAS runs on any Windows PC, not only notebooks.
+- Field hints on the Branding and assistant pages now use the smaller hint style.
+- Install over 0.1.3 directly. Chats, assistants, branding and models are kept.
+
+---
+
 ## 0.1.3 — 19 November 2026 (installer fix)
 
 - **Fixed: "Error opening file for writing … engine\vulkan\ggml-base.dll" during an update.** A leftover engine process from an earlier version (the graphics test that hung in 0.1.1) still held the file open.

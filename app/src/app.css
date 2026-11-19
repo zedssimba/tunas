@@ -80,7 +80,7 @@ button:disabled { cursor: default; opacity: .5; }
 .btn:hover:not(:disabled) { background: var(--hover); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn.primary { background: var(--grad); color: #fff; border: 0; }
-.btn.primary:hover:not(:disabled) { filter: brightness(1.06); }
+.btn.primary:hover:not(:disabled) { background: var(--grad); filter: brightness(1.12); }
 .btn.danger { color: var(--err); }
 .btn.ghost { background: transparent; border-color: transparent; }
 .btn.ghost:hover:not(:disabled) { background: var(--hover); }
@@ -98,8 +98,8 @@ input[type='text'], input[type='search'], textarea, select {
 }
 input:focus, textarea:focus, select:focus { border-color: var(--brand1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand1) 18%, transparent); }
 textarea { resize: vertical; line-height: 1.5; }
-label.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
-label.field .hint { font-weight: 400; color: var(--mute); font-size: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 13px; }
+.field .hint { font-weight: 400; color: var(--mute); font-size: 12px; }
 
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
 .card.tight { padding: 14px; }

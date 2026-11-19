@@ -1,4 +1,5 @@
 <script>
+  import PoweredBy from '../lib/PoweredBy.svelte';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
   import { api } from '../lib/api.js';
@@ -72,7 +73,7 @@
 
 <aside>
   <div class="brand">
-    <BrandLogo src={app.brand?.logo_data_url} size={36} />
+    <BrandLogo src={app.brand?.logo_data_url} bg={app.brand?.logo_bg} shape={app.brand?.logo_shape} size={36} />
     <div class="grow">
       <div class="name ellipsis" title={app.brand?.effective_name}>{app.brand?.effective_name || 'TUNAS'}</div>
       <div class="sub ellipsis">{app.brand?.effective_name && app.brand.effective_name !== 'TUNAS' ? 'TUNAS · Personal AI' : 'Personal AI'}</div>
@@ -122,7 +123,7 @@
   </nav>
 
   <button class="credit" onclick={() => (app.view = 'about')} title="About TUNAS and S.A.L.T CI">
-    <span class="salt-credit">Powered by <b>S.A.L.T CI</b></span>
+    <PoweredBy />
   </button>
 </aside>
 

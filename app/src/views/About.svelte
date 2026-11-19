@@ -1,4 +1,5 @@
 <script>
+  import PoweredBy from '../lib/PoweredBy.svelte';
   import Icon from '../lib/Icon.svelte';
   import Mark from '../lib/Mark.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
@@ -29,7 +30,7 @@
       </div>
     </div>
     <p style="margin-top:14px">TUNAS runs open AI models on this machine, fully offline and private. <i>Tunas</i> means a young shoot, the first growth: it is the personal start of S.A.L.T CI.</p>
-    <div class="salt-credit" style="font-size:14px;margin-top:14px">Powered by <b>S.A.L.T CI</b></div>
+    <div style="margin-top:14px"><PoweredBy size={14} logo={30} /></div>
   </div>
 
   {#if credited.length}
@@ -37,7 +38,7 @@
     <div class="credits">
       {#each credited as l}
         <div class="card tight row">
-          <BrandLogo src={l.logo_data_url} size={36} />
+          <BrandLogo src={l.logo_data_url} size={36} bg={l.brand.logo_bg} shape={l.brand.logo_shape} />
           <div class="grow"><div class="small faint">{LABEL[l.layer]}</div><b>{l.brand.name || 'Logo only'}</b>{#if l.brand.issuer}<div class="small faint">Pack made by {l.brand.issuer}</div>{/if}</div>
         </div>
       {/each}
