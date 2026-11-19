@@ -5,6 +5,27 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.2.1 — 19 November 2026 (simpler main screen, Settings panel, model per chat)
+
+- **Cleaner main screen.**
+  - The sidebar now holds only what people use every day: New chat, search, the chats, and My assistants (Knowledge joins it in 0.3).
+  - At the bottom: "Powered by S.A.L.T CI" and a **⚙ Settings** button.
+- **Settings panel with its own menu:**
+  - General: default model, run AI on, appearance, privacy, data folder.
+  - Models: check my machine, catalogue, downloads, USB.
+  - Branding.
+  - Connections: TERAS, cloud providers, apps that use TUNAS.
+  - About.
+
+  "Back" or Esc returns to the chat. Links such as "Open Models" open the right page of Settings.
+- **Model chip in the chat header.** It shows the model answering this chat. Click it to pick another model for this chat only: a model on this machine, a TERAS model, or (if allowed) a cloud model. "Assistant's model" goes back to the assistant's own choice. The choice is remembered per chat, and starting a new chat or choosing another assistant resets it.
+- The engine label in the header now shows only Graphics or Processor, since the chip shows the model.
+- The Privacy text in General now mentions TERAS and cloud providers.
+- The Settings gear is a proper cog icon.
+- Install over 0.2.0 directly. Everything is kept.
+
+---
+
 ## 0.2.0 — 19 November 2026 (Connections: TERAS, cloud providers, apps that use TUNAS; built-in S.A.L.T reference)
 
 The order of the plan changed on 19 Nov: Connections and the local API come in 0.2; Knowledge and Documents move to 0.3.

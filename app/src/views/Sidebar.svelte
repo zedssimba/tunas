@@ -3,7 +3,7 @@
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
   import { api } from '../lib/api.js';
-  import { app, refreshChats, assistantName } from '../lib/state.svelte.js';
+  import { app, refreshChats, assistantName, openSettings } from '../lib/state.svelte.js';
 
   let searchTimer;
   let renaming = $state(null);
@@ -61,14 +61,6 @@
     return Object.entries(g).filter(([, v]) => v.length);
   }
 
-  const nav = [
-    ['assistants', 'user', 'My assistants'],
-    ['models', 'models', 'Models'],
-    ['branding', 'brush', 'Branding'],
-    ['connections', 'globe', 'Connections'],
-    ['settings', 'settings', 'Settings'],
-    ['about', 'info', 'About'],
-  ];
   const aName = (id) => assistantName(app.assistants.find((a) => a.id === id));
 </script>
 
@@ -118,14 +110,13 @@
   </div>
 
   <nav>
-    {#each nav as [v, icon, label]}
-      <button class:active={app.view === v} onclick={() => (app.view = v)}><Icon name={icon} size={17} /> {label}</button>
-    {/each}
+    <button class:active={app.view === 'assistants'} onclick={() => (app.view = 'assistants')}><Icon name="user" size={17} /> My assistants</button>
   </nav>
 
-  <button class="credit" onclick={() => (app.view = 'about')} title="About TUNAS and S.A.L.T CI">
-    <PoweredBy />
-  </button>
+  <div class="foot">
+    <button class="credit" onclick={() => openSettings('about')} title="About TUNAS and S.A.L.T CI"><PoweredBy /></button>
+    <button class="gear" class:active={app.view === 'settings'} title="Settings" aria-label="Settings" onclick={() => openSettings('general')}><Icon name="settings" size={19} /></button>
+  </div>
 </aside>
 
 <style>
@@ -154,5 +145,8 @@
   nav button { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; color: var(--mute); font-weight: 500; text-align: left; }
   nav button:hover { background: var(--hover); color: var(--ink); }
   nav button.active { color: var(--ink); background: var(--hover); }
-  .credit { padding: 6px 10px 2px; text-align: left; }
+  .foot { display: flex; align-items: center; gap: 6px; padding: 4px 2px 0 6px; }
+  .credit { flex: 1; text-align: left; min-width: 0; }
+  .gear { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--mute); }
+  .gear:hover, .gear.active { background: var(--hover); color: var(--ink); }
 </style>

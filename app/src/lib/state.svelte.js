@@ -10,7 +10,9 @@ export const app = $state({
   chats: [],
   engine: { state: 'stopped' },
   progress: {}, // model id -> progress
-  view: 'chat', // chat | assistants | models | branding | settings | about | setup
+  view: 'chat', // chat | assistants | settings | setup
+  settingsTab: 'general', // general | models | branding | connections | about
+  backView: 'chat',
   chatId: null,
   assistantId: 'starter-general',
   chatQuery: '',
@@ -124,4 +126,14 @@ function clearProgress(id, ms) {
     delete p[id];
     app.progress = p;
   }, ms);
+}
+
+export function openSettings(tab = 'general') {
+  if (app.view !== 'settings') app.backView = app.view;
+  app.settingsTab = tab;
+  app.view = 'settings';
+}
+
+export function closeSettings() {
+  app.view = app.backView && app.backView !== 'settings' ? app.backView : 'chat';
 }

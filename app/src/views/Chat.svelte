@@ -6,7 +6,7 @@
   import { api, pickFiles } from '../lib/api.js';
   import { md } from '../lib/markdown.js';
   import { buildMessages, streamChat, makeTitle } from '../lib/chat.js';
-  import { app, toast, refreshChats, assistantName, currentAssistant, modelName } from '../lib/state.svelte.js';
+  import { app, toast, refreshChats, assistantName, currentAssistant, modelName, openSettings } from '../lib/state.svelte.js';
 
   let messages = $state([]);
   let input = $state('');
@@ -22,7 +22,7 @@
   let supported = [];
 
   const assistant = $derived(currentAssistant());
-  const noModels = $derived(app.installed.filter((m) => !m.id.includes('embed')).length === 0 && !(assistant?.model_id || '').startsWith('prov:'));
+  const noModels = $derived(app.installed.filter((m) => !m.id.includes('embed')).length === 0 && !effModel.startsWith('prov:'));
 
   $effect(() => {
     const id = app.chatId;
@@ -33,7 +33,8 @@
   });
 
   async function load(id) {
-    if (!id) { messages = []; return; }
+    if (!id) { messages = []; modelOverride = ''; return; }
+    modelOverride = (await api.setting_get({ key: `chat_model:${id}` })) || '';
     messages = await api.messages_list({ chatId: id });
     await scrollDown(true);
   }
@@ -84,8 +85,11 @@
   }
 
   let route = $state({ kind: 'local', label: '', provider: '', ctx: 8192, error: '' });
+  let modelOverride = $state('');
+  let modelOpen = $state(false);
+  const effModel = $derived(modelOverride || assistant?.model_id || '');
   $effect(() => {
-    const m = assistant?.model_id || '';
+    const m = effModel;
     const _d = app.prefs.default_model + app.installed.length + app.providers.length + app.prefs.cloud_enabled;
     api.route_info({ modelId: m }).then((r) => (route = r));
   });
@@ -93,7 +97,7 @@
   async function send(textOverride) {
     const text = (textOverride ?? input).trim();
     if ((!text && !files.length) || busy) return;
-    if (noModels) { app.view = 'models'; return; }
+    if (noModels) { openSettings('models'); return; }
     if (files.some((f) => f.loading)) { toast('Still reading your files…'); return; }
     busy = true;
     const sentFiles = files.map(({ name, kind, text, chars, truncated, warning }) => ({ name, kind, text, chars, truncated, warning }));
@@ -106,6 +110,7 @@
         const c = await api.chat_create({ assistantId: assistant.id, title: (text || sentFiles[0]?.name || 'New chat').slice(0, 48) });
         chatId = c.id;
         loadedChat = chatId;
+        if (modelOverride) api.setting_set({ key: `chat_model:${chatId}`, value: modelOverride });
         app.chatId = chatId;
         messages = [];
         refreshChats();
@@ -128,7 +133,7 @@
   }
 
   async function runAssistant(chatId, first) {
-    const r = await api.route_info({ modelId: assistant?.model_id || '' });
+    const r = await api.route_info({ modelId: effModel });
     route = r;
     if (r.error) throw new Error(r.error);
     streaming = '…';
@@ -139,7 +144,7 @@
     try {
       const r = await streamChat({
         assistant,
-        model: assistant?.model_id || '',
+        model: effModel,
         messages: msgs,
         signal: abort.signal,
         onToken: (t) => { streaming = t; scrollDown(); },
@@ -161,7 +166,7 @@
     const am = await api.message_add({
       message: {
         id: '', chat_id: chatId, role: 'assistant', content: text, files: [],
-        stats: JSON.stringify({ ...(stats || {}), model: route.kind === 'local' ? app.engine?.model_id : assistant?.model_id, engine: route.kind === 'local' ? app.engine?.engine : route.kind }), created: '',
+        stats: JSON.stringify({ ...(stats || {}), model: route.kind === 'local' ? app.engine?.model_id : effModel, engine: route.kind === 'local' ? app.engine?.engine : route.kind }), created: '',
       },
     });
     messages = [...messages, am];
@@ -169,7 +174,7 @@
     await scrollDown();
     if (first && !stats?.stopped) {
       const userText = messages[0]?.content || '';
-      const title = await makeTitle({ model: assistant?.model_id || '', userText, answer: text });
+      const title = await makeTitle({ model: effModel, userText, answer: text });
       if (title) { await api.chat_rename({ id: chatId, title }); refreshChats(); }
     } else {
       refreshChats();
@@ -214,10 +219,27 @@
     }
   }
 
+  async function chooseModel(id) {
+    modelOpen = false;
+    modelOverride = id;
+    if (app.chatId) await api.setting_set({ key: `chat_model:${app.chatId}`, value: id });
+  }
+
+  const modelGroups = $derived.by(() => {
+    const g = [{ label: 'On this machine', items: app.installed.filter((m) => !m.id.includes('embed')).map((m) => ({ id: m.id, name: m.name })) }];
+    const cloudOk = app.prefs.cloud_enabled === '1' && app.brand?.policy?.allow_cloud !== false;
+    for (const p of app.providers) {
+      if (!p.enabled || !p.models.length || (p.kind !== 'teras' && !cloudOk)) continue;
+      g.push({ label: p.kind === 'teras' ? `${p.name} (your organisation)` : `${p.name} (cloud, online)`, items: p.models.map((m) => ({ id: `prov:${p.id}:${m}`, name: m })) });
+    }
+    return g;
+  });
+
   function chooseAssistant(a) {
     pickerOpen = false;
     if (a.id === app.assistantId) return;
     app.assistantId = a.id;
+    modelOverride = '';
     api.setting_set({ key: 'last_assistant', value: a.id });
     if (app.chatId) { app.chatId = null; }
   }
@@ -284,12 +306,34 @@
         <button class="scrim" aria-label="Close" onclick={() => (pickerOpen = false)}></button>
       {/if}
     </div>
+    <div class="picker">
+      <button class="mchip" class:over={!!modelOverride} onclick={() => (modelOpen = !modelOpen)} title="Model for this chat">
+        <Icon name={route.kind === 'cloud' ? 'globe' : route.kind === 'teras' ? 'server' : 'models'} size={14} />
+        <span class="ellipsis">{route.label || 'No model'}</span>
+        <Icon name="chevron" size={12} class="rot" />
+      </button>
+      {#if modelOpen}
+        <div class="menu card" role="menu">
+          <button class="mi" class:sel={!modelOverride} onclick={() => chooseModel('')}>
+            <span class="grow">Assistant's model</span><span class="faint small">{assistant?.model_id ? modelName(assistant.model_id) : 'Default'}</span>
+          </button>
+          {#each modelGroups as g}
+            {#if g.items.length}
+              <div class="glabel">{g.label}</div>
+              {#each g.items as m}
+                <button class="mi" class:sel={modelOverride === m.id} onclick={() => chooseModel(m.id)}><span class="grow ellipsis">{m.name}</span></button>
+              {/each}
+            {/if}
+          {/each}
+          <button class="mi manage" onclick={() => { modelOpen = false; openSettings('models'); }}><Icon name="plus" size={14} /> Get more models</button>
+        </div>
+        <button class="scrim" aria-label="Close" onclick={() => (modelOpen = false)}></button>
+      {/if}
+    </div>
     <div class="spacer"></div>
     {#if route.kind === 'cloud'}
-      <span class="pill warn" title="Messages in this chat are sent to {route.provider}"><Icon name="globe" size={13} /> {route.provider} · {route.label}</span>
       <span class="pill warn" title="This assistant uses a cloud model"><Icon name="external" size={12} /> Online · leaves this machine</span>
     {:else if route.kind === 'teras'}
-      <span class="pill brand" title="Answered by your organisation's TERAS"><Icon name="server" size={13} /> {route.provider} · {route.label}</span>
       <span class="pill ok" title="Sent only to your organisation's TERAS server"><Icon name="lock" size={12} /> Your organisation's server</span>
     {:else}
       {#if app.engine?.state === 'starting'}
@@ -297,7 +341,7 @@
       {:else if app.engine?.state === 'ready'}
         <span class="pill" title="Running on this machine">
           <Icon name={app.engine.engine === 'vulkan' ? 'chip' : 'cpu'} size={13} />
-          {modelName(app.engine.model_id) || app.engine.model_id} · {app.engine.engine === 'vulkan' ? 'Graphics' : 'Processor'}
+          {app.engine.engine === 'vulkan' ? 'Graphics' : 'Processor'}
         </span>
       {:else if app.engine?.state === 'error'}
         <span class="pill err" title={app.engine.message}><Icon name="warn" size={13} /> Engine problem</span>
@@ -317,7 +361,7 @@
             <div class="card tight notice">
               <Icon name="models" size={20} />
               <div class="grow"><b>No model installed yet.</b><div class="mute small">Download a model, or import one from a USB stick, to start chatting.</div></div>
-              <button class="btn primary sm" onclick={() => (app.view = 'models')}>Open Models</button>
+              <button class="btn primary sm" onclick={() => openSettings('models')}>Open Models</button>
             </div>
           {:else}
             <div class="sugs">
@@ -421,6 +465,11 @@
   .mi { display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 8px; border-radius: 8px; text-align: left; }
   .mi:hover { background: var(--hover); }
   .mi.sel { background: color-mix(in srgb, var(--brand1) 10%, transparent); }
+  .mchip { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line); color: var(--mute); font-weight: 600; font-size: 13px; max-width: 260px; }
+  .mchip:hover { background: var(--hover); color: var(--ink); }
+  .mchip.over { border-color: color-mix(in srgb, var(--brand1) 45%, var(--line)); color: var(--ink); }
+  .mchip :global(.rot) { transform: rotate(90deg); color: var(--faint); }
+  .glabel { font-size: 11px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .07em; margin: 8px 8px 2px; }
   .mi.manage { color: var(--brand1); font-weight: 600; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; margin-top: 4px; padding-top: 10px; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .pulse { animation: pulse 1.2s infinite; }

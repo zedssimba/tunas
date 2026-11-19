@@ -7,12 +7,8 @@
   import Sidebar from './views/Sidebar.svelte';
   import Chat from './views/Chat.svelte';
   import Assistants from './views/Assistants.svelte';
-  import Models from './views/Models.svelte';
-  import Branding from './views/Branding.svelte';
-  import Settings from './views/Settings.svelte';
-  import About from './views/About.svelte';
-  import Connections from './views/Connections.svelte';
   import Setup from './views/Setup.svelte';
+  import SettingsShell from './views/SettingsShell.svelte';
   import Icon from './lib/Icon.svelte';
 
   let ready = $state(false);
@@ -57,11 +53,7 @@
       <main>
         {#if app.view === 'chat'}<Chat />
         {:else if app.view === 'assistants'}<Assistants />
-        {:else if app.view === 'models'}<Models />
-        {:else if app.view === 'branding'}<Branding />
-        {:else if app.view === 'connections'}<Connections />
-        {:else if app.view === 'settings'}<Settings />
-        {:else if app.view === 'about'}<About />
+        {:else if app.view === 'settings'}<SettingsShell />
         {/if}
       </main>
     </div>
