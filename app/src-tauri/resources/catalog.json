@@ -1,0 +1,135 @@
+{
+ "version": 1,
+ "updated": "2026-11-19",
+ "models": [
+  {
+   "id": "qwen3.5-2b",
+   "file": "Qwen3.5-2B-Q4_K_M.gguf",
+   "name": "Qwen 3.5 2B",
+   "family": "Qwen 3.5",
+   "params": "2B",
+   "quant": "Q4_K_M",
+   "tier": "fast",
+   "role": "chat",
+   "bundle": true,
+   "min_ram_gb": 6,
+   "size": 1280835840,
+   "sha256": "aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
+   "license": "Apache-2.0",
+   "license_note": "",
+   "description": "Quick everyday model. The best choice for 8 GB notebooks without a graphics card.",
+   "urls": [
+    "https://models.salt.ci/Qwen3.5-2B-Q4_K_M.gguf",
+    "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-Q4_K_M.gguf"
+   ],
+   "source_page": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF"
+  },
+  {
+   "id": "qwen3.5-4b",
+   "file": "Qwen3.5-4B-Q4_K_M.gguf",
+   "name": "Qwen 3.5 4B",
+   "family": "Qwen 3.5",
+   "params": "4B",
+   "quant": "Q4_K_M",
+   "tier": "better",
+   "role": "chat",
+   "bundle": true,
+   "min_ram_gb": 8,
+   "size": 2740937888,
+   "sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+   "license": "Apache-2.0",
+   "license_note": "",
+   "description": "Better writing and reasoning, a little slower. Recommended from 12 GB, usable on 8 GB.",
+   "urls": [
+    "https://models.salt.ci/Qwen3.5-4B-Q4_K_M.gguf",
+    "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/e87f176479d0855a907a41277aca2f8ee7a09523/Qwen3.5-4B-Q4_K_M.gguf"
+   ],
+   "source_page": "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF"
+  },
+  {
+   "id": "granite-4.2-3b",
+   "file": "granite-4.2-3b-Q4_K_M.gguf",
+   "name": "Granite 4.2 3B",
+   "family": "IBM Granite",
+   "params": "3B",
+   "quant": "Q4_K_M",
+   "tier": "balanced",
+   "role": "chat",
+   "bundle": true,
+   "min_ram_gb": 8,
+   "size": 2244011552,
+   "sha256": "e0406663965846ae22a403456eb826ccce5f450840491f71952f18a7cb78e7d5",
+   "license": "Apache-2.0",
+   "license_note": "",
+   "description": "Steady, business-style answers. A good second opinion to the Qwen models.",
+   "urls": [
+    "https://models.salt.ci/granite-4.2-3b-Q4_K_M.gguf",
+    "https://huggingface.co/ibm-granite/granite-4.2-3b-GGUF/resolve/c40945d71cd90f249a56985e8155551a9188dc30/granite-4.2-3b-Q4_K_M.gguf"
+   ],
+   "source_page": "https://huggingface.co/ibm-granite/granite-4.2-3b-GGUF"
+  },
+  {
+   "id": "qwen3.5-0.8b",
+   "file": "Qwen3.5-0.8B-Q4_K_M.gguf",
+   "name": "Qwen 3.5 0.8B",
+   "family": "Qwen 3.5",
+   "params": "0.8B",
+   "quant": "Q4_K_M",
+   "tier": "tiny",
+   "role": "chat",
+   "bundle": false,
+   "min_ram_gb": 4,
+   "size": 532517120,
+   "sha256": "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",
+   "license": "Apache-2.0",
+   "license_note": "",
+   "description": "Very small and very fast, for older notebooks with 4–6 GB. Simple tasks only.",
+   "urls": [
+    "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-Q4_K_M.gguf"
+   ],
+   "source_page": "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF"
+  },
+  {
+   "id": "sea-lion-v4-4b",
+   "file": "Gemma-SEA-LION-v4-4B-VL-Q4_K_M.gguf",
+   "name": "SEA-LION v4 4B",
+   "family": "SEA-LION (AI Singapore)",
+   "params": "4B",
+   "quant": "Q4_K_M",
+   "tier": "regional",
+   "role": "chat",
+   "bundle": false,
+   "min_ram_gb": 8,
+   "size": 2489894176,
+   "sha256": "9a103dc33586307001b672fec36e47e406009bd3bc64c4e1f3bb217630feb628",
+   "license": "See source page",
+   "license_note": "Built on a Gemma base model; the Gemma terms of use may apply in addition to the listed licence.",
+   "description": "Tuned for Southeast Asian languages including Malay. You download it yourself; check its licence first.",
+   "urls": [
+    "https://huggingface.co/aisingapore/Gemma-SEA-LION-v4-4B-VL-GGUF/resolve/59f4fedcdc39816d22108b44036e02449e62e2ce/Gemma-SEA-LION-v4-4B-VL-Q4_K_M.gguf"
+   ],
+   "source_page": "https://huggingface.co/aisingapore/Gemma-SEA-LION-v4-4B-VL-GGUF"
+  },
+  {
+   "id": "qwen3-embed-0.6b",
+   "file": "Qwen3-Embedding-0.6B-Q8_0.gguf",
+   "name": "Qwen 3 Embedding 0.6B",
+   "family": "Qwen 3",
+   "params": "0.6B",
+   "quant": "Q8_0",
+   "tier": "embedding",
+   "role": "embedding",
+   "bundle": false,
+   "min_ram_gb": 4,
+   "size": 639150592,
+   "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
+   "license": "Apache-2.0",
+   "license_note": "",
+   "description": "Reads your documents for Knowledge (coming in TUNAS 0.2).",
+   "urls": [
+    "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/370f27d7550e0def9b39c1f16d3fbaa13aa67728/Qwen3-Embedding-0.6B-Q8_0.gguf"
+   ],
+   "source_page": "https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF"
+  }
+ ]
+}
