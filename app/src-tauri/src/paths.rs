@@ -59,5 +59,6 @@ pub fn app_dir() -> PathBuf {
 }
 
 pub fn engine_dir(kind: &str) -> PathBuf {
-    app_dir().join("engine").join(kind)
+    // Each version has its own engine folder, so a stuck old engine process can never block an update.
+    app_dir().join("engine").join(env!("CARGO_PKG_VERSION")).join(kind)
 }

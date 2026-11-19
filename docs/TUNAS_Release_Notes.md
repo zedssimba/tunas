@@ -5,6 +5,15 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.1.3 — 19 November 2026 (installer fix)
+
+- **Fixed: "Error opening file for writing … engine\vulkan\ggml-base.dll" during an update.** A leftover engine process from an earlier version (the graphics test that hung in 0.1.1) still held the file open.
+  - The installer now stops TUNAS and engine processes again just before copying, and waits for Windows to release the files.
+  - Each version installs its engine into its own folder (`engine\0.1.3\…`), so a stuck old process can no longer block an update. Old engine folders are removed when they are free.
+- **Installer header:** the gold S.A.L.T logo on the inner pages is smaller, with space around it, instead of touching the frame.
+
+---
+
 ## 0.1.2 — 19 November 2026 (fixes from the .76 test, and S.A.L.T branding)
 
 - **Fixed: setup stuck on "Checking memory, processor and graphics…".** On some graphics drivers (seen on .76 with a Quadro K6000), the engine's device test prints the device list and then never closes, so TUNAS waited forever.

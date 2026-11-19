@@ -92,8 +92,13 @@ Function CheckWebView2
 FunctionEnd
 
 Section "TUNAS" SecMain
+  ; Make sure no TUNAS or engine process holds files open, then give Windows a moment to release them.
+  nsExec::Exec 'taskkill /IM TUNAS.exe /F'
+  nsExec::Exec 'taskkill /IM llama-server.exe /F'
+  Sleep 1500
   SetOutPath "$INSTDIR"
-  ; Remove the previous engine files so old DLLs never mix with new ones.
+  ; Older engine folders are removed when possible; a folder still locked by a stuck process is left
+  ; behind harmlessly, because each version uses its own engine folder.
   RMDir /r "$INSTDIR\engine"
   File /r "${STAGE}\*.*"
 

@@ -79,8 +79,8 @@ def side_panel(scale=2):
 def header(scale=2):
     w, h = 150 * scale, 57 * scale
     img = Image.new('RGB', (w, h), (255, 255, 255))
-    salt = fit(f'{B}/salt/salt-gold-3d.png', 60 * scale, 49 * scale)
-    img.paste(salt, (w - salt.width - 6 * scale, (h - salt.height) // 2), salt)
+    salt = fit(f'{B}/salt/salt-gold-3d.png', 44 * scale, 41 * scale)
+    img.paste(salt, (w - salt.width - 16 * scale, (h - salt.height) // 2), salt)
     return img
 
 

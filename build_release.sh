@@ -6,7 +6,7 @@ ROOT=/home/claude/tunas
 B=/home/claude/build
 STAGE=$B/stage
 OUT=$ROOT/release
-rm -rf "$STAGE"; mkdir -p "$STAGE"/{resources,engine/cpu,engine/vulkan} "$OUT"
+rm -rf "$STAGE"; mkdir -p "$STAGE"/{resources,engine/$VER/cpu,engine/$VER/vulkan} "$OUT"
 
 EXE=$ROOT/app/src-tauri/target/x86_64-pc-windows-gnu/release/tunas.exe
 cp "$EXE" "$STAGE/TUNAS.exe"
@@ -23,13 +23,13 @@ copy_rt() {
   done
 }
 for kind in cpu vulkan; do
-  D=$STAGE/engine/$kind
+  D=$STAGE/engine/$VER/$kind
   cp $B/llama-cpu/bin/llama-server.exe $B/llama-cpu/bin/*.dll "$D/"
   copy_rt "$D"
 done
-cp $B/llama-vk/bin/ggml-vulkan.dll "$STAGE/engine/vulkan/"
+cp $B/llama-vk/bin/ggml-vulkan.dll "$STAGE/engine/$VER/vulkan/"
 find "$STAGE/engine" -name "*.dll" -exec x86_64-w64-mingw32-strip --strip-unneeded {} \;
-x86_64-w64-mingw32-strip --strip-unneeded "$STAGE"/engine/*/llama-server.exe
+x86_64-w64-mingw32-strip --strip-unneeded "$STAGE"/engine/*/*/llama-server.exe
 
 cat > "$STAGE/THIRD-PARTY-NOTICES.txt" <<'EOF'
 TUNAS includes the following open-source components:
