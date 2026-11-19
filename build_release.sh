@@ -49,6 +49,6 @@ cp /home/claude/ggml-org/llama.cpp/LICENSE "$STAGE/LICENSE-llama.cpp.txt"
 
 SETUP=$OUT/TUNAS_Setup_${VER}.exe
 makensis -V2 -DVERSION="$VER" -DSTAGE="$STAGE" -DOUTFILE="$SETUP" $ROOT/installer/tunas.nsi
-( cd $OUT && rm -f TUNAS_${VER}.zip && zip -q -j TUNAS_${VER}.zip TUNAS_Setup_${VER}.exe )
+( cd $OUT && rm -f TUNAS_${VER}.zip && cp $ROOT/docs/TUNAS_Release_Notes.md . && zip -q -j TUNAS_${VER}.zip TUNAS_Setup_${VER}.exe TUNAS_Release_Notes.md && rm TUNAS_Release_Notes.md )
 ls -la $OUT
 sha256sum $OUT/TUNAS_${VER}.zip

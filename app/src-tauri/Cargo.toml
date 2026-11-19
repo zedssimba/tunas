@@ -1,6 +1,6 @@
 [package]
 name = "tunas"
-version = "0.1.0"
+version = "0.1.1"
 description = "TUNAS - personal AI for your notebook. S.A.L.T CI"
 authors = ["S.A.L.T. CI TECHNOLOGY"]
 edition = "2021"
@@ -13,7 +13,7 @@ crate-type = ["rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["image-png", "image-ico"] }
+tauri = { version = "2", features = ["image-png", "image-ico", "custom-protocol"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-single-instance = "2"

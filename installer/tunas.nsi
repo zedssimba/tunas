@@ -58,6 +58,12 @@ VIAddVersionKey "LegalCopyright" "S.A.L.T CI and its components are proprietary 
 !insertmacro MUI_LANGUAGE "English"
 
 Function .onInit
+  ; Only one copy of the installer at a time.
+  System::Call 'kernel32::CreateMutex(p 0, i 0, t "TUNAS_Setup_Running") p .r1 ?e'
+  Pop $R0
+  ${If} $R0 == 183
+    Abort
+  ${EndIf}
   ; Close a running copy so files can be replaced.
   nsExec::Exec 'taskkill /IM TUNAS.exe /F'
   nsExec::Exec 'taskkill /IM llama-server.exe /F'
@@ -119,6 +125,14 @@ Section "TUNAS" SecMain
 
   Call CheckWebView2
 SectionEnd
+
+Function un.onInit
+  System::Call 'kernel32::CreateMutex(p 0, i 0, t "TUNAS_Uninstall_Running") p .r1 ?e'
+  Pop $R0
+  ${If} $R0 == 183
+    Abort
+  ${EndIf}
+FunctionEnd
 
 Section "Uninstall"
   nsExec::Exec 'taskkill /IM TUNAS.exe /F'

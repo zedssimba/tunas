@@ -5,6 +5,16 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.1.1 — 19 November 2026 (fixes after the first install on .76)
+
+- **Fixed: the app window showed "localhost refused to connect".** 0.1.0 was built without its screens packed inside, so it looked for a development server. The screens are now embedded in TUNAS.exe.
+- **Fixed: the installer and the uninstaller could run twice.** Each now allows only one copy of itself at a time.
+- **New TUNAS mark: option B** (a shoot growing from a gold seed). It is used for the app icon, the installer, the shortcuts and inside the app when no co-brand is set.
+- The release notes now come inside the zip.
+- Install over 0.1.0 directly. Chats, assistants, branding and models are kept.
+
+---
+
 ## 0.1.0 — 19 November 2026 (first build, for testing on CAPT ZEDs' notebooks)
 
 **Status: built, not yet tested on Windows.** It was built and checked on the build machine. The Windows run test is on CAPT ZEDs' 8 GB reference notebook and VM.
