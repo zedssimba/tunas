@@ -122,7 +122,7 @@ impl Engine {
             .args(["-np", "1"])
             .args(["-ngl", if kind == "vulkan" { "999" } else { "0" }])
             .args(["--cache-ram", if hw >= 15.0 { "512" } else { "0" }])
-            .args(["--jinja", "--no-webui", "--reasoning", "off"])
+            .args(["--jinja", "--no-webui"])
             .arg("--log-file").arg(&log_path)
             .stdin(Stdio::null())
             .stdout(Stdio::null())

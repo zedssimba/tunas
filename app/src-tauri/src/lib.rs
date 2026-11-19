@@ -448,6 +448,7 @@ fn gateway_info(st: State<AppState>) -> GatewayInfo {
 #[derive(Serialize)]
 struct RouteInfo {
     kind: String,
+    model_id: String,
     label: String,
     provider: String,
     ctx: u32,
@@ -461,10 +462,10 @@ fn route_info(app: AppHandle, model_id: String) -> RouteInfo {
             let mut s = sysinfo::System::new();
             s.refresh_memory();
             let ctx = if s.total_memory() as f64 / 1024f64.powi(3) >= 15.0 { 16384 } else { 8192 };
-            RouteInfo { kind: "local".into(), label: m.name, provider: String::new(), ctx, error: String::new() }
+            RouteInfo { kind: "local".into(), model_id: m.id, label: m.name, provider: String::new(), ctx, error: String::new() }
         }
-        Ok(gateway::Target::Provider(p, m)) => RouteInfo { kind: if p.kind == "teras" { "teras".into() } else { "cloud".into() }, label: m, provider: p.name, ctx: 32768, error: String::new() },
-        Err(e) => RouteInfo { kind: "none".into(), label: String::new(), provider: String::new(), ctx: 8192, error: e },
+        Ok(gateway::Target::Provider(p, m)) => RouteInfo { kind: if p.kind == "teras" { "teras".into() } else { "cloud".into() }, model_id: format!("prov:{}:{}", p.id, m), label: m, provider: p.name, ctx: 32768, error: String::new() },
+        Err(e) => RouteInfo { kind: "none".into(), model_id: String::new(), label: String::new(), provider: String::new(), ctx: 8192, error: e },
     }
 }
 

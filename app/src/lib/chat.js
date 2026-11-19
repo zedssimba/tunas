@@ -33,7 +33,7 @@ export function buildMessages(assistant, history, ctx) {
 /**
  * Stream a chat completion. Calls onToken(textSoFar). Returns { text, stats }.
  */
-export async function streamChat({ messages, signal, onToken, maxTokens = 2048, assistant = null, model = '', raw = false }) {
+export async function streamChat({ messages, signal, onToken, onThinking, maxTokens = 2048, assistant = null, model = '', raw = false, think = false }) {
   const gw = app.gateway;
   const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
     method: 'POST',
@@ -44,10 +44,10 @@ export async function streamChat({ messages, signal, onToken, maxTokens = 2048, 
       tunas_raw: raw,
       messages,
       stream: true,
-      max_tokens: maxTokens,
+      max_tokens: think ? undefined : maxTokens,
       temperature: 0.6,
       top_p: 0.9,
-      chat_template_kwargs: { enable_thinking: false },
+      chat_template_kwargs: { enable_thinking: !!think },
     }),
     signal,
   });
@@ -60,6 +60,9 @@ export async function streamChat({ messages, signal, onToken, maxTokens = 2048, 
   const dec = new TextDecoder();
   let buf = '';
   let text = '';
+  let reasoning = '';
+  let tThinkStart = 0;
+  let tThinkEnd = 0;
   let stats = null;
   const t0 = performance.now();
   let tFirst = 0;
@@ -78,8 +81,15 @@ export async function streamChat({ messages, signal, onToken, maxTokens = 2048, 
       let j;
       try { j = JSON.parse(data); } catch { continue; }
       const ch = j.choices?.[0];
+      const rpiece = ch?.delta?.reasoning_content || '';
+      if (rpiece) {
+        if (!tThinkStart) tThinkStart = performance.now();
+        reasoning += rpiece;
+        onThinking?.(reasoning);
+      }
       const piece = ch?.delta?.content || '';
       if (piece) {
+        if (tThinkStart && !tThinkEnd) tThinkEnd = performance.now();
         if (!tFirst) tFirst = performance.now();
         text += piece;
         onToken?.(text);
@@ -96,13 +106,15 @@ export async function streamChat({ messages, signal, onToken, maxTokens = 2048, 
       }
     }
   }
-  if (stats) stats.finish = finish;
+  const think_ms = tThinkStart ? Math.round((tThinkEnd || performance.now()) - tThinkStart) : 0;
+  if (stats) { stats.finish = finish; if (think_ms) stats.think_ms = think_ms; }
   else if (text) {
     // Cloud providers send no timings: estimate from the text.
     const secs = Math.max(0.001, (performance.now() - (tFirst || t0)) / 1000);
     stats = { first_ms: Math.round((tFirst || performance.now()) - t0), tps: Math.round((text.length / 4 / secs) * 10) / 10, est: true, finish };
+    if (think_ms) stats.think_ms = think_ms;
   }
-  return { text, stats };
+  return { text, reasoning, stats };
 }
 
 /** Ask the model for a short chat title from the first exchange. */

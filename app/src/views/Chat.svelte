@@ -13,6 +13,36 @@
   let files = $state([]); // {name, path, kind, text, chars, truncated, warning, loading}
   let busy = $state(false);
   let streaming = $state('');
+  // Smooth typing: tokens arrive in bursts; the screen reveals them at an even pace and re-renders
+  // the formatted text at most every 60 ms.
+  let target = '';
+  let shownLen = 0;
+  let streamHtml = $state('');
+  let lastRender = 0;
+  let raf = 0;
+  let thinkText = $state('');
+  let thinkStart = $state(0);
+  let thinkNow = $state(0);
+  let thinkOpen = $state(true);
+  let thinkModeOpen = $state(false);
+  let openThoughts = $state({});
+
+  function pump(ts) {
+    if (shownLen < target.length) {
+      const gap = target.length - shownLen;
+      shownLen += Math.max(1, Math.ceil(gap / 10));
+      if (ts - lastRender > 60 || shownLen >= target.length) {
+        streamHtml = md(target.slice(0, shownLen));
+        lastRender = ts;
+        scrollDown();
+      }
+    }
+    if (thinkStart) thinkNow = performance.now();
+    raf = requestAnimationFrame(pump);
+  }
+  function startPump() { target = ''; shownLen = 0; streamHtml = ''; lastRender = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(pump); }
+  function stopPump() { cancelAnimationFrame(raf); raf = 0; }
+
   let abort = null;
   let scroller;
   let ta;
@@ -136,41 +166,59 @@
     const r = await api.route_info({ modelId: effModel });
     route = r;
     if (r.error) throw new Error(r.error);
+    const mode = r.kind === 'local' ? (app.thinkModes[r.model_id] || 'off') : 'off';
     streaming = '…';
+    thinkText = '';
+    thinkStart = 0;
+    thinkOpen = mode === 'shown';
+    startPump();
     abort = new AbortController();
     const msgs = buildMessages(assistant, messages, r.ctx || 8192);
     let text = '';
+    let reasoning = '';
     let stats = null;
     try {
-      const r = await streamChat({
+      const res = await streamChat({
         assistant,
         model: effModel,
         messages: msgs,
         signal: abort.signal,
-        onToken: (t) => { streaming = t; scrollDown(); },
+        think: mode !== 'off',
+        onThinking: (t) => { if (!thinkStart) thinkStart = performance.now(); if (mode === 'shown') { thinkText = t; scrollDown(); } },
+        onToken: (t) => {
+          if (thinkStart && streaming === '…' && mode === 'shown') thinkOpen = false; // fold the thoughts when the answer starts
+          streaming = t;
+          target = t;
+        },
       });
-      text = r.text;
-      stats = r.stats;
+      text = res.text;
+      reasoning = res.reasoning;
+      stats = res.stats;
     } catch (e) {
       if (e.name === 'AbortError') {
         text = streaming === '…' ? '' : streaming;
         stats = { stopped: true };
       } else {
+        stopPump();
         throw e;
       }
     }
+    // Let the last words appear before saving.
+    while (shownLen < target.length) await new Promise((r) => setTimeout(r, 16));
+    stopPump();
     if (!text.trim()) {
-      if (stats?.stopped) return;
+      if (stats?.stopped) { streaming = ''; return; }
       text = '_No answer was produced. Try again, or try another model._';
     }
+    const extra = { model: route.kind === 'local' ? app.engine?.model_id : effModel, engine: route.kind === 'local' ? app.engine?.engine : route.kind };
+    if (mode === 'shown' && reasoning) extra.reasoning = reasoning;
     const am = await api.message_add({
-      message: {
-        id: '', chat_id: chatId, role: 'assistant', content: text, files: [],
-        stats: JSON.stringify({ ...(stats || {}), model: route.kind === 'local' ? app.engine?.model_id : effModel, engine: route.kind === 'local' ? app.engine?.engine : route.kind }), created: '',
-      },
+      message: { id: '', chat_id: chatId, role: 'assistant', content: text, files: [], stats: JSON.stringify({ ...(stats || {}), ...extra }), created: '' },
     });
     messages = [...messages, am];
     streaming = '';
+    thinkText = '';
+    thinkStart = 0;
     await scrollDown();
     if (first && !stats?.stopped) {
       const userText = messages[0]?.content || '';
@@ -180,6 +228,22 @@
       refreshChats();
     }
   }
+
+  // Thinking mode per local model: off | hidden | shown.
+  const thinkMode = $derived(route.kind === 'local' ? (app.thinkModes[route.model_id] || 'off') : 'off');
+  $effect(() => {
+    const id = route.kind === 'local' ? route.model_id : '';
+    if (id && app.thinkModes[id] === undefined) {
+      api.setting_get({ key: `think:${id}` }).then((v) => { app.thinkModes = { ...app.thinkModes, [id]: v || 'off' }; });
+    }
+  });
+  async function setThink(m) {
+    thinkModeOpen = false;
+    app.thinkModes = { ...app.thinkModes, [route.model_id]: m };
+    await api.setting_set({ key: `think:${route.model_id}`, value: m });
+  }
+  const THINK_LABEL = { off: 'Thinking off', hidden: 'Thinking (hidden)', shown: 'Thinking (shown)' };
+  const secs = (ms) => (ms / 1000).toFixed(ms < 10000 ? 1 : 0);
 
   function stop() { abort?.abort(); }
 
@@ -330,6 +394,22 @@
         <button class="scrim" aria-label="Close" onclick={() => (modelOpen = false)}></button>
       {/if}
     </div>
+    {#if route.kind === 'local'}
+      <div class="picker">
+        <button class="mchip" class:over={thinkMode !== 'off'} onclick={() => (thinkModeOpen = !thinkModeOpen)} title="Let this model think before answering">
+          <Icon name="bulb" size={14} /><span>{THINK_LABEL[thinkMode]}</span><Icon name="chevron" size={12} class="rot" />
+        </button>
+        {#if thinkModeOpen}
+          <div class="menu card think" role="menu">
+            <button class="mi" class:sel={thinkMode === 'off'} onclick={() => setThink('off')}><span class="grow"><b>Off</b><span class="d">Fastest. Answers straight away.</span></span></button>
+            <button class="mi" class:sel={thinkMode === 'hidden'} onclick={() => setThink('hidden')}><span class="grow"><b>On, hidden</b><span class="d">Thinks first for better answers; shows only "Thinking…" and the time.</span></span></button>
+            <button class="mi" class:sel={thinkMode === 'shown'} onclick={() => setThink('shown')}><span class="grow"><b>On, shown</b><span class="d">Shows the thinking live as it happens, then folds it away. Good for classes.</span></span></button>
+            <div class="small faint" style="padding:6px 8px 2px">Saved for {route.label}. Not every model can think.</div>
+          </div>
+          <button class="scrim" aria-label="Close" onclick={() => (thinkModeOpen = false)}></button>
+        {/if}
+      </div>
+    {/if}
     <div class="spacer"></div>
     {#if route.kind === 'cloud'}
       <span class="pill warn" title="This assistant uses a cloud model"><Icon name="external" size={12} /> Online · leaves this machine</span>
@@ -392,6 +472,16 @@
           <div class="msg bot">
             <span class="av big" style="background:{assistant?.color || 'var(--brand1)'}"><Icon name={assistant?.icon} size={16} stroke={2} /></span>
             <div class="grow">
+              {#if st?.think_ms}
+                {#if st.reasoning}
+                  <button class="thought" onclick={() => (openThoughts = { ...openThoughts, [m.id]: !openThoughts[m.id] })}>
+                    <Icon name="bulb" size={13} /> Thought for {secs(st.think_ms)} s <Icon name="chevron" size={11} class={openThoughts[m.id] ? 'down' : ''} />
+                  </button>
+                  {#if openThoughts[m.id]}<div class="thinkbox">{st.reasoning}</div>{/if}
+                {:else}
+                  <div class="thought plain"><Icon name="bulb" size={13} /> Thought for {secs(st.think_ms)} s</div>
+                {/if}
+              {/if}
               <div class="md">{@html md(m.content)}</div>
               <div class="tools">
                 <button class="icon-btn" title="Copy" onclick={() => copy(m.content)}><Icon name="copy" size={14} /></button>
@@ -411,10 +501,22 @@
         <div class="msg bot">
           <span class="av big" style="background:{assistant?.color || 'var(--brand1)'}"><Icon name={assistant?.icon} size={16} stroke={2} /></span>
           <div class="grow">
+            {#if thinkStart}
+              {#if thinkMode === 'shown' && thinkText}
+                <button class="thought live" onclick={() => (thinkOpen = !thinkOpen)}>
+                  <Icon name="bulb" size={13} /> {streaming === '…' ? 'Thinking' : 'Thought'} · {secs(thinkNow - thinkStart)} s <Icon name="chevron" size={11} class={thinkOpen ? 'down' : ''} />
+                </button>
+                {#if thinkOpen}<div class="thinkbox live">{thinkText}</div>{/if}
+              {:else if streaming === '…'}
+                <div class="thought plain pulse"><Icon name="bulb" size={13} /> Thinking… {secs(thinkNow - thinkStart)} s</div>
+              {/if}
+            {/if}
             {#if streaming === '…'}
-              <div class="typing"><i></i><i></i><i></i>{#if app.engine?.state === 'starting'}<span class="faint small">{app.engine.message}</span>{/if}</div>
+              {#if !thinkStart}
+                <div class="typing"><i></i><i></i><i></i>{#if app.engine?.state === 'starting'}<span class="faint small">{app.engine.message}</span>{:else}<span class="faint small">Reading your message…</span>{/if}</div>
+              {/if}
             {:else}
-              <div class="md">{@html md(streaming)}</div>
+              <div class="md">{@html streamHtml}</div>
             {/if}
           </div>
         </div>
@@ -492,6 +594,13 @@
   .msg:hover .tools, .msg:last-child .tools { opacity: 1; }
   .tools .icon-btn { width: 28px; height: 28px; }
   .tools span { margin-left: 6px; }
+  .thought { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mute); padding: 3px 9px; border-radius: 99px; background: var(--soft); margin-bottom: 8px; }
+  .thought :global(.down) { transform: rotate(90deg); }
+  .thought.plain { cursor: default; }
+  .thought.pulse { animation: pulse 1.4s infinite; }
+  .thinkbox { font-size: 12.5px; line-height: 1.55; color: var(--mute); font-style: italic; white-space: pre-wrap; border-left: 2px solid var(--line); padding: 2px 0 2px 12px; margin: 0 0 10px; max-height: 260px; overflow-y: auto; }
+  .menu.think { width: 330px; }
+  .menu .d { display: block; font-size: 12px; color: var(--faint); font-weight: 400; }
   .typing { display: flex; align-items: center; gap: 4px; height: 26px; }
   .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); animation: b 1.2s infinite; }
   .typing i:nth-child(2) { animation-delay: .15s; }

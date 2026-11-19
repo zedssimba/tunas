@@ -21,6 +21,7 @@ export const app = $state({
   prefs: { engine_pref: 'auto', default_model: '', cloud_enabled: '0' },
   gateway: { port: 0, key: '' },
   providers: [],
+  thinkModes: {},
 });
 
 let toastSeq = 0;

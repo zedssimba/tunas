@@ -5,6 +5,25 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.2.3 — 20 November 2026 (smoother typing, thinking per model)
+
+- **Smoother typing.** Answers now appear at an even pace instead of in jumps.
+  - Before, the whole formatted answer was redrawn for every word the model sent, which made the text stutter on long answers.
+  - Now words come out steadily, and the formatting is redrawn at most about 16 times a second. The model's speed is unchanged; only the display is smoother.
+- **Thinking, set per model.** Some models (Qwen 3.5) can think before they answer. Each model now has three settings:
+  - **Off** (default): fastest; the answer starts straight away.
+  - **On, hidden**: the model thinks first for a better answer; the user sees only "Thinking… 12.4 s".
+  - **On, shown**: the thinking appears live in grey italics, then folds away when the answer starts. Good for showing a class how the model reasons. Click "Thought for X s" to open or close it again.
+- **Where to set it:**
+  - in a chat, from the new **Thinking** chip next to the model chip; the choice is saved for that model;
+  - in **Settings → Models**, next to each installed model.
+- Saved answers show "Thought for X s". In "shown" mode the thinking is kept with the answer and can be opened later.
+- Apps using the TUNAS API get the same per-model setting by default, and can override it per request with `chat_template_kwargs.enable_thinking`. The thinking comes back as `reasoning_content`.
+- Thinking makes answers slower to start, sometimes much slower on a Processor-only machine. Chat titles and the speed test always run with thinking off.
+- Install over 0.2.2 directly. Everything is kept.
+
+---
+
 ## 0.2.2 — 19 November 2026 (built-in S.A.L.T reference fixes)
 
 - **Fixed: "salt tu apa?" got an invented answer** ("System for Advanced Learning and Testing"). The built-in reference was only used for "S.A.L.T", "salt ci", "teras" and similar, not for the plain word "salt".

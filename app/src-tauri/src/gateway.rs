@@ -269,9 +269,20 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 Ok(s) => s,
                 Err(e) => return err(StatusCode::SERVICE_UNAVAILABLE, &e.to_string()),
             };
+            // Thinking: the request may say (TUNAS chat does); otherwise use the model's setting.
+            let mode = crate::db::get_setting(&state.db.lock(), &format!("think:{}", m.id)).unwrap_or_else(|| "off".into());
             if let Some(o) = body.as_object_mut() {
                 o.insert("model".into(), json!(m.id));
-                o.entry("chat_template_kwargs").or_insert(json!({"enable_thinking": false}));
+                let think = o
+                    .get("chat_template_kwargs")
+                    .and_then(|k| k.get("enable_thinking"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(mode != "off");
+                o.insert("chat_template_kwargs".into(), json!({"enable_thinking": think}));
+                if think {
+                    // Thinking needs room: let the answer run to the end of the context.
+                    o.remove("max_tokens");
+                }
             }
             (format!("http://127.0.0.1:{}/v1/chat/completions", st.port), st.key)
         }

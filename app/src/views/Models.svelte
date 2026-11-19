@@ -13,6 +13,17 @@
   let report = $state(null);
   let customName = $state('');
   let confirmRemove = $state(null);
+  onMount(async () => {
+    const ids = app.installed.map((m) => m.id).filter((id) => !id.includes('embed'));
+    const vals = await Promise.all(ids.map((id) => api.setting_get({ key: `think:${id}` })));
+    const tm = { ...app.thinkModes };
+    ids.forEach((id, i) => (tm[id] = vals[i] || 'off'));
+    app.thinkModes = tm;
+  });
+  async function setThink(id, v) {
+    app.thinkModes = { ...app.thinkModes, [id]: v };
+    await api.setting_set({ key: `think:${id}`, value: v });
+  }
 
   const chatCatalog = $derived(app.catalog.filter((m) => m.role === 'chat'));
   const customs = $derived(app.installed.filter((m) => m.source === 'custom'));
@@ -164,6 +175,7 @@
             {#if p && !['done', 'error', 'cancelled'].includes(p.phase)}
               <button class="btn sm" onclick={() => api.model_cancel({ id: m.id })}>Cancel</button>
             {:else if m.installed}
+              {#if !m.id.includes('embed')}<select class="thinksel" title="Thinking before answering" value={app.thinkModes[m.id] || 'off'} onchange={(e) => setThink(m.id, e.currentTarget.value)}><option value="off">Thinking off</option><option value="hidden">Thinking, hidden</option><option value="shown">Thinking, shown</option></select>{/if}
               {#if defaultId !== m.id}<button class="btn sm" onclick={() => setPref('default_model', m.id)}>Make default</button>{/if}
               {#if confirmRemove === m.id}
                 <button class="btn sm danger" onclick={() => remove(m.id)}>Remove</button>
@@ -198,6 +210,7 @@
         <div class="card tight row">
           <Icon name="models" />
           <div class="grow"><b>{m.name}</b><div class="small faint">{fmtBytes(m.size)} · Added by you</div></div>
+          <select class="thinksel" title="Thinking before answering" value={app.thinkModes[m.id] || 'off'} onchange={(e) => setThink(m.id, e.currentTarget.value)}><option value="off">Thinking off</option><option value="hidden">Thinking, hidden</option><option value="shown">Thinking, shown</option></select>
           {#if defaultId !== m.id}<button class="btn sm" onclick={() => setPref('default_model', m.id)}>Make default</button>{:else}<span class="pill gold">Default</span>{/if}
           {#if confirmRemove === m.id}
             <button class="btn sm danger" onclick={() => remove(m.id)}>Remove</button>
@@ -239,6 +252,7 @@
 </div>
 
 <style>
+  .thinksel { width: auto; padding: 5px 8px; font-size: 12.5px; }
   .specs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
   .spec { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 11px; background: var(--soft); min-width: 0; color: var(--mute); }
   .spec div { display: flex; flex-direction: column; min-width: 0; }
