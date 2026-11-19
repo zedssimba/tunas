@@ -157,7 +157,7 @@
         <div class="locked">
           <Icon name="lock" size={18} />
           <div>
-            {#if layer === 'oem'}This brand comes with the notebook from the maker or reseller and is set at installation.
+            {#if layer === 'oem'}This brand comes with the machine from the maker or reseller and is set at installation.
             {:else if current?.machine}This brand is managed by your organisation's IT department.
             {:else}Your organisation does not allow this brand to be changed.{/if}
           </div>
@@ -285,7 +285,7 @@
           <label class="chk"><input type="checkbox" bind:checked={exp.pol.allow_personal_brand} /> People may add their own brand on top</label>
           <label class="chk"><input type="checkbox" bind:checked={exp.pol.allow_create_assistants} /> People may create their own assistants</label>
         </div>
-        <p class="small faint">Rules in a pack apply to people who import it. For notebooks your IT department manages, rules can also be set machine-wide so users cannot change them.</p>
+        <p class="small faint">Rules in a pack apply to people who import it. For machines your IT department manages, rules can also be set machine-wide so users cannot change them.</p>
       {/if}
       <div class="row" style="justify-content:flex-end;margin-top:14px">
         <button class="btn" onclick={() => (exp.open = false)}>Cancel</button>

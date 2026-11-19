@@ -19,7 +19,7 @@
 </script>
 
 <div class="page">
-  <div class="page-head"><div class="grow"><h1>Settings</h1><p>How TUNAS runs on this notebook.</p></div></div>
+  <div class="page-head"><div class="grow"><h1>Settings</h1><p>How TUNAS runs on this machine.</p></div></div>
 
   <div class="stack">
     <div class="card set">
@@ -33,7 +33,7 @@
     <div class="card set">
       <div class="grow">
         <b>Run AI on</b>
-        <div class="small mute">Automatic uses the graphics when they can help and falls back to the processor. On some notebooks with built-in graphics, the processor is faster: try both with <i>Test speed</i> on the Models page.</div>
+        <div class="small mute">Automatic uses the graphics when they can help and falls back to the processor. On some machines with built-in graphics, the processor is faster: try both with <i>Test speed</i> on the Models page.</div>
       </div>
       <div class="seg">
         {#each [['auto', 'Automatic'], ['vulkan', 'Graphics'], ['cpu', 'Processor']] as [v, l]}
@@ -65,7 +65,7 @@
     <div class="card set">
       <div class="grow">
         <b>Privacy</b>
-        <div class="small mute">Chats, assistants and models are stored only on this notebook. TUNAS sends nothing about you or your chats anywhere. It goes online only when you download a model.</div>
+        <div class="small mute">Chats, assistants and models are stored only on this machine. TUNAS sends nothing about you or your chats anywhere. It goes online only when you download a model.</div>
       </div>
       <span class="pill ok"><Icon name="lock" size={12} /> On this device</span>
     </div>

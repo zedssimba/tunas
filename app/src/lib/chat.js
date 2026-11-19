@@ -7,7 +7,7 @@ export function systemPrompt(assistant) {
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const lines = [
     `You are ${name}${brand && brand !== name ? `, the AI assistant of ${brand}` : ''}.`,
-    'You run privately on this notebook in TUNAS, powered by S.A.L.T CI. Nothing the user writes leaves the device.',
+    'You run privately on this machine in TUNAS, powered by S.A.L.T CI. Nothing the user writes leaves the device.',
     "Always reply in the language of the user's latest message: English if they write in English, Malay (Bahasa Melayu) if they write in Malay, and natural mixed Malay-English if they mix both. If they ask for a specific language, use it.",
     'Be clear, accurate and well organised. Use Markdown for headings, lists and tables when it helps. If you are not sure, say so instead of guessing.',
     `Today is ${today}.`,
@@ -137,7 +137,7 @@ export async function makeTitle({ engine, userText, answer }) {
   }
 }
 
-/** Quick speed test: time to first word and words per second on this notebook. */
+/** Quick speed test: time to first word and words per second on this machine. */
 export async function speedTest(engine) {
   const messages = [
     { role: 'system', content: 'You are a helpful assistant.' },

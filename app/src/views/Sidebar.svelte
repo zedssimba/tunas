@@ -111,7 +111,7 @@
         </div>
       {/each}
     {:else}
-      <div class="empty faint small">{app.chatQuery ? 'No chats match your search.' : 'Your chats will appear here. They stay on this notebook.'}</div>
+      <div class="empty faint small">{app.chatQuery ? 'No chats match your search.' : 'Your chats will appear here. They stay on this machine.'}</div>
     {/each}
   </div>
 

@@ -389,7 +389,7 @@ pub fn import_pack(src: &Path) -> Result<ImportedPack> {
     let st = state();
     let org = st.layers.iter().find(|l| l.layer == "org").unwrap();
     if org.machine {
-        return Err(anyhow!("this notebook's organisation brand is managed by your IT department"));
+        return Err(anyhow!("this machine's organisation brand is managed by your IT department"));
     }
     if !org.editable {
         return Err(anyhow!("your organisation does not allow its brand to be changed"));

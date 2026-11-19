@@ -32,7 +32,7 @@ BrandingText "TUNAS ${VERSION} - Powered by S.A.L.T CI"
 VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "TUNAS"
 VIAddVersionKey "CompanyName" "${PUBLISHER}"
-VIAddVersionKey "FileDescription" "TUNAS - personal AI for your notebook"
+VIAddVersionKey "FileDescription" "TUNAS - personal AI for your machine"
 VIAddVersionKey "FileVersion" "${VERSION}"
 VIAddVersionKey "ProductVersion" "${VERSION}"
 VIAddVersionKey "LegalCopyright" "S.A.L.T CI and its components are proprietary technology of S.A.L.T. CI TECHNOLOGY, distributed and commercialised by Pemangkin Teknologi."
@@ -55,7 +55,7 @@ VIAddVersionKey "LegalCopyright" "S.A.L.T CI and its components are proprietary 
 !define MUI_HEADERIMAGE_UNBITMAP "${__FILEDIR__}\header.bmp"
 !define MUI_HEADERIMAGE_UNBITMAP_STRETCH AspectFitHeight
 !define MUI_WELCOMEPAGE_TITLE "Welcome to TUNAS"
-!define MUI_WELCOMEPAGE_TEXT "TUNAS is your own AI, running privately on this notebook. It works offline and speaks English and Bahasa Melayu.$\r$\n$\r$\nAfter installing, TUNAS checks your notebook and helps you get one or two AI models, from the internet or from a USB stick.$\r$\n$\r$\nNo administrator rights are needed.$\r$\n$\r$\nPowered by S.A.L.T CI"
+!define MUI_WELCOMEPAGE_TEXT "TUNAS is your own AI, running privately on this machine. It works offline and speaks English and Bahasa Melayu.$\r$\n$\r$\nAfter installing, TUNAS checks your machine and helps you get one or two AI models, from the internet or from a USB stick.$\r$\n$\r$\nNo administrator rights are needed.$\r$\n$\r$\nPowered by S.A.L.T CI"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\TUNAS.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Open TUNAS now"
 
@@ -87,7 +87,7 @@ Function CheckWebView2
   ${If} $0 == ""
   ${OrIf} $0 == "0.0.0.0"
     IfSilent +2
-    MessageBox MB_ICONINFORMATION|MB_OK "TUNAS needs Microsoft Edge WebView2, which is part of current Windows 10 and 11.$\r$\n$\r$\nIt was not found on this notebook. Please install the 'Evergreen WebView2 Runtime' from Microsoft (or ask your IT department), then open TUNAS."
+    MessageBox MB_ICONINFORMATION|MB_OK "TUNAS needs Microsoft Edge WebView2, which is part of current Windows 10 and 11.$\r$\n$\r$\nIt was not found on this machine. Please install the 'Evergreen WebView2 Runtime' from Microsoft (or ask your IT department), then open TUNAS."
   ${EndIf}
 FunctionEnd
 

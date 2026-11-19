@@ -1,4 +1,4 @@
-//! "Check my notebook": reads RAM, processor and graphics, and recommends a model size and engine.
+//! "Check my machine": reads RAM, processor and graphics, and recommends a model size and engine.
 
 use serde::Serialize;
 use sysinfo::{Disks, System};
@@ -191,7 +191,7 @@ pub fn check() -> Hardware {
     }
 
     let (models, verdict): (Vec<&str>, &str) = if ram_gb < 5.5 {
-        (vec!["qwen3.5-0.8b"], "This notebook has little memory. TUNAS will run, but only very small models.")
+        (vec!["qwen3.5-0.8b"], "This machine has little memory. TUNAS will run, but only very small models.")
     } else if ram_gb < 11.0 {
         (
             vec!["qwen3.5-2b", "qwen3.5-4b"],
@@ -200,7 +200,7 @@ pub fn check() -> Hardware {
     } else if ram_gb < 24.0 || !dedicated {
         (vec!["qwen3.5-4b", "qwen3.5-2b", "granite-4.2-3b"], "Comfortable for 3–4B models.")
     } else {
-        (vec!["qwen3.5-4b", "granite-4.2-3b", "qwen3.5-2b"], "Strong notebook. Small models will be fast; larger ones are possible.")
+        (vec!["qwen3.5-4b", "granite-4.2-3b", "qwen3.5-2b"], "Strong machine. Small models will be fast; larger ones are possible.")
     };
     if disk_free_gb > 0.0 && disk_free_gb < 8.0 {
         notes.push(format!("Only {:.0} GB of free disk space. Each model needs 1–3 GB.", disk_free_gb));

@@ -1,4 +1,4 @@
-//! TUNAS — personal AI for your notebook. S.A.L.T CI.
+//! TUNAS — personal AI for your machine. S.A.L.T CI.
 //! S.A.L.T CI and its components are proprietary technology of S.A.L.T. CI TECHNOLOGY,
 //! distributed and commercialised by Pemangkin Teknologi.
 
@@ -226,7 +226,7 @@ fn assistant_save(st: State<AppState>, mut assistant: db::Assistant) -> R<db::As
     let c = st.db.lock();
     let exists = db::get_assistant(&c, &assistant.id).is_some();
     if !exists && !brand::policy().allow_create_assistants {
-        return Err("Your organisation does not allow new assistants on this notebook.".into());
+        return Err("Your organisation does not allow new assistants on this machine.".into());
     }
     if assistant.name.trim().is_empty() {
         return Err("Give the assistant a name.".into());

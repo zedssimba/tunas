@@ -1,4 +1,4 @@
-//! Where TUNAS keeps things on the notebook.
+//! Where TUNAS keeps things on the machine.
 //!
 //! - Local data (big, per user, not roaming): %LOCALAPPDATA%\TUNAS
 //!   models\, tunas.db, logs\

@@ -20,7 +20,7 @@
   let logoWarn = $state([]);
   let savingBrand = $state(false);
 
-  const steps = ['Welcome', 'Your notebook', 'Models', 'Branding', 'Ready'];
+  const steps = ['Welcome', 'Your machine', 'Models', 'Branding', 'Ready'];
   const bundled = $derived(app.catalog.filter((m) => m.role === 'chat' && m.bundle));
   const totalSize = $derived(bundled.filter((m) => picked.includes(m.id)).reduce((a, m) => a + m.size, 0));
   const hasModel = $derived(app.installed.some((m) => !m.id.includes('embed')));
@@ -106,12 +106,12 @@
         <div class="center">
           <BrandLogo src={app.brand?.logo_data_url} size={84} />
           <h1>{oem?.name ? `Welcome to ${app.brand.effective_name}` : 'Welcome to TUNAS'}</h1>
-          <p class="mute lead">Your own AI, running privately on this notebook. It works offline, reads your documents and speaks English and Bahasa Melayu.</p>
-          <p class="mute small">This takes a few minutes: we check your notebook, get one or two AI models, and you can add your organisation's name and logo.</p>
+          <p class="mute lead">Your own AI, running privately on this machine. It works offline, reads your documents and speaks English and Bahasa Melayu.</p>
+          <p class="mute small">This takes a few minutes: we check your machine, get one or two AI models, and you can add your organisation's name and logo.</p>
           <button class="btn primary big" onclick={next}>Get started <Icon name="send" size={16} /></button>
         </div>
       {:else if step === 1}
-        <h2>Your notebook</h2>
+        <h2>Your machine</h2>
         {#if hw}
           <div class="specs">
             <div><Icon name="memory" /><b>{hw.ram_gb} GB</b><span>Memory</span></div>
@@ -126,13 +126,13 @@
         <div class="nav"><button class="btn" onclick={back}>Back</button><div class="spacer"></div><button class="btn primary" disabled={!hw} onclick={next}>Next</button></div>
       {:else if step === 2}
         <h2>Choose your models</h2>
-        <p class="mute">We've ticked the best ones for this notebook. You can add or remove models later.</p>
+        <p class="mute">We've ticked the best ones for this machine. You can add or remove models later.</p>
         <div class="mlist">
           {#each bundled as m (m.id)}
             <label class="mrow" class:dim={m.installed}>
               <input type="checkbox" value={m.id} bind:group={picked} disabled={m.installed} />
               <div class="grow">
-                <div class="row"><b>{m.name}</b>{#if hw?.recommended_models?.[0] === m.id}<span class="pill brand">Best for this notebook</span>{/if}{#if m.installed}<span class="pill ok">Installed</span>{/if}</div>
+                <div class="row"><b>{m.name}</b>{#if hw?.recommended_models?.[0] === m.id}<span class="pill brand">Best for this machine</span>{/if}{#if m.installed}<span class="pill ok">Installed</span>{/if}</div>
                 <div class="small mute">{m.description}</div>
               </div>
               <span class="small faint">{fmtBytes(m.size)}</span>
@@ -186,7 +186,7 @@
               <p class="small faint">Downloads continue in the background. You can start chatting as soon as one model is ready.</p>
             </div>
           {:else if hasModel}
-            <p class="mute lead">Ask anything, drop in a document, or make your own assistants. Everything stays on this notebook.</p>
+            <p class="mute lead">Ask anything, drop in a document, or make your own assistants. Everything stays on this machine.</p>
           {:else}
             <p class="mute lead">No model is installed yet. You can download or import one from the Models page.</p>
           {/if}

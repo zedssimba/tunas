@@ -25,10 +25,10 @@
       <Mark size={56} />
       <div class="grow">
         <h1>TUNAS</h1>
-        <div class="mute">Personal AI for your notebook · Version {app.info?.version}</div>
+        <div class="mute">Personal AI for your machine · Version {app.info?.version}</div>
       </div>
     </div>
-    <p style="margin-top:14px">TUNAS runs open AI models on this notebook, fully offline and private. <i>Tunas</i> means a young shoot, the first growth: it is the personal start of S.A.L.T CI.</p>
+    <p style="margin-top:14px">TUNAS runs open AI models on this machine, fully offline and private. <i>Tunas</i> means a young shoot, the first growth: it is the personal start of S.A.L.T CI.</p>
     <div class="salt-credit" style="font-size:14px;margin-top:14px">Powered by <b>S.A.L.T CI</b></div>
   </div>
 
@@ -46,7 +46,7 @@
 
   <div class="section-title">What TERAS adds</div>
   <div class="card teras">
-    <p class="mute" style="margin-bottom:14px">TUNAS is for one person on one notebook. <b style="color:var(--ink)">TERAS</b>, the intelligent core of S.A.L.T CI, brings the same AI to a whole organisation, on its own servers.</p>
+    <p class="mute" style="margin-bottom:14px">TUNAS is for one person on one machine. <b style="color:var(--ink)">TERAS</b>, the intelligent core of S.A.L.T CI, brings the same AI to a whole organisation, on its own servers.</p>
     <div class="tgrid">
       {#each teras as [icon, title, text]}
         <div class="titem"><Icon name={icon} size={18} /><div><b>{title}</b><div class="small mute">{text}</div></div></div>

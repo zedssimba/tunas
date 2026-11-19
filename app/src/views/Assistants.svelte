@@ -121,7 +121,7 @@
         </div>
 
         <label class="field">Base model
-          <span class="hint">The model on this notebook that this assistant uses. Cloud models and your organisation's TERAS come in a later version.</span>
+          <span class="hint">The model on this machine that this assistant uses. Cloud models and your organisation's TERAS come in a later version.</span>
           <select bind:value={edit.model_id}>
             <option value="">Default model{app.prefs.default_model ? ` (${modelName(app.prefs.default_model)})` : ''}</option>
             {#each chatModels as m}<option value={m.id}>{m.name}</option>{/each}

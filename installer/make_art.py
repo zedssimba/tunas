@@ -58,7 +58,7 @@ def side_panel(scale=2):
     mark = fit('/tmp/mark112.png', 54 * scale, 54 * scale)
     img.paste(mark, ((w - mark.width) // 2, 20 * scale), mark)
     center_text(d, 80 * scale, 'TUNAS', F(800, 19 * scale), (255, 255, 255), w)
-    center_text(d, 104 * scale, 'Your own AI, on your notebook', F(400, 7.5 * scale), (0xB9, 0xC3, 0xE0), w)
+    center_text(d, 104 * scale, 'Your own AI, on your machine', F(400, 7.5 * scale), (0xB9, 0xC3, 0xE0), w)
     # Middle: the gold S.A.L.T logo (largest of the three)
     salt = fit(f'{B}/salt/salt-gold-3d.png', 88 * scale, 98 * scale)
     img.paste(salt, ((w - salt.width) // 2, 128 * scale), salt)

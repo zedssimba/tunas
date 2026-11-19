@@ -288,14 +288,14 @@
     {#if app.engine?.state === 'starting'}
       <span class="pill brand"><span class="dot pulse"></span>{app.engine.message}</span>
     {:else if app.engine?.state === 'ready'}
-      <span class="pill" title="Running on this notebook">
+      <span class="pill" title="Running on this machine">
         <Icon name={app.engine.engine === 'vulkan' ? 'chip' : 'cpu'} size={13} />
         {modelName(app.engine.model_id) || app.engine.model_id} · {app.engine.engine === 'vulkan' ? 'Graphics' : 'Processor'}
       </span>
     {:else if app.engine?.state === 'error'}
       <span class="pill err" title={app.engine.message}><Icon name="warn" size={13} /> Engine problem</span>
     {/if}
-    <span class="pill ok" title="Everything stays on this notebook"><Icon name="lock" size={12} /> Offline &amp; private</span>
+    <span class="pill ok" title="Everything stays on this machine"><Icon name="lock" size={12} /> Offline &amp; private</span>
   </header>
 
   <div class="scroll" bind:this={scroller} onclick={onMdClick} role="presentation">
@@ -395,7 +395,7 @@
       </div>
       {#if dragging}<div class="dropzone"><Icon name="upload" size={22} /> Drop files to add them to this chat</div>{/if}
     </div>
-    <div class="foot faint small">Answers are made on this notebook and can be wrong. Check important facts.</div>
+    <div class="foot faint small">Answers are made on this machine and can be wrong. Check important facts.</div>
   </div>
 </div>
 
