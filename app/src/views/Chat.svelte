@@ -22,7 +22,7 @@
   let supported = [];
 
   const assistant = $derived(currentAssistant());
-  const noModels = $derived(app.installed.filter((m) => !m.id.includes('embed')).length === 0);
+  const noModels = $derived(app.installed.filter((m) => !m.id.includes('embed')).length === 0 && !(assistant?.model_id || '').startsWith('prov:'));
 
   $effect(() => {
     const id = app.chatId;
@@ -52,7 +52,7 @@
   }
 
   function maxCharsPerFile() {
-    const ctx = app.engine?.ctx || 8192;
+    const ctx = route?.ctx || app.engine?.ctx || 8192;
     return Math.floor((ctx * 3.3 * 0.55) / Math.max(1, files.length + 1));
   }
 
@@ -83,15 +83,12 @@
     if (p.length) addPaths(p);
   }
 
-  async function ensureEngine() {
-    const want = assistant?.model_id || '';
-    const st = app.engine;
-    if (st?.state === 'ready' && (!want || st.model_id === want)) {
-      // also check default model setting matches when assistant has none
-      if (want || !app.prefs.default_model || st.model_id === app.prefs.default_model) return st;
-    }
-    return await api.engine_ensure({ modelId: want });
-  }
+  let route = $state({ kind: 'local', label: '', provider: '', ctx: 8192, error: '' });
+  $effect(() => {
+    const m = assistant?.model_id || '';
+    const _d = app.prefs.default_model + app.installed.length + app.providers.length + app.prefs.cloud_enabled;
+    api.route_info({ modelId: m }).then((r) => (route = r));
+  });
 
   async function send(textOverride) {
     const text = (textOverride ?? input).trim();
@@ -131,15 +128,18 @@
   }
 
   async function runAssistant(chatId, first) {
-    const engine = await ensureEngine();
+    const r = await api.route_info({ modelId: assistant?.model_id || '' });
+    route = r;
+    if (r.error) throw new Error(r.error);
     streaming = '…';
     abort = new AbortController();
-    const msgs = buildMessages(assistant, messages, engine.ctx || 8192);
+    const msgs = buildMessages(assistant, messages, r.ctx || 8192);
     let text = '';
     let stats = null;
     try {
       const r = await streamChat({
-        engine,
+        assistant,
+        model: assistant?.model_id || '',
         messages: msgs,
         signal: abort.signal,
         onToken: (t) => { streaming = t; scrollDown(); },
@@ -161,7 +161,7 @@
     const am = await api.message_add({
       message: {
         id: '', chat_id: chatId, role: 'assistant', content: text, files: [],
-        stats: JSON.stringify({ ...(stats || {}), model: engine.model_id, engine: engine.engine }), created: '',
+        stats: JSON.stringify({ ...(stats || {}), model: route.kind === 'local' ? app.engine?.model_id : assistant?.model_id, engine: route.kind === 'local' ? app.engine?.engine : route.kind }), created: '',
       },
     });
     messages = [...messages, am];
@@ -169,7 +169,7 @@
     await scrollDown();
     if (first && !stats?.stopped) {
       const userText = messages[0]?.content || '';
-      const title = await makeTitle({ engine, userText, answer: text });
+      const title = await makeTitle({ model: assistant?.model_id || '', userText, answer: text });
       if (title) { await api.chat_rename({ id: chatId, title }); refreshChats(); }
     } else {
       refreshChats();
@@ -285,17 +285,25 @@
       {/if}
     </div>
     <div class="spacer"></div>
-    {#if app.engine?.state === 'starting'}
-      <span class="pill brand"><span class="dot pulse"></span>{app.engine.message}</span>
-    {:else if app.engine?.state === 'ready'}
-      <span class="pill" title="Running on this machine">
-        <Icon name={app.engine.engine === 'vulkan' ? 'chip' : 'cpu'} size={13} />
-        {modelName(app.engine.model_id) || app.engine.model_id} · {app.engine.engine === 'vulkan' ? 'Graphics' : 'Processor'}
-      </span>
-    {:else if app.engine?.state === 'error'}
-      <span class="pill err" title={app.engine.message}><Icon name="warn" size={13} /> Engine problem</span>
+    {#if route.kind === 'cloud'}
+      <span class="pill warn" title="Messages in this chat are sent to {route.provider}"><Icon name="globe" size={13} /> {route.provider} · {route.label}</span>
+      <span class="pill warn" title="This assistant uses a cloud model"><Icon name="external" size={12} /> Online · leaves this machine</span>
+    {:else if route.kind === 'teras'}
+      <span class="pill brand" title="Answered by your organisation's TERAS"><Icon name="server" size={13} /> {route.provider} · {route.label}</span>
+      <span class="pill ok" title="Sent only to your organisation's TERAS server"><Icon name="lock" size={12} /> Your organisation's server</span>
+    {:else}
+      {#if app.engine?.state === 'starting'}
+        <span class="pill brand"><span class="dot pulse"></span>{app.engine.message}</span>
+      {:else if app.engine?.state === 'ready'}
+        <span class="pill" title="Running on this machine">
+          <Icon name={app.engine.engine === 'vulkan' ? 'chip' : 'cpu'} size={13} />
+          {modelName(app.engine.model_id) || app.engine.model_id} · {app.engine.engine === 'vulkan' ? 'Graphics' : 'Processor'}
+        </span>
+      {:else if app.engine?.state === 'error'}
+        <span class="pill err" title={app.engine.message}><Icon name="warn" size={13} /> Engine problem</span>
+      {/if}
+      <span class="pill ok" title="Everything stays on this machine"><Icon name="lock" size={12} /> Offline &amp; private</span>
     {/if}
-    <span class="pill ok" title="Everything stays on this machine"><Icon name="lock" size={12} /> Offline &amp; private</span>
   </header>
 
   <div class="scroll" bind:this={scroller} onclick={onMdClick} role="presentation">
@@ -346,7 +354,7 @@
                 {#if i === messages.length - 1}
                   <button class="icon-btn" title="Answer again" disabled={busy} onclick={regenerate}><Icon name="refresh" size={14} /></button>
                 {/if}
-                {#if st?.tps}<span class="faint small">{modelName(st.model) || st.model} · {st.tps} tokens/s</span>{/if}
+                {#if st?.tps}<span class="faint small">{modelName(st.model) || st.model} · {st.est ? '~' : ''}{st.tps} tokens/s</span>{/if}
                 {#if st?.stopped}<span class="faint small">Stopped</span>{/if}
                 {#if st?.finish === 'length'}<span class="faint small">Answer reached the length limit</span>{/if}
               </div>

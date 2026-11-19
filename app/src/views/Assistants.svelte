@@ -2,7 +2,7 @@
   import Icon from '../lib/Icon.svelte';
   import { api } from '../lib/api.js';
   import { ASSISTANT_ICONS, ASSISTANT_COLORS } from '../lib/icons.js';
-  import { app, toast, refreshAssistants, assistantName, modelName } from '../lib/state.svelte.js';
+  import { app, toast, refreshAssistants, refreshProviders, assistantName, modelName } from '../lib/state.svelte.js';
 
   let edit = $state(null); // working copy
   let confirmDel = $state(false);
@@ -121,11 +121,21 @@
         </div>
 
         <label class="field">Base model
-          <span class="hint">The model on this machine that this assistant uses. Cloud models and your organisation's TERAS come in a later version.</span>
+          <span class="hint">A model on this machine, your organisation's TERAS, or a cloud model. Connect TERAS and cloud providers in Connections.</span>
           <select bind:value={edit.model_id}>
             <option value="">Default model{app.prefs.default_model ? ` (${modelName(app.prefs.default_model)})` : ''}</option>
-            {#each chatModels as m}<option value={m.id}>{m.name}</option>{/each}
+            <optgroup label="On this machine">
+              {#each chatModels as m}<option value={m.id}>{m.name}</option>{/each}
+            </optgroup>
+            {#each app.providers.filter((p) => p.enabled && p.models.length && (p.kind === 'teras' || (app.prefs.cloud_enabled === '1' && app.brand?.policy?.allow_cloud !== false))) as p}
+              <optgroup label={p.kind === 'teras' ? `${p.name} (your organisation)` : `${p.name} (cloud, online)`}>
+                {#each p.models as m}<option value={`prov:${p.id}:${m}`}>{p.name} · {m}</option>{/each}
+              </optgroup>
+            {/each}
           </select>
+          {#if edit.model_id.startsWith('prov:') && !app.providers.some((p) => p.kind === 'teras' && edit.model_id.startsWith(`prov:${p.id}:`))}
+            <span class="hint" style="color:var(--warn)">This is a cloud model: what you type to this assistant is sent to the provider over the internet.</span>
+          {/if}
         </label>
       </div>
 

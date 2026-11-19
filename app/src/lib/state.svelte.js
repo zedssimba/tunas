@@ -16,7 +16,9 @@ export const app = $state({
   chatQuery: '',
   toasts: [],
   theme: 'light',
-  prefs: { engine_pref: 'auto', default_model: '' },
+  prefs: { engine_pref: 'auto', default_model: '', cloud_enabled: '0' },
+  gateway: { port: 0, key: '' },
+  providers: [],
 });
 
 let toastSeq = 0;
@@ -45,6 +47,7 @@ export async function refreshModels() {
   app.installed = installed;
   app.catalog = catalog;
 }
+export async function refreshProviders() { app.providers = await api.providers_list(); }
 export async function refreshChats() { app.chats = await api.chats_list({ query: app.chatQuery || '' }); }
 
 export async function loadPrefs() {
@@ -82,6 +85,12 @@ export function currentAssistant() {
 }
 
 export function modelName(id) {
+  if (!id) return '';
+  if (id.startsWith('prov:')) {
+    const [, pid, ...rest] = id.split(':');
+    const p = app.providers.find((x) => x.id === pid);
+    return `${p ? p.name : 'Removed provider'} · ${rest.join(':')}`;
+  }
   const m = app.installed.find((x) => x.id === id);
   return m ? m.name : '';
 }

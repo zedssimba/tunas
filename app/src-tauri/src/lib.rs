@@ -6,9 +6,11 @@ mod brand;
 mod db;
 mod engine;
 mod extract;
+mod gateway;
 mod hardware;
 mod models;
 mod paths;
+mod secret;
 
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -21,6 +23,7 @@ pub struct AppState {
     pub engine: engine::Engine,
     pub transfers: models::Transfers,
     pub pending_pack: Mutex<Option<String>>,
+    pub gateway: gateway::Gateway,
 }
 
 type R<T> = Result<T, String>;
@@ -426,6 +429,227 @@ async fn brand_apply(app: AppHandle) -> R<()> {
     tokio::task::spawn_blocking(move || brand::apply_to_system(&app)).await.map_err(e)?.map_err(e)
 }
 
+
+// ---------------- connections: providers, TERAS, local API ----------------
+
+const DEFAULT_API_PORT: u16 = 11435;
+
+#[derive(Serialize)]
+struct GatewayInfo {
+    port: u16,
+    key: String,
+}
+
+#[tauri::command]
+fn gateway_info(st: State<AppState>) -> GatewayInfo {
+    GatewayInfo { port: *st.gateway.internal_port.lock(), key: st.gateway.internal_key.clone() }
+}
+
+#[derive(Serialize)]
+struct RouteInfo {
+    kind: String,
+    label: String,
+    provider: String,
+    ctx: u32,
+    error: String,
+}
+
+#[tauri::command]
+fn route_info(app: AppHandle, model_id: String) -> RouteInfo {
+    match gateway::resolve_target(&app, &model_id) {
+        Ok(gateway::Target::Local(m)) => {
+            let mut s = sysinfo::System::new();
+            s.refresh_memory();
+            let ctx = if s.total_memory() as f64 / 1024f64.powi(3) >= 15.0 { 16384 } else { 8192 };
+            RouteInfo { kind: "local".into(), label: m.name, provider: String::new(), ctx, error: String::new() }
+        }
+        Ok(gateway::Target::Provider(p, m)) => RouteInfo { kind: if p.kind == "teras" { "teras".into() } else { "cloud".into() }, label: m, provider: p.name, ctx: 32768, error: String::new() },
+        Err(e) => RouteInfo { kind: "none".into(), label: String::new(), provider: String::new(), ctx: 8192, error: e },
+    }
+}
+
+fn normalise_base(kind: &str, url: &str) -> String {
+    let preset = match kind {
+        "openai" => "https://api.openai.com/v1",
+        "openrouter" => "https://openrouter.ai/api/v1",
+        "anthropic" => "https://api.anthropic.com/v1",
+        "gemini" => "https://generativelanguage.googleapis.com/v1beta/openai",
+        _ => "",
+    };
+    let u = url.trim().trim_end_matches('/').to_string();
+    if u.is_empty() {
+        return preset.into();
+    }
+    let u = if u.starts_with("http://") || u.starts_with("https://") { u } else { format!("https://{u}") };
+    if kind == "teras" && !u.ends_with("/v1") {
+        return format!("{u}/v1");
+    }
+    u
+}
+
+async fn fetch_models(p: &db::Provider) -> Result<Vec<String>, String> {
+    let key = secret::reveal(&p.key_enc).unwrap_or_default();
+    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(20)).build().map_err(e)?;
+    let mut req = client.get(format!("{}/models", p.base_url.trim_end_matches('/')));
+    if !key.is_empty() {
+        req = req.bearer_auth(&key);
+    }
+    if p.kind == "anthropic" {
+        req = req.header("x-api-key", &key).header("anthropic-version", "2023-06-01");
+    }
+    let r = req.send().await.map_err(|x| format!("Could not reach {}: {x}", p.name))?;
+    if r.status().as_u16() == 401 || r.status().as_u16() == 403 {
+        return Err(format!("{} refused the key ({}). Check the key.", p.name, r.status()));
+    }
+    if !r.status().is_success() {
+        return Err(format!("{} answered {} when listing models. You can still type model names.", p.name, r.status()));
+    }
+    let v: serde_json::Value = r.json().await.map_err(e)?;
+    let mut ids: Vec<String> = v
+        .get("data")
+        .or_else(|| v.get("models"))
+        .and_then(|d| d.as_array())
+        .map(|a| a.iter().filter_map(|m| m.get("id").and_then(|i| i.as_str()).map(|s| s.trim_start_matches("models/").to_string())).collect())
+        .unwrap_or_default();
+    ids.sort();
+    ids.dedup();
+    Ok(ids)
+}
+
+#[tauri::command]
+fn providers_list(st: State<AppState>) -> Vec<db::Provider> {
+    db::list_providers(&st.db.lock()).unwrap_or_default()
+}
+
+#[derive(serde::Deserialize)]
+struct ProviderInput {
+    id: String,
+    kind: String,
+    name: String,
+    base_url: String,
+    enabled: bool,
+    models: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct ProviderResult {
+    provider: db::Provider,
+    available: Vec<String>,
+    error: String,
+}
+
+#[tauri::command]
+async fn provider_save(st: State<'_, AppState>, provider: ProviderInput, key: Option<String>) -> R<ProviderResult> {
+    if provider.kind != "teras" && !brand::policy().allow_cloud {
+        return Err("Your organisation does not allow cloud AI providers on this machine.".into());
+    }
+    let existing = if provider.id.is_empty() { None } else { db::get_provider(&st.db.lock(), &provider.id) };
+    let mut p = db::Provider {
+        id: if provider.id.is_empty() { uuid::Uuid::new_v4().to_string()[..8].to_string() } else { provider.id.clone() },
+        kind: provider.kind.clone(),
+        name: if provider.name.trim().is_empty() { provider.kind.clone() } else { provider.name.trim().to_string() },
+        base_url: normalise_base(&provider.kind, &provider.base_url),
+        key_enc: existing.as_ref().map(|x| x.key_enc.clone()).unwrap_or_default(),
+        has_key: false,
+        enabled: provider.enabled,
+        models: provider.models.clone(),
+        created: existing.as_ref().map(|x| x.created.clone()).unwrap_or_else(db::now),
+    };
+    if p.base_url.is_empty() {
+        return Err("Enter the address.".into());
+    }
+    if let Some(k) = key {
+        let k = k.trim().to_string();
+        p.key_enc = if k.is_empty() { String::new() } else { secret::protect(&k).map_err(e)? };
+    }
+    let (available, error) = match fetch_models(&p).await {
+        Ok(list) => (list, String::new()),
+        Err(x) => (vec![], x),
+    };
+    if p.models.is_empty() && !available.is_empty() && p.kind == "teras" {
+        p.models = available.clone();
+    }
+    db::save_provider(&st.db.lock(), &p).map_err(e)?;
+    p.has_key = !p.key_enc.is_empty();
+    Ok(ProviderResult { provider: p, available, error })
+}
+
+#[tauri::command]
+async fn provider_available(st: State<'_, AppState>, id: String) -> R<Vec<String>> {
+    let p = db::get_provider(&st.db.lock(), &id).ok_or("not found")?;
+    fetch_models(&p).await
+}
+
+#[tauri::command]
+fn provider_delete(st: State<AppState>, id: String) -> R<()> {
+    db::delete_provider(&st.db.lock(), &id).map_err(e)
+}
+
+#[derive(Serialize)]
+struct ApiSettings {
+    enabled: bool,
+    port: u16,
+    running: bool,
+    allowed: bool,
+}
+
+#[tauri::command]
+fn api_settings(app: AppHandle, st: State<AppState>) -> ApiSettings {
+    let c = st.db.lock();
+    ApiSettings {
+        enabled: db::get_setting(&c, "api_enabled").as_deref() == Some("1"),
+        port: db::get_setting(&c, "api_port").and_then(|p| p.parse().ok()).unwrap_or(DEFAULT_API_PORT),
+        running: gateway::external_port(&app).is_some(),
+        allowed: brand::policy().allow_local_api,
+    }
+}
+
+#[tauri::command]
+async fn api_set(app: AppHandle, st: State<'_, AppState>, enabled: bool, port: u16) -> R<()> {
+    let port = if port < 1024 { DEFAULT_API_PORT } else { port };
+    gateway::set_external(app.clone(), enabled, port).await.map_err(e)?;
+    let c = st.db.lock();
+    db::set_setting(&c, "api_enabled", if enabled { "1" } else { "0" }).map_err(e)?;
+    db::set_setting(&c, "api_port", &port.to_string()).map_err(e)?;
+    Ok(())
+}
+
+#[tauri::command]
+fn app_keys_list(st: State<AppState>) -> Vec<db::AppKey> {
+    db::list_app_keys(&st.db.lock()).unwrap_or_default()
+}
+
+#[derive(Serialize)]
+struct NewKey {
+    key: String,
+    entry: db::AppKey,
+}
+
+#[tauri::command]
+fn app_key_create(st: State<AppState>, name: String) -> R<NewKey> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err("Give the key a name, such as the app that will use it.".into());
+    }
+    let key = secret::new_key("tunas-");
+    let entry = db::AppKey {
+        id: uuid::Uuid::new_v4().to_string(),
+        name: name.into(),
+        key_hash: secret::hash_key(&key),
+        hint: format!("{}…{}", &key[..10], &key[key.len() - 4..]),
+        created: db::now(),
+        last_used: String::new(),
+        uses: 0,
+    };
+    db::add_app_key(&st.db.lock(), &entry).map_err(e)?;
+    Ok(NewKey { key, entry })
+}
+
+#[tauri::command]
+fn app_key_delete(st: State<AppState>, id: String) -> R<()> {
+    db::delete_app_key(&st.db.lock(), &id).map_err(e)
+}
+
 fn pack_from_args(args: &[String]) -> Option<String> {
     args.iter().skip(1).find(|a| a.to_lowercase().ends_with(".tunasbrand")).cloned()
 }
@@ -439,6 +663,7 @@ pub fn run() {
         engine: engine::Engine::default(),
         transfers: models::Transfers::default(),
         pending_pack: Mutex::new(pack_from_args(&args)),
+        gateway: gateway::Gateway::default(),
     };
 
     tauri::Builder::default()
@@ -455,6 +680,19 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .setup(|app| {
+            let g = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let _ = gateway::start_internal(g.clone()).await;
+                let (on, port) = {
+                    let st = g.state::<AppState>();
+                    let c = st.db.lock();
+                    (db::get_setting(&c, "api_enabled").as_deref() == Some("1"),
+                     db::get_setting(&c, "api_port").and_then(|p| p.parse().ok()).unwrap_or(DEFAULT_API_PORT))
+                };
+                if on {
+                    let _ = gateway::set_external(g, true, port).await;
+                }
+            });
             let h = app.handle().clone();
             // Apply the brand to the window title and icon at start.
             std::thread::spawn(move || {
@@ -505,6 +743,17 @@ pub fn run() {
             brand_import_pack,
             brand_export_pack,
             brand_apply,
+            gateway_info,
+            route_info,
+            providers_list,
+            provider_save,
+            provider_available,
+            provider_delete,
+            api_settings,
+            api_set,
+            app_keys_list,
+            app_key_create,
+            app_key_delete,
         ])
         .run(tauri::generate_context!())
         .expect("error while running TUNAS");

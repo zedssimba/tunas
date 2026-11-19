@@ -1,20 +1,5 @@
 // Talking to the local engine (llama.cpp server, OpenAI-compatible) with streaming.
-import { app, assistantName } from './state.svelte.js';
-
-export function systemPrompt(assistant) {
-  const name = assistantName(assistant) || 'TUNAS';
-  const brand = app.brand?.effective_name && app.brand.effective_name !== 'TUNAS' ? app.brand.effective_name : '';
-  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const lines = [
-    `You are ${name}${brand && brand !== name ? `, the AI assistant of ${brand}` : ''}.`,
-    'You run privately on this machine in TUNAS, powered by S.A.L.T CI. Nothing the user writes leaves the device.',
-    "Always reply in the language of the user's latest message: English if they write in English, Malay (Bahasa Melayu) if they write in Malay, and natural mixed Malay-English if they mix both. If they ask for a specific language, use it.",
-    'Be clear, accurate and well organised. Use Markdown for headings, lists and tables when it helps. If you are not sure, say so instead of guessing.',
-    `Today is ${today}.`,
-  ];
-  const persona = (assistant?.persona || '').trim();
-  return persona ? `${lines.join('\n')}\n\nYour role:\n${persona}` : lines.join('\n');
-}
+import { app } from './state.svelte.js';
 
 /** Rough token estimate (good enough for budgeting). */
 export function estTokens(s) {
@@ -23,8 +8,8 @@ export function estTokens(s) {
 
 /** Turn stored messages into the API format, attaching file text, within the context budget. */
 export function buildMessages(assistant, history, ctx) {
-  const sys = systemPrompt(assistant);
-  const budget = Math.max(1024, ctx - 1400 - estTokens(sys)); // leave room for the answer
+  // The TUNAS gateway adds the system prompt (persona, language rule, built-in S.A.L.T reference).
+  const budget = Math.max(1024, ctx - 2400); // leave room for the system prompt and the answer
   const out = [];
   let used = 0;
   for (let i = history.length - 1; i >= 0; i--) {
@@ -42,24 +27,27 @@ export function buildMessages(assistant, history, ctx) {
     out.unshift({ role: m.role, content: used + t > budget ? content.slice(0, Math.floor((budget - used) * 3.3)) : content });
     used += t;
   }
-  return [{ role: 'system', content: sys }, ...out];
+  return out;
 }
 
 /**
  * Stream a chat completion. Calls onToken(textSoFar). Returns { text, stats }.
  */
-export async function streamChat({ engine, messages, signal, onToken, maxTokens = 2048 }) {
-  const res = await fetch(`http://127.0.0.1:${engine.port}/v1/chat/completions`, {
+export async function streamChat({ messages, signal, onToken, maxTokens = 2048, assistant = null, model = '', raw = false }) {
+  const gw = app.gateway;
+  const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${engine.key}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gw.key}` },
     body: JSON.stringify({
+      model,
+      tunas_assistant: assistant?.id,
+      tunas_raw: raw,
       messages,
       stream: true,
       max_tokens: maxTokens,
       temperature: 0.6,
       top_p: 0.9,
       chat_template_kwargs: { enable_thinking: false },
-      timings_per_token: false,
     }),
     signal,
   });
@@ -109,16 +97,24 @@ export async function streamChat({ engine, messages, signal, onToken, maxTokens 
     }
   }
   if (stats) stats.finish = finish;
+  else if (text) {
+    // Cloud providers send no timings: estimate from the text.
+    const secs = Math.max(0.001, (performance.now() - (tFirst || t0)) / 1000);
+    stats = { first_ms: Math.round((tFirst || performance.now()) - t0), tps: Math.round((text.length / 4 / secs) * 10) / 10, est: true, finish };
+  }
   return { text, stats };
 }
 
 /** Ask the model for a short chat title from the first exchange. */
-export async function makeTitle({ engine, userText, answer }) {
+export async function makeTitle({ model, userText, answer }) {
   try {
-    const res = await fetch(`http://127.0.0.1:${engine.port}/v1/chat/completions`, {
+    const gw = app.gateway;
+    const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${engine.key}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gw.key}` },
       body: JSON.stringify({
+        model,
+        tunas_raw: true,
         messages: [
           { role: 'system', content: 'You write very short chat titles. Reply with the title only: 2 to 6 words, no quotes, no full stop, in the same language as the conversation.' },
           { role: 'user', content: `User: ${userText.slice(0, 1200)}\n\nAssistant: ${answer.slice(0, 800)}\n\nTitle:` },
@@ -137,12 +133,12 @@ export async function makeTitle({ engine, userText, answer }) {
   }
 }
 
-/** Quick speed test: time to first word and words per second on this machine. */
-export async function speedTest(engine) {
+/** Quick speed test on a local model: time to first word and tokens per second on this machine. */
+export async function speedTest(model) {
   const messages = [
     { role: 'system', content: 'You are a helpful assistant.' },
     { role: 'user', content: 'Write three short sentences about why reading is good for you.' },
   ];
-  const { stats } = await streamChat({ engine, messages, maxTokens: 96 });
+  const { stats } = await streamChat({ messages, maxTokens: 96, model, raw: true });
   return stats;
 }

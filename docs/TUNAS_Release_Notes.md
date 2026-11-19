@@ -5,6 +5,55 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.2.0 — 19 November 2026 (Connections: TERAS, cloud providers, apps that use TUNAS; built-in S.A.L.T reference)
+
+The order of the plan changed on 19 Nov: Connections and the local API come in 0.2; Knowledge and Documents move to 0.3.
+
+### New: Connections page (sidebar)
+- **Your organisation's TERAS:**
+  - Enter the TERAS address and your key, then Connect. TERAS's models are listed and become base models for your assistants.
+  - Messages go only to your organisation's server, and the chat shows "Your organisation's server".
+  - Refresh models, switch off or remove.
+- **Cloud AI providers:**
+  - Off by default, behind the "Allow cloud providers" switch, with a clear note that chats with a cloud model leave the machine.
+  - Providers: OpenAI, Anthropic (Claude), Google Gemini, OpenRouter, or any OpenAI-compatible service.
+  - Add your own key, load the provider's model list, tick the models to use (search or type a name).
+  - Keys are stored protected by Windows (DPAPI) for the signed-in user.
+  - A chat using a cloud model shows an amber "Online · leaves this machine" label.
+  - The organisation's policy can block cloud providers.
+- **Apps that use TUNAS (local API):**
+  - Off by default. When switched on, other apps on this machine (such as S.A.L.T NEXUS desktop) can use TUNAS as their AI engine through an OpenAI-compatible API, at `http://127.0.0.1:11435/v1` (port changeable). This machine only.
+  - `GET /v1/models` lists your assistants (for example `surat-rasmi`), local models and connected provider models (`teras/<model>`). `POST /v1/chat/completions` answers, with streaming.
+  - Asking for an assistant applies its persona and base model.
+  - Each app gets its own key, shown once when made. The list shows how often and when each key was used. Remove a key to cut that app off.
+  - The organisation's policy can turn the API off.
+- **My assistants:** the base model can now be a model on this machine, a TERAS model, or (with cloud allowed) a cloud model.
+
+### New: built-in S.A.L.T reference
+- A short reference on S.A.L.T CI, TERAS, TUNAS, S.A.L.T. CI TECHNOLOGY, Pemangkin Teknologi and the S.A.L.T CI apps is built into TUNAS. Users cannot edit or delete it.
+- When a question mentions these names, the reference is given to the model with the question, so answers stay correct offline and on small models. Anything not in it (prices, staff, clients, dates) is answered with "not in this reference" and the contact addresses.
+- It works through the local API too.
+- Note from testing: the very small 0.8B model can still mix up details; the 2B and 4B models are recommended.
+
+### Changed
+- All chats now go through one TUNAS gateway inside the app. It adds the persona, the language rule and the reference, and routes to the local engine, TERAS or a cloud provider.
+- Password fields are styled like other fields.
+
+### Tested before release
+- Built and run on the build machine, on a real engine with a small model:
+  - app key required (a wrong key is refused);
+  - model list;
+  - assistant persona answer in Malay;
+  - streaming;
+  - the reference answer on owner and distributor;
+  - routing an assistant to an OpenAI-compatible provider;
+  - cloud models refused while cloud is switched off.
+- Windows run test on CAPT ZEDs' machines.
+
+Install over 0.1.4 directly. Chats, assistants, branding and models are kept.
+
+---
+
 ## 0.1.4 — 19 November 2026 (cosmetic fixes from the .76 test)
 
 - **Fixed: blue buttons turned white when the mouse was over them**, so they seemed to disappear. They now stay blue and brighten slightly.

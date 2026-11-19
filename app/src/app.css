@@ -91,7 +91,7 @@ button:disabled { cursor: default; opacity: .5; }
 }
 .icon-btn:hover:not(:disabled) { background: var(--hover); color: var(--ink); }
 
-input[type='text'], input[type='search'], textarea, select {
+input[type='text'], input[type='search'], input[type='password'], textarea, select {
   font: inherit; color: var(--ink); background: var(--panel);
   border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; width: 100%;
   outline: none; transition: border-color .15s, box-shadow .15s;

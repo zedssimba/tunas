@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { api, listen } from './lib/api.js';
   import {
-    app, toast, refreshBrand, refreshAssistants, refreshModels, refreshChats, loadPrefs, initEvents,
+    app, toast, refreshBrand, refreshAssistants, refreshModels, refreshChats, refreshProviders, loadPrefs, initEvents,
   } from './lib/state.svelte.js';
   import Sidebar from './views/Sidebar.svelte';
   import Chat from './views/Chat.svelte';
@@ -11,6 +11,7 @@
   import Branding from './views/Branding.svelte';
   import Settings from './views/Settings.svelte';
   import About from './views/About.svelte';
+  import Connections from './views/Connections.svelte';
   import Setup from './views/Setup.svelte';
   import Icon from './lib/Icon.svelte';
 
@@ -36,7 +37,8 @@
   onMount(async () => {
     await initEvents();
     app.info = await api.app_info();
-    await Promise.all([refreshBrand(), loadPrefs(), refreshAssistants(), refreshModels(), refreshChats()]);
+    for (let i = 0; i < 50 && !app.gateway.port; i++) { app.gateway = await api.gateway_info(); if (!app.gateway.port) await new Promise((r) => setTimeout(r, 100)); }
+    await Promise.all([refreshBrand(), loadPrefs(), refreshAssistants(), refreshModels(), refreshChats(), refreshProviders()]);
     app.engine = await api.engine_status();
     if (!app.info.setup_done) app.view = 'setup';
     ready = true;
@@ -57,6 +59,7 @@
         {:else if app.view === 'assistants'}<Assistants />
         {:else if app.view === 'models'}<Models />
         {:else if app.view === 'branding'}<Branding />
+        {:else if app.view === 'connections'}<Connections />
         {:else if app.view === 'settings'}<Settings />
         {:else if app.view === 'about'}<About />
         {/if}

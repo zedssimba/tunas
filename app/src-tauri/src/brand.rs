@@ -36,6 +36,7 @@ pub struct Policy {
     pub allow_create_assistants: bool,
     pub allow_cloud: bool,
     pub allow_knowledge_with_cloud: bool,
+    pub allow_local_api: bool,
     pub source: String,
 }
 
@@ -47,6 +48,7 @@ impl Default for Policy {
             allow_create_assistants: true,
             allow_cloud: true,
             allow_knowledge_with_cloud: true,
+            allow_local_api: true,
             source: "default".into(),
         }
     }

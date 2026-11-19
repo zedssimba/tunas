@@ -28,6 +28,13 @@ pub fn open() -> Result<Connection> {
             role TEXT NOT NULL, content TEXT NOT NULL, files TEXT NOT NULL DEFAULT '[]',
             stats TEXT NOT NULL DEFAULT '', created TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS idx_messages_chat ON messages(chat_id, created);
+        CREATE TABLE IF NOT EXISTS providers (
+            id TEXT PRIMARY KEY, kind TEXT NOT NULL, name TEXT NOT NULL, base_url TEXT NOT NULL,
+            key_enc TEXT NOT NULL DEFAULT '', enabled INTEGER NOT NULL DEFAULT 1,
+            models TEXT NOT NULL DEFAULT '[]', created TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS app_keys (
+            id TEXT PRIMARY KEY, name TEXT NOT NULL, key_hash TEXT NOT NULL, hint TEXT NOT NULL,
+            created TEXT NOT NULL, last_used TEXT NOT NULL DEFAULT '', uses INTEGER NOT NULL DEFAULT 0);
         "#,
     )?;
     seed_starters(&conn)?;
@@ -340,4 +347,107 @@ pub fn delete_messages_from(c: &Connection, chat_id: &str, message_id: &str) -> 
         c.execute("DELETE FROM messages WHERE chat_id=?1 AND created>=?2", params![chat_id, cr])?;
     }
     Ok(())
+}
+
+// ---------- providers ----------
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Provider {
+    pub id: String,
+    pub kind: String, // teras | openai | openrouter | anthropic | gemini | custom
+    pub name: String,
+    pub base_url: String,
+    #[serde(skip_serializing)]
+    #[serde(default)]
+    pub key_enc: String,
+    #[serde(default)]
+    pub has_key: bool,
+    pub enabled: bool,
+    #[serde(default)]
+    pub models: Vec<String>,
+    #[serde(default)]
+    pub created: String,
+}
+
+pub fn list_providers(c: &Connection) -> Result<Vec<Provider>> {
+    let mut st = c.prepare("SELECT id,kind,name,base_url,key_enc,enabled,models,created FROM providers ORDER BY created")?;
+    let rows = st.query_map([], |r| {
+        let key_enc: String = r.get(4)?;
+        let models: String = r.get(6)?;
+        Ok(Provider {
+            id: r.get(0)?,
+            kind: r.get(1)?,
+            name: r.get(2)?,
+            base_url: r.get(3)?,
+            has_key: !key_enc.is_empty(),
+            key_enc,
+            enabled: r.get::<_, i64>(5)? != 0,
+            models: serde_json::from_str(&models).unwrap_or_default(),
+            created: r.get(7)?,
+        })
+    })?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+pub fn get_provider(c: &Connection, id: &str) -> Option<Provider> {
+    list_providers(c).ok()?.into_iter().find(|p| p.id == id)
+}
+
+pub fn save_provider(c: &Connection, p: &Provider) -> Result<()> {
+    c.execute(
+        "INSERT INTO providers(id,kind,name,base_url,key_enc,enabled,models,created) VALUES(?1,?2,?3,?4,?5,?6,?7,?8)
+         ON CONFLICT(id) DO UPDATE SET kind=excluded.kind, name=excluded.name, base_url=excluded.base_url,
+           key_enc=excluded.key_enc, enabled=excluded.enabled, models=excluded.models",
+        params![p.id, p.kind, p.name, p.base_url, p.key_enc, p.enabled as i64, serde_json::to_string(&p.models)?, p.created],
+    )?;
+    Ok(())
+}
+
+pub fn delete_provider(c: &Connection, id: &str) -> Result<()> {
+    c.execute("DELETE FROM providers WHERE id=?1", [id])?;
+    c.execute("UPDATE assistants SET model_id='' WHERE model_id LIKE ?1", [format!("prov:{id}:%")])?;
+    Ok(())
+}
+
+// ---------- app keys (local API) ----------
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct AppKey {
+    pub id: String,
+    pub name: String,
+    #[serde(skip_serializing)]
+    pub key_hash: String,
+    pub hint: String,
+    pub created: String,
+    pub last_used: String,
+    pub uses: i64,
+}
+
+pub fn list_app_keys(c: &Connection) -> Result<Vec<AppKey>> {
+    let mut st = c.prepare("SELECT id,name,key_hash,hint,created,last_used,uses FROM app_keys ORDER BY created")?;
+    let rows = st.query_map([], |r| {
+        Ok(AppKey { id: r.get(0)?, name: r.get(1)?, key_hash: r.get(2)?, hint: r.get(3)?, created: r.get(4)?, last_used: r.get(5)?, uses: r.get(6)? })
+    })?;
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+pub fn add_app_key(c: &Connection, k: &AppKey) -> Result<()> {
+    c.execute(
+        "INSERT INTO app_keys(id,name,key_hash,hint,created,last_used,uses) VALUES(?1,?2,?3,?4,?5,'',0)",
+        params![k.id, k.name, k.key_hash, k.hint, k.created],
+    )?;
+    Ok(())
+}
+
+pub fn delete_app_key(c: &Connection, id: &str) -> Result<()> {
+    c.execute("DELETE FROM app_keys WHERE id=?1", [id])?;
+    Ok(())
+}
+
+pub fn touch_app_key(c: &Connection, hash: &str) -> Option<String> {
+    let name: Option<String> = c.query_row("SELECT name FROM app_keys WHERE key_hash=?1", [hash], |r| r.get(0)).optional().ok().flatten();
+    if name.is_some() {
+        let _ = c.execute("UPDATE app_keys SET uses=uses+1, last_used=?2 WHERE key_hash=?1", params![hash, now()]);
+    }
+    name
 }

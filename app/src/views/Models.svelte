@@ -27,8 +27,8 @@
     testing = true;
     speed = null;
     try {
-      const engine = await api.engine_ensure({ modelId: defaultId });
-      speed = { ...(await speedTest(engine)), model: engine.model_id, engine: engine.engine };
+      const st = await speedTest(defaultId);
+      speed = { ...st, model: app.engine?.model_id || defaultId, engine: app.engine?.engine };
     } catch (e) {
       toast(String(e.message || e), 'error', 8000);
     } finally { testing = false; }

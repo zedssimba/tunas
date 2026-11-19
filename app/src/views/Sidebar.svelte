@@ -65,6 +65,7 @@
     ['assistants', 'user', 'My assistants'],
     ['models', 'models', 'Models'],
     ['branding', 'brush', 'Branding'],
+    ['connections', 'globe', 'Connections'],
     ['settings', 'settings', 'Settings'],
     ['about', 'info', 'About'],
   ];

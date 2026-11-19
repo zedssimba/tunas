@@ -1,6 +1,6 @@
 [package]
 name = "tunas"
-version = "0.1.4"
+version = "0.2.0"
 description = "TUNAS - personal AI for your notebook. S.A.L.T CI"
 authors = ["S.A.L.T. CI TECHNOLOGY"]
 edition = "2021"
@@ -39,9 +39,11 @@ anyhow = "1"
 base64 = "0.22"
 parking_lot = "0.12"
 rand = "0.8"
+axum = { version = "0.7", default-features = false, features = ["http1", "json", "tokio"] }
+tower-http = { version = "0.6", features = ["cors"] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_Security"] }
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_Security", "Win32_Security_Cryptography"] }
 
 [profile.release]
 codegen-units = 4
