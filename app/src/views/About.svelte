@@ -2,6 +2,7 @@
   import Icon from '../lib/Icon.svelte';
   import Mark from '../lib/Mark.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
+  import SaltBrandStrip from '../lib/SaltBrandStrip.svelte';
   import { openUrl, SALT_LINKS } from '../lib/api.js';
   import { app } from '../lib/state.svelte.js';
 
@@ -63,6 +64,8 @@
     Each AI model keeps its own licence, shown on the Models page.
   </div>
 
+  <div class="stripwrap"><SaltBrandStrip /></div>
+
   <div class="legal small faint">
     <div>S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi</div>
     <div>S.A.L.T CI and its components are proprietary technology of S.A.L.T. CI TECHNOLOGY, distributed and commercialised by Pemangkin Teknologi.</div>
@@ -82,7 +85,8 @@
   .tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
   .titem { display: flex; gap: 10px; align-items: flex-start; }
   .titem :global(.icon) { color: var(--brand1); margin-top: 2px; }
-  .legal { margin-top: 26px; display: flex; flex-direction: column; gap: 3px; }
+  .stripwrap { margin-top: 26px; border-radius: 14px; overflow: hidden; }
+  .legal { margin-top: 14px; display: flex; flex-direction: column; gap: 3px; }
   .lnk { color: var(--brand1); padding: 0; font-size: 12px; }
   .lnk:hover { text-decoration: underline; }
 </style>

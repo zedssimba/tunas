@@ -5,6 +5,21 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.1.2 — 19 November 2026 (fixes from the .76 test, and S.A.L.T branding)
+
+- **Fixed: setup stuck on "Checking memory, processor and graphics…".** On some graphics drivers (seen on .76 with a Quadro K6000), the engine's device test prints the device list and then never closes, so TUNAS waited forever.
+  - TUNAS now reads the list as soon as it appears and closes the test itself.
+  - Every outside check has a time limit: 12 s for the Windows graphics query and 15 s for the engine test.
+  - The checks run side by side, and the result is remembered for the rest of the session. The engine start uses the same remembered result.
+- **S.A.L.T branding in the installer:**
+  - The Welcome and Finish pages have a navy side panel with the TUNAS mark at the top, the gold 3D S.A.L.T logo in the middle, the S.A.L.T. CI TECHNOLOGY and Pemangkin logos below, and both web addresses.
+  - The other pages show a small gold S.A.L.T logo at the top right.
+  - Every page carries "TUNAS 0.1.2 - Powered by S.A.L.T CI".
+- **The same brand strip** (gold S.A.L.T logo, "Powered by S.A.L.T CI", owner and distributor logos, links) appears at the bottom of the setup screens and on the About page.
+- Install over 0.1.1 directly. Chats, assistants, branding and models are kept.
+
+---
+
 ## 0.1.1 — 19 November 2026 (fixes after the first install on .76)
 
 - **Fixed: the app window showed "localhost refused to connect".** 0.1.0 was built without its screens packed inside, so it looked for a development server. The screens are now embedded in TUNAS.exe.

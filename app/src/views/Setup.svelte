@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
+  import SaltBrandStrip from '../lib/SaltBrandStrip.svelte';
   import { api, pickFile, pickFolder, fmtBytes, fmtEta } from '../lib/api.js';
   import { app, toast, refreshModels, refreshAssistants, setPref } from '../lib/state.svelte.js';
 
@@ -120,7 +121,7 @@
           </div>
           <div class="verdict"><Icon name="check" size={18} /><div><b>{hw.verdict}</b>{#each hw.notes as n}<div class="small mute">{n}</div>{/each}</div></div>
         {:else}
-          <p class="mute" style="margin-top:20px">Checking memory, processor and graphics…</p>
+          <p class="mute" style="margin-top:20px">Checking memory, processor and graphics (up to 15 seconds)…</p>
         {/if}
         <div class="nav"><button class="btn" onclick={back}>Back</button><div class="spacer"></div><button class="btn primary" disabled={!hw} onclick={next}>Next</button></div>
       {:else if step === 2}
@@ -193,7 +194,7 @@
         </div>
       {/if}
     </div>
-    <div class="foot salt-credit">Powered by <b>S.A.L.T CI</b></div>
+    <SaltBrandStrip compact />
   </div>
 </div>
 
@@ -233,5 +234,4 @@
   .mt { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 11px; background: var(--soft); border-bottom: 1px solid var(--line); }
   .mb { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 14px; text-align: center; background: var(--bg); }
   .dl { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 6px; }
-  .foot { padding: 10px 22px; border-top: 1px solid var(--line); text-align: right; }
 </style>

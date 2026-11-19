@@ -44,6 +44,16 @@ VIAddVersionKey "LegalCopyright" "S.A.L.T CI and its components are proprietary 
 !define MUI_ICON "${STAGE}\TUNAS.ico"
 !define MUI_UNICON "${STAGE}\TUNAS.ico"
 !define MUI_ABORTWARNING
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}\welcome.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP_STRETCH AspectFitHeight
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "${__FILEDIR__}\welcome.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP_STRETCH AspectFitHeight
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_RIGHT
+!define MUI_HEADERIMAGE_BITMAP "${__FILEDIR__}\header.bmp"
+!define MUI_HEADERIMAGE_BITMAP_STRETCH AspectFitHeight
+!define MUI_HEADERIMAGE_UNBITMAP "${__FILEDIR__}\header.bmp"
+!define MUI_HEADERIMAGE_UNBITMAP_STRETCH AspectFitHeight
 !define MUI_WELCOMEPAGE_TITLE "Welcome to TUNAS"
 !define MUI_WELCOMEPAGE_TEXT "TUNAS is your own AI, running privately on this notebook. It works offline and speaks English and Bahasa Melayu.$\r$\n$\r$\nAfter installing, TUNAS checks your notebook and helps you get one or two AI models, from the internet or from a USB stick.$\r$\n$\r$\nNo administrator rights are needed.$\r$\n$\r$\nPowered by S.A.L.T CI"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\TUNAS.exe"

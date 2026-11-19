@@ -35,6 +35,54 @@ fn hidden(cmd: &mut std::process::Command) {
 #[cfg(not(windows))]
 fn hidden(_cmd: &mut std::process::Command) {}
 
+
+/// Run a command with a time limit. Returns whatever it printed (stdout + stderr) even if it had to be stopped.
+/// `done_when` lets the caller stop early once the output it needs has appeared.
+pub fn run_limited(mut cmd: std::process::Command, limit: std::time::Duration, done_when: impl Fn(&str) -> bool) -> String {
+    use std::io::Read;
+    use std::sync::{Arc, Mutex};
+    hidden(&mut cmd);
+    cmd.stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped());
+    let mut child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(_) => return String::new(),
+    };
+    let out = Arc::new(Mutex::new(String::new()));
+    let mut readers = vec![];
+    for pipe in [child.stdout.take().map(|p| Box::new(p) as Box<dyn Read + Send>), child.stderr.take().map(|p| Box::new(p) as Box<dyn Read + Send>)] {
+        if let Some(mut p) = pipe {
+            let o = out.clone();
+            readers.push(std::thread::spawn(move || {
+                let mut buf = [0u8; 4096];
+                while let Ok(n) = p.read(&mut buf) {
+                    if n == 0 { break; }
+                    o.lock().unwrap().push_str(&String::from_utf8_lossy(&buf[..n]));
+                }
+            }));
+        }
+    }
+    let t0 = std::time::Instant::now();
+    let mut seen_done: Option<std::time::Instant> = None;
+    loop {
+        if let Ok(Some(_)) = child.try_wait() { break; }
+        if seen_done.is_none() && done_when(&out.lock().unwrap()) {
+            seen_done = Some(std::time::Instant::now());
+        }
+        // Once the needed output is there, give it a moment to finish printing, then stop it.
+        if seen_done.map(|t| t.elapsed() > std::time::Duration::from_millis(1500)).unwrap_or(false) || t0.elapsed() > limit {
+            let _ = child.kill();
+            let _ = child.wait();
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    let _ = child.wait();
+    let s = out.lock().unwrap().clone();
+    s
+}
+
 fn read_gpus() -> Vec<Gpu> {
     #[cfg(windows)]
     {
@@ -45,9 +93,9 @@ fn read_gpus() -> Vec<Gpu> {
             "-Command",
             "Get-CimInstance Win32_VideoController | Select-Object Name,AdapterRAM | ConvertTo-Json -Compress",
         ]);
-        hidden(&mut cmd);
-        if let Ok(out) = cmd.output() {
-            let txt = String::from_utf8_lossy(&out.stdout).to_string();
+        {
+            let txt = run_limited(cmd, std::time::Duration::from_secs(12), |_| false);
+            let txt = txt.lines().filter(|l| l.trim_start().starts_with('[') || l.trim_start().starts_with('{') || l.trim_start().starts_with('"') || l.trim_start().starts_with('}') || l.trim_start().starts_with(']')).collect::<Vec<_>>().join("\n");
             let v: serde_json::Value = serde_json::from_str(txt.trim()).unwrap_or(serde_json::Value::Null);
             let arr = match v {
                 serde_json::Value::Array(a) => a,
@@ -78,7 +126,13 @@ fn read_gpus() -> Vec<Gpu> {
 }
 
 /// Ask the Vulkan build of the engine which devices it can use.
+static VK_CACHE: std::sync::Mutex<Option<Vec<String>>> = std::sync::Mutex::new(None);
+
+/// Ask the Vulkan build of the engine which devices it can use (time-limited, remembered for this run).
 pub fn vulkan_devices() -> Vec<String> {
+    if let Some(v) = VK_CACHE.lock().unwrap().clone() {
+        return v;
+    }
     let exe = crate::engine::server_exe("vulkan");
     if !exe.exists() {
         return vec![];
@@ -86,18 +140,19 @@ pub fn vulkan_devices() -> Vec<String> {
     let mut cmd = std::process::Command::new(&exe);
     cmd.arg("--list-devices");
     cmd.current_dir(exe.parent().unwrap());
-    hidden(&mut cmd);
-    let out = match cmd.output() {
-        Ok(o) => o,
-        Err(_) => return vec![],
-    };
-    let txt = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
-    txt.lines()
+    // Some drivers print the list and then never exit: stop once a device line is in, or after 15 s.
+    let txt = run_limited(cmd, std::time::Duration::from_secs(15), |o| {
+        o.lines().any(|l| l.trim_start().starts_with("Vulkan")) || o.contains("no devices")
+    });
+    let list: Vec<String> = txt
+        .lines()
         .map(|l| l.trim())
         .filter(|l| l.starts_with("Vulkan"))
         .map(|l| l.to_string())
         .filter(|l| !l.to_lowercase().contains("llvmpipe") && !l.to_lowercase().contains("basic render"))
-        .collect()
+        .collect();
+    *VK_CACHE.lock().unwrap() = Some(list.clone());
+    list
 }
 
 pub fn check() -> Hardware {
@@ -120,8 +175,9 @@ pub fn check() -> Hardware {
         .map(|d| d.available_space() as f64 / 1024f64.powi(3))
         .unwrap_or(0.0);
 
+    let vk_thread = std::thread::spawn(vulkan_devices);
     let gpus = read_gpus();
-    let vk = vulkan_devices();
+    let vk = vk_thread.join().unwrap_or_default();
     let mut notes = vec![];
 
     let dedicated = gpus.iter().any(|g| !g.integrated && g.vram_mb >= 3500);
