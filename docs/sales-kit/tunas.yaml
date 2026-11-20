@@ -16,6 +16,7 @@ cover:
   chips:
   - The lightweight edition of TERAS
   - Runs on the computer, works offline
+  - Windows, macOS, Linux and Android
   - Malay, English and mixed
   - Seven ready-made assistants
   - Reads your folders in place
@@ -177,10 +178,10 @@ pages:
       color: orange
       title: Quiet in the background
       text: Uses the graphics card when there is one and pauses while you chat.
-    - icon: brain
+    - icon: server
       color: red
-      title: Documents come first
-      text: The user's documents take priority over anything else the assistant knows.
+      title: Plus TERAS knowledge
+      text: Connected, the organisation's TERAS collections sit beside the user's folders.
 - kicker: Documents
   color: gold
   h1: From an answer *to a finished document*
@@ -392,7 +393,7 @@ pages:
     - icon: download
       color: violet
       title: Branding packs
-      text: One .tunasbrand file carries the name, logo, colours, assistants and rules; import it once and the computer is done.
+      text: One signed .tunasbrand file carries the name, logo, colours, assistants and rules; import it once and the computer is done.
     - icon: shield
       color: red
       title: Organisation rules
@@ -417,7 +418,7 @@ pages:
     - icon: server
       color: navy
       title: Connect to TERAS
-      text: The organisation's TERAS models appear by name, for any assistant, with the same sign-in key kept protected by Windows.
+      text: The organisation's TERAS models and knowledge collections appear by name, for any assistant, with the key kept protected on the device.
     - icon: globe
       color: blue
       title: Cloud, only if allowed
@@ -453,7 +454,7 @@ pages:
 - kicker: Privacy and deployment
   color: orange
   h1: Private by design, *simple to roll out*
-  lead: TUNAS keeps chats, assistants and knowledge on the computer, works without the internet, and asks before it reads a folder. It installs per user with no administrator rights, and an organisation sets it up once with a branding pack.
+  lead: TUNAS keeps chats, assistants and knowledge on the device, works without the internet, and asks before it reads a folder. It installs per user with no administrator rights, silently across a fleet, and an organisation sets it up once with a branding pack.
   blocks:
   - type: cards
     cols: 3
@@ -470,7 +471,7 @@ pages:
     - icon: key
       color: blue
       title: Keys protected
-      text: TERAS and cloud keys are kept with Windows' own protection, tied to the user's account.
+      text: TERAS and cloud keys are kept with the operating system's own protection, tied to the user's account.
     - icon: shield
       color: violet
       title: Off until switched on
@@ -491,21 +492,23 @@ pages:
     - 26%
     - 74%
     rows:
-    - - Computer
-      - Windows 10 or 11, 64-bit; 8 GB memory recommended, 4 GB for the smallest model
+    - - Devices
+      - Windows 10 and 11; macOS on Apple silicon and Intel; Linux (AppImage and .deb); Android phones and tablets. 8 GB memory recommended
     - - Graphics
       - Optional; used where it is faster, with the processor as the fallback
     - - Install
-      - Per user, no administrator rights; setup checks the machine and picks the models
+      - Per user, no administrator rights; or silent, with one settings file for the brand, models, TERAS and policy
     - - Models
       - Downloaded and checked in the app, or copied from a USB stick or a folder on the image
     - - Organisation set-up
       - A branding pack with the name, logo, assistants and rules; or a machine-wide policy file
+    - - Updates
+      - A quiet in-app update check, or an offline update file for networks without internet
     - - TERAS
       - Optional; the address and a key in Connections
   - type: goldbox
     title: For OEM, leasing and resellers
-    text: Pre-installed, co-branded TUNAS images for notebook makers, leasing companies and resellers are arranged through Pemangkin Teknologi, the authorised distributor of S.A.L.T CI.
+    text: Pre-installed, co-branded TUNAS images for notebook makers, leasing companies and resellers, and the TUNAS trainer kit (installers, models on USB, branding packs and a handout) for workshops, are arranged through Pemangkin Teknologi, the authorised distributor of S.A.L.T CI.
 - kicker: Why S.A.L.T TUNAS
   color: blue
   h1: Personal AI *the organisation can trust*
@@ -578,7 +581,7 @@ pages:
     - icon: calendar
       color: coral
       title: Trainings
-      text: Workshops where every seat runs its own AI.
+      text: A trainer kit for workshops where every seat runs its own AI.
   - type: sub
     text: TUNAS and TERAS
   - type: table

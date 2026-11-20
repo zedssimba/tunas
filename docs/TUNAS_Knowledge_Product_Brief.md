@@ -15,7 +15,7 @@ S.A.L.T TUNAS is the lightweight edition of TERAS, the core of the S.A.L.T CI fr
 
 - **What it does:** chat in Bahasa Melayu, English or both; ready-made assistants for letters, minutes, emails and summaries; answers from the user's own folders with their sources; and finished Word, Excel and PDF documents with the organisation's letterhead.
 - **Who it is for:** staff in agencies, universities and companies who handle internal documents; lecturers, students and AI classes; trainers running workshops; and notebook makers, leasing companies and resellers who want a co-branded AI app on every machine they ship.
-- **How it is used:** installed on a Windows computer like any desktop app, with no account and no administrator rights. It picks the right models for the machine, downloads them or copies them from a USB stick, and opens into a chat.
+- **How it is used:** installed like any app on Windows, macOS, Linux or Android, with no account and no administrator rights. It picks the right models for the machine, downloads them or copies them from a USB stick, and opens into a chat.
 - **What it costs:** TUNAS is free to install, with no licence key, activation or expiry. OEM, leasing and reseller arrangements go through Pemangkin Teknologi.
 
 The name: *tunas* is Malay for a young shoot, the first growth of a plant. TUNAS is where people start with S.A.L.T CI, on their own computer, before growing into TERAS, the organisation's own AI server.
@@ -68,6 +68,7 @@ TUNAS reads the user's folders where they already are, with permission, and answ
 - **Whole documents:** PDFs are read page by page, PowerPoint slide by slide, Excel sheet by sheet and Markdown section by section, so an answer keeps its place in the document.
 - **Sources:** each answer shows one chip per file with the numbered points behind it; a click opens the file.
 - **Documents come first:** when the user's documents speak to a question, they take priority over anything else the assistant knows, including the built-in S.A.L.T reference.
+- **TERAS knowledge:** when connected to TERAS, the organisation's TERAS knowledge collections that the user may see appear beside the user's own knowledge sets, searched on the TERAS server.
 - **Readiness:** if a set is still being read, the assistant says so instead of guessing.
 - **Quiet in the background:** the reading model uses the graphics card when TUNAS runs on it, uses all processor cores at low priority otherwise, and pauses while a chat is answering.
 - **The reading model:** Qwen 3 Embedding 0.6B, downloaded automatically the first time a knowledge set is made.
@@ -99,7 +100,7 @@ When an assistant writes a letter, minutes, a report or a table, TUNAS offers it
 - **Downloads are checked** against their published checksums before use.
 - **Offline:** import models from a folder or USB stick, or copy installed models out to prepare another machine.
 - **Your own models:** advanced users can add any GGUF model file.
-- **Run AI on:** Automatic, Graphics or Processor. Graphics are used through Vulkan where they are faster; the processor is always the fallback.
+- **Run AI on:** Automatic, Graphics or Processor. Graphics are used through Vulkan (Metal on Mac) where they are faster; the processor is always the fallback.
 - **One model at a time:** chats and other apps take turns on the same loaded model, so the computer never loads two chat models at once.
 
 ## 8. TUNAS branding
@@ -117,14 +118,14 @@ TUNAS takes the name, logo and colours of whoever gives it out.
 | OEM or reseller | The machine's image, by the computer maker or reseller | Pre-installed notebooks; users can't remove it |
 | Always shown | S.A.L.T CI | "Powered by S.A.L.T CI" and credit on the About page |
 
-- **Branding packs:** one .tunasbrand file carries the brand, the logo, optionally the organisation's assistants, and optionally the organisation's rules. Double-click it, or use Import branding pack.
+- **Branding packs:** one signed .tunasbrand file carries the brand, the logo, optionally the organisation's assistants, and optionally the organisation's rules. Double-click it, or use Import branding pack.
 - **Organisation rules:** a pack or a machine policy file can lock the organisation brand, stop personal brands, stop new assistants, and turn off cloud providers, cloud use with knowledge, or the local AI API.
 
 ## 9. TUNAS connections
 
 Everything in TUNAS works on the computer alone. Connections adds more, when the user or the organisation chooses.
 
-- **Connect to TERAS:** the organisation's TERAS address and a key. The organisation's TERAS models then appear by name, and any assistant can use them.
+- **Connect to TERAS:** the organisation's TERAS address and a key. The organisation's TERAS models and knowledge collections then appear by name, and any assistant can use them.
 - **Cloud AI providers:** the main cloud AI providers, or any OpenAI-compatible service, with the user's own key. Off until the user switches on "Allow cloud providers", and the organisation can block it.
 - **Let other apps use TUNAS (local AI API):** the private AI engine for S.A.L.T CI desktop apps such as NEXUS, WARKAH, NASKAH, Kembara and MOM Studio, and for other programs the user allows. An OpenAI-compatible API (`/v1/models`, `/v1/chat/completions` with streaming) on this computer only (127.0.0.1, port 11435 by default). Each app gets its own key from TUNAS; keys can be removed at any time and the list shows when each was last used. Apps can ask for an assistant by name (its persona and knowledge apply) or for a model. Off by default.
 - **Built-in S.A.L.T reference:** TUNAS knows the basic facts about S.A.L.T CI and its products, so it can answer questions about TERAS and the platform. The user's own documents always come first.
@@ -134,7 +135,7 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 - **On the device:** chats, assistants, knowledge indexes, branding and saved documents stay on the computer.
 - **Offline:** once installed with its models, TUNAS needs no internet and no account.
 - **Read-only folders:** TUNAS only reads folders the user allowed and never changes or deletes the user's files.
-- **Keys protected:** TERAS and cloud keys are kept with Windows' own protection (DPAPI), tied to the user's Windows account. Local API keys are stored only as a hash.
+- **Keys protected:** TERAS and cloud keys are kept with the operating system's own protection (DPAPI on Windows), tied to the user's account. Local API keys are stored only as a hash.
 - **Off by default:** cloud providers and the local AI API.
 - **Local only:** the local AI API listens on this computer only, not the network.
 - **No usage data:** TUNAS sends no content and no usage reports anywhere.
@@ -145,41 +146,44 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 | Part | Technology |
 |---|---|
 | App | Tauri 2 desktop app: a Rust core with a Svelte interface |
-| AI engine | llama.cpp, in processor and Vulkan graphics builds, shipped with the app |
+| AI engine | llama.cpp, shipped with the app: processor and Vulkan graphics builds, and Metal on Apple silicon |
 | Models | GGUF model files, kept in the user's TUNAS data folder |
 | Chats and settings | A local SQLite database |
 | Knowledge | A separate local database with full-text and vector search; a second engine runs the reading model |
 | Documents | Word, Excel and PDF written by TUNAS itself, with bundled fonts |
 | Local AI API | An OpenAI-compatible gateway on 127.0.0.1 |
-| Installer | A per-user Windows installer; no administrator rights |
+| Installers | Per-user installers for Windows, macOS (signed and notarised) and Linux, and an Android app; silent install with a settings file |
 
 ## 12. Deploying TUNAS
 
 | Item | Details |
 |---|---|
-| Computer | Windows 10 or 11, 64-bit |
+| Devices | Windows 10 and 11 (64-bit); macOS on Apple silicon and Intel; Linux (AppImage and .deb); Android phones and tablets |
 | Memory | 8 GB recommended; 4 GB runs the smallest model |
 | Graphics | Optional; used where faster, with the processor as fallback |
 | Disk | About 2 to 4 GB per model, plus the app |
-| Install | Per user, into the user's own programs folder; no administrator rights |
+| Install | Per user, with no administrator rights; or silent, with one settings file that presets the brand, models, TERAS address and policy |
+| Updates | A quiet in-app update check, or an offline update file for networks without internet |
 | Models | Downloaded in the app, or imported from a folder or USB stick |
 | Organisation set-up | A branding pack, or machine-wide brand and policy files placed by IT |
 | TERAS | Optional; address and key in Connections |
 
-## 13. TUNAS limits
+## 13. TUNAS trainer kit
+
+For workshops and trainings, the TUNAS trainer kit is one folder with the installers, the models on USB, branding packs and a handout, so every seat runs its own AI without the internet. It is arranged through Pemangkin Teknologi.
+
+## 14. TUNAS limits
 
 | Limit | Details |
 |---|---|
-| Windows | Windows 10 and 11, 64-bit |
 | One person, one computer | Sharing AI and knowledge across people is what TERAS does |
 | Local API on the same computer | Other computers on the network can't reach it |
 | Interface in English | Chats and assistants work in Malay and English |
-| Installation | Each install runs the normal per-user installer; machine-wide brand and policy are placed by IT |
+| Android | The local AI API for other apps is on Windows, macOS and Linux |
 | Installer checks | Some antivirus tools scan or delay the installer the first time |
 | Small models | Answers from small local models can be wrong; check important facts |
-| TERAS knowledge | TERAS models are used from TUNAS; TERAS knowledge collections are used in TERAS itself |
 
-## 14. Questions and answers
+## 15. Questions and answers
 
 **Does TUNAS need the internet?**
 Only to download models. After that it works fully offline, or models can be copied from a USB stick.
@@ -214,7 +218,7 @@ Yes, in Settings › Branding, or for a whole department with a branding pack.
 **Which model should I use?**
 Check my machine recommends one. On most 8 GB notebooks, Qwen 3.5 2B is the everyday choice; Qwen 3.5 4B writes better where there is enough memory or a graphics card.
 
-## 15. Words used
+## 16. Words used
 
 | Word | Meaning |
 |---|---|
