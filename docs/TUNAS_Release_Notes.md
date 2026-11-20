@@ -5,6 +5,17 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.6 — 20 November 2026 (sources back for questions about your documents)
+
+- **Fixed: questions about the documents got citation numbers but no sources listed.** 0.3.5 judged relevance mostly by closeness of meaning, with a line measured on the demo documents. On a folder of release notes the scores came out differently: "what is in our new product release" scored 0.497 with 30 matching passages, just under the line, so no passages were given to the model. It answered from earlier in the chat, with old citation numbers and nothing to list.
+  - Words from the documents now decide: a message whose content words appear in the documents uses them (from a closeness of 0.40). Closeness alone counts only when it is high (0.58).
+  - Greetings stay out: on the same release notes "salam" scored 0.503 but matches no words, so it gets a plain reply.
+  - Checked against every search logged on both machines: all 13 messages (greetings, small talk, unrelated questions and questions about the documents) are now decided correctly.
+- A few more everyday words ("new", "tell", "know", "need" and similar) no longer count as matches.
+- Install over 0.3.5 directly. Everything is kept.
+
+---
+
 ## 0.3.5 — 20 November 2026 (sources only when they are used)
 
 - **Fixed: every answer listed the documents, even for "hi", "salam" or "terima kasih".**

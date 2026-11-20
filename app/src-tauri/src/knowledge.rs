@@ -101,17 +101,19 @@ pub struct FailedFile {
 }
 
 /// Similarity by meaning above which a piece is about the question on its own. Measured with the
-/// Qwen3 embedding model: greetings and unrelated requests scored 0.17-0.47, document questions 0.55-0.76.
-const MEANING_STRONG: f32 = 0.56;
+/// Qwen3 embedding model. Scores depend on the documents: greetings scored 0.33-0.47 on the demo set but
+/// "salam" scored 0.50 on a set of release notes, where a real question scored 0.497 with 30 word matches.
+/// So words from the documents decide, and meaning alone only counts when it is high.
+const MEANING_STRONG: f32 = 0.58;
 /// Similarity by meaning that is enough when content words also match.
-const MEANING_WITH_WORDS: f32 = 0.50;
+const MEANING_WITH_WORDS: f32 = 0.40;
 /// Similarity by meaning that is enough when a reference or version number also matches.
 const MEANING_WITH_IDENTIFIER: f32 = 0.40;
 /// Common words that say nothing about a document (English and Malay), plus greetings.
 const STOPWORDS: &[&str] = &[
     "the", "and", "for", "you", "your", "are", "was", "what", "how", "who", "why", "when", "where", "which", "this", "that",
     "with", "from", "have", "has", "can", "could", "would", "should", "please", "about", "tell", "give", "any", "all", "our",
-    "hello", "thanks", "thank", "good", "morning", "afternoon", "evening", "night", "okay", "yes", "hey", "hai", "helo",
+    "hello", "thanks", "thank", "new", "tell", "know", "want", "need", "like", "just", "some", "more", "much", "many", "very", "also", "there", "they", "them", "then", "than", "will", "does", "did", "doing", "make", "use", "get", "got", "good", "morning", "afternoon", "evening", "night", "okay", "yes", "hey", "hai", "helo",
     "salam", "assalamualaikum", "waalaikumsalam", "selamat", "pagi", "petang", "malam", "tengahari", "terima", "kasih", "apa",
     "khabar", "baik", "yang", "dan", "untuk", "dengan", "ini", "itu", "ada", "boleh", "saya", "kami", "kita", "anda", "awak",
     "dia", "mereka", "adalah", "dalam", "pada", "kepada", "dari", "daripada", "tidak", "tak", "bagaimana", "kenapa", "mengapa",
