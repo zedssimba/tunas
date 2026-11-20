@@ -249,12 +249,17 @@
     const id = route.kind === 'local' ? route.model_id : '';
     if (id && app.thinkModes[id] === undefined) {
       api.setting_get({ key: `think:${id}` }).then((v) => { app.thinkModes = { ...app.thinkModes, [id]: v || 'off' }; });
+      api.setting_get({ key: `think_len:${id}` }).then((v) => { app.thinkLens = { ...app.thinkLens, [id]: v || 'normal' }; });
     }
   });
   async function setThink(m) {
     thinkModeOpen = false;
     app.thinkModes = { ...app.thinkModes, [route.model_id]: m };
     await api.setting_set({ key: `think:${route.model_id}`, value: m });
+  }
+  async function setLen(v) {
+    app.thinkLens = { ...app.thinkLens, [route.model_id]: v };
+    await api.setting_set({ key: `think_len:${route.model_id}`, value: v });
   }
   const THINK_LABEL = { off: 'Thinking off', hidden: 'Thinking (hidden)', shown: 'Thinking (shown)' };
   const secs = (ms) => (ms / 1000).toFixed(ms < 10000 ? 1 : 0);
@@ -418,6 +423,16 @@
             <button class="mi" class:sel={thinkMode === 'off'} onclick={() => setThink('off')}><span class="grow"><b>Off</b><span class="d">Fastest. Answers straight away.</span></span></button>
             <button class="mi" class:sel={thinkMode === 'hidden'} onclick={() => setThink('hidden')}><span class="grow"><b>On, hidden</b><span class="d">Thinks first for better answers; shows only "Thinking…" and the time.</span></span></button>
             <button class="mi" class:sel={thinkMode === 'shown'} onclick={() => setThink('shown')}><span class="grow"><b>On, shown</b><span class="d">Shows the thinking live as it happens, then folds it away. Good for classes.</span></span></button>
+            {#if thinkMode !== 'off'}
+              <div class="lenrow">
+                <span class="small mute">How long to think</span>
+                <div class="seg sm">
+                  {#each [['short', 'Short'], ['normal', 'Normal'], ['long', 'Long']] as [v, l]}
+                    <button class:sel={(app.thinkLens[route.model_id] || 'normal') === v} onclick={() => setLen(v)}>{l}</button>
+                  {/each}
+                </div>
+              </div>
+            {/if}
             <div class="small faint" style="padding:6px 8px 2px">Saved for {route.label}. Not every model can think.</div>
           </div>
           <button class="scrim" aria-label="Close" onclick={() => (thinkModeOpen = false)}></button>
@@ -614,6 +629,10 @@
   .thought.pulse { animation: pulse 1.4s infinite; }
   .thinkbox { font-size: 12.5px; line-height: 1.55; color: var(--mute); font-style: italic; white-space: pre-wrap; border-left: 2px solid var(--line); padding: 2px 0 2px 12px; margin: 0 0 10px; max-height: 260px; overflow-y: auto; }
   .menu.think { width: 330px; }
+  .lenrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 8px 4px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; padding: 2px; gap: 2px; background: var(--bg); }
+  .seg button { padding: 3px 9px; border-radius: 7px; font-size: 12px; font-weight: 600; color: var(--mute); }
+  .seg button.sel { background: var(--panel); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
   .menu .d { display: block; font-size: 12px; color: var(--faint); font-weight: 400; }
   .typing { display: flex; align-items: center; gap: 4px; height: 26px; }
   .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); animation: b 1.2s infinite; }

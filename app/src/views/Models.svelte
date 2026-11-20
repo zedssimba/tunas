@@ -19,7 +19,15 @@
     const tm = { ...app.thinkModes };
     ids.forEach((id, i) => (tm[id] = vals[i] || 'off'));
     app.thinkModes = tm;
+    const lens = await Promise.all(ids.map((id) => api.setting_get({ key: `think_len:${id}` })));
+    const tl = { ...app.thinkLens };
+    ids.forEach((id, i) => (tl[id] = lens[i] || 'normal'));
+    app.thinkLens = tl;
   });
+  async function setLen(id, v) {
+    app.thinkLens = { ...app.thinkLens, [id]: v };
+    await api.setting_set({ key: `think_len:${id}`, value: v });
+  }
   async function setThink(id, v) {
     app.thinkModes = { ...app.thinkModes, [id]: v };
     await api.setting_set({ key: `think:${id}`, value: v });
@@ -175,7 +183,7 @@
             {#if p && !['done', 'error', 'cancelled'].includes(p.phase)}
               <button class="btn sm" onclick={() => api.model_cancel({ id: m.id })}>Cancel</button>
             {:else if m.installed}
-              {#if !m.id.includes('embed')}<select class="thinksel" title="Thinking before answering" value={app.thinkModes[m.id] || 'off'} onchange={(e) => setThink(m.id, e.currentTarget.value)}><option value="off">Thinking off</option><option value="hidden">Thinking, hidden</option><option value="shown">Thinking, shown</option></select>{/if}
+              {#if !m.id.includes('embed')}<select class="thinksel" title="Thinking before answering" value={app.thinkModes[m.id] || 'off'} onchange={(e) => setThink(m.id, e.currentTarget.value)}><option value="off">Thinking off</option><option value="hidden">Thinking, hidden</option><option value="shown">Thinking, shown</option></select>{#if (app.thinkModes[m.id] || 'off') !== 'off'}<select class="thinksel" title="How long to think" value={app.thinkLens[m.id] || 'normal'} onchange={(e) => setLen(m.id, e.currentTarget.value)}><option value="short">Short thinking</option><option value="normal">Normal thinking</option><option value="long">Long thinking</option></select>{/if}{/if}
               {#if defaultId !== m.id}<button class="btn sm" onclick={() => setPref('default_model', m.id)}>Make default</button>{/if}
               {#if confirmRemove === m.id}
                 <button class="btn sm danger" onclick={() => remove(m.id)}>Remove</button>
@@ -210,7 +218,7 @@
         <div class="card tight row">
           <Icon name="models" />
           <div class="grow"><b>{m.name}</b><div class="small faint">{fmtBytes(m.size)} · Added by you</div></div>
-          <select class="thinksel" title="Thinking before answering" value={app.thinkModes[m.id] || 'off'} onchange={(e) => setThink(m.id, e.currentTarget.value)}><option value="off">Thinking off</option><option value="hidden">Thinking, hidden</option><option value="shown">Thinking, shown</option></select>
+          <select class="thinksel" title="Thinking before answering" value={app.thinkModes[m.id] || 'off'} onchange={(e) => setThink(m.id, e.currentTarget.value)}><option value="off">Thinking off</option><option value="hidden">Thinking, hidden</option><option value="shown">Thinking, shown</option></select>{#if (app.thinkModes[m.id] || 'off') !== 'off'}<select class="thinksel" title="How long to think" value={app.thinkLens[m.id] || 'normal'} onchange={(e) => setLen(m.id, e.currentTarget.value)}><option value="short">Short thinking</option><option value="normal">Normal thinking</option><option value="long">Long thinking</option></select>{/if}
           {#if defaultId !== m.id}<button class="btn sm" onclick={() => setPref('default_model', m.id)}>Make default</button>{:else}<span class="pill gold">Default</span>{/if}
           {#if confirmRemove === m.id}
             <button class="btn sm danger" onclick={() => remove(m.id)}>Remove</button>

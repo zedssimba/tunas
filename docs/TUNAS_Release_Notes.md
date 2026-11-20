@@ -5,6 +5,25 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.2.5 — 20 November 2026 (thinking that ends with an answer; app icon choice)
+
+- **Fixed: with thinking on, the model thought until it ran out of room and never answered.** Small models (Qwen 3.5 4B and smaller) tend to think in circles ("Wait, is it…").
+  - Each model now has a **thinking length**: Short (about 500 tokens), Normal (about 1,000, the default) or Long (about 2,000). When the length is used up, the engine closes the thinking and the model answers.
+  - With thinking on, TUNAS uses the settings Qwen recommends for thinking, which stop the circling.
+  - Tested on the build machine with "Apa kelebihan tenaga solar berbanding arang batu untuk Malaysia?":
+    - before: about 5,900 tokens of thinking and no answer;
+    - now: about 1,000 tokens of thinking, then a full answer.
+  - Set the length in the chat's **Thinking** menu ("How long to think"), or in **Settings → Models** next to each model.
+  - Apps using the TUNAS API get the same length by default. They can set their own with `thinking_budget_tokens`.
+- **App icon: your choice.** A branding logo no longer replaces the TUNAS icon automatically. Before, it changed only when the brand was applied again (for example when the engine restarted), which looked random.
+  - In **Settings → Branding**, tick **"Also use as the app icon"** to put the logo on the taskbar, desktop and Start menu.
+  - Off by default: the TUNAS icon stays, and the logo shows inside the app.
+  - The preview shows which icon will be used.
+- Installer starting twice: when an antivirus tool scans the installer, the tool starts it again after the scan. That can't be stopped from inside the installer; signing the installer (planned before the OEM release) is the real fix. Meanwhile, if a second installer window appears, close it.
+- Install over 0.2.4 directly. Everything is kept. If you had a logo set and want it as the icon, tick the new box once.
+
+---
+
 ## 0.2.4 — 20 November 2026 (fixes from testing 0.2.3 on .76)
 
 - **Fixed: chats got stuck after the first answer.**

@@ -2,6 +2,7 @@
   import PoweredBy from '../lib/PoweredBy.svelte';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
+  import Mark from '../lib/Mark.svelte';
   import { api, pickFile, saveFile } from '../lib/api.js';
   import { app, toast, refreshAssistants, assistantName } from '../lib/state.svelte.js';
 
@@ -35,7 +36,7 @@
       name: b.name || '', assistant_name: b.assistant_name || '', welcome: b.welcome || '',
       color1: b.color1 || '', color2: b.color2 || '', letterhead_org: b.letterhead_org || '',
       letterhead_address: b.letterhead_address || '', issuer: b.issuer || '', logo_file: b.logo_file || '', updated: '',
-      logo_bg: b.logo_bg || '', logo_shape: b.logo_shape || 'square',
+      logo_bg: b.logo_bg || '', logo_shape: b.logo_shape || 'square', logo_as_icon: !!b.logo_as_icon,
     };
   }
 
@@ -199,6 +200,12 @@
               </div>
               <span class="hint">A white logo disappears on light screens and a dark logo on dark ones. A light or dark background keeps it visible everywhere, including the icon.</span>
             {/if}
+            {#if form.logo_file || logoPath}
+              <label class="check" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px">
+                <input type="checkbox" bind:checked={form.logo_as_icon} />
+                <span><b>Also use as the app icon</b><span class="hint" style="display:block">Taskbar, desktop and Start menu. When off, the TUNAS icon stays and the logo shows inside the app only.</span></span>
+              </label>
+            {/if}
             {#each logoCheck?.warnings || [] as w}<div class="small" style="color:var(--warn)"><Icon name="warn" size={13} /> {w}</div>{/each}
           </div>
         </div>
@@ -242,7 +249,7 @@
       <div class="small faint" style="margin-bottom:8px">Live preview</div>
       <div class="win">
         <div class="titlebar">
-          <span class="tb-ic"><BrandLogo src={previewLogo} size={16} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></span>
+          <span class="tb-ic">{#if form.logo_as_icon}<BrandLogo src={previewLogo} size={16} rounded={false} bg={form.logo_bg} shape={form.logo_shape} />{:else}<Mark size={16} />{/if}</span>
           <span class="ellipsis">{previewName}</span>
           <span class="spacer"></span><span class="dots"><i></i><i></i><i></i></span>
         </div>
@@ -264,8 +271,8 @@
 
       <div class="small faint" style="margin:16px 0 8px">Desktop and Start menu</div>
       <div class="desk">
-        <div class="dicon"><div class="dic"><BrandLogo src={previewLogo} size={44} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></div><span>{previewName}</span></div>
-        <div class="taskbar"><BrandLogo src={previewLogo} size={22} rounded={false} bg={form.logo_bg} shape={form.logo_shape} /></div>
+        <div class="dicon"><div class="dic">{#if form.logo_as_icon}<BrandLogo src={previewLogo} size={44} rounded={false} bg={form.logo_bg} shape={form.logo_shape} />{:else}<Mark size={44} />{/if}</div><span>{previewName}</span></div>
+        <div class="taskbar">{#if form.logo_as_icon}<BrandLogo src={previewLogo} size={22} rounded={false} bg={form.logo_bg} shape={form.logo_shape} />{:else}<Mark size={22} />{/if}</div>
       </div>
     </div>
   </div>

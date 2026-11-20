@@ -280,10 +280,21 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                     .unwrap_or(mode != "off");
                 o.insert("chat_template_kwargs".into(), json!({"enable_thinking": think}));
                 if think {
-                    // Thinking needs room, but never without a limit: on a slow machine endless thinking
-                    // would hold the engine for hours.
+                    // Small models can think in circles until nothing is left for the answer. A thinking
+                    // budget makes the engine close the thinking and answer; the sampling Qwen recommends for
+                    // thinking (top_k 20, presence penalty 1.5) stops the loops. Tested: without these the
+                    // model looped for 5,900 tokens with no answer; with them it answered in about a minute.
+                    let len = crate::db::get_setting(&state.db.lock(), &format!("think_len:{}", m.id)).unwrap_or_default();
+                    let budget: u64 = match len.as_str() { "short" => 512, "long" => 2048, _ => 1024 };
+                    if !o.contains_key("thinking_budget_tokens") && !o.contains_key("reasoning_budget_tokens") {
+                        o.insert("thinking_budget_tokens".into(), json!(budget));
+                        o.insert("reasoning_budget_message".into(), json!("\n\nOkay, I have thought enough. Time to answer now.\n"));
+                    }
+                    for (k, v) in [("top_k", json!(20)), ("top_p", json!(0.95)), ("presence_penalty", json!(1.5))] {
+                        if !o.contains_key(k) { o.insert(k.into(), v); }
+                    }
                     let asked = o.get("max_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
-                    o.insert("max_tokens".into(), json!(asked.max(6144)));
+                    o.insert("max_tokens".into(), json!(asked.max(budget + 4096)));
                 }
             }
             (format!("http://127.0.0.1:{}/v1/chat/completions", st.port), st.key)

@@ -26,6 +26,8 @@ pub struct Brand {
     pub logo_bg: String,
     /// 'square' (rounded) | 'circle'
     pub logo_shape: String,
+    /// Also use the logo as the app icon (taskbar, desktop, Start menu). Off by default: the TUNAS icon stays.
+    pub logo_as_icon: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -514,7 +516,7 @@ pub fn apply_to_system(app: &tauri::AppHandle) -> Result<()> {
         .filter(|l| l.layer != "personal" || st.policy.allow_personal_brand)
         .find_map(|l| {
             let b = l.brand.as_ref()?;
-            if b.logo_file.is_empty() {
+            if b.logo_file.is_empty() || !b.logo_as_icon {
                 return None;
             }
             Some((layer_dir(&l.layer).0.join(&b.logo_file), b.logo_bg.clone(), b.logo_shape.clone()))

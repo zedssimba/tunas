@@ -22,6 +22,7 @@ export const app = $state({
   gateway: { port: 0, key: '' },
   providers: [],
   thinkModes: {},
+  thinkLens: {},
 });
 
 let toastSeq = 0;

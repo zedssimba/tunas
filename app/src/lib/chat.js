@@ -44,9 +44,10 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
       tunas_raw: raw,
       messages,
       stream: true,
-      max_tokens: think ? Math.max(maxTokens, 6144) : maxTokens,
+      // With thinking, TUNAS sets the length and sampling for the model (see the gateway).
+      max_tokens: think ? undefined : maxTokens,
       temperature: 0.6,
-      top_p: 0.9,
+      top_p: think ? undefined : 0.9,
       chat_template_kwargs: { enable_thinking: !!think },
     }),
     signal,
