@@ -841,6 +841,15 @@ async fn start_embedder(model: &Path, kind: &str) -> Result<EmbedServer> {
         let child = cmd.spawn().map_err(|e| anyhow!("could not start the search engine: {e}"))?;
         #[cfg(windows)]
         crate::engine::attach_to_job(&child);
+        // macOS and Linux: lower the reading engine's priority, as BELOW_NORMAL does on Windows.
+        #[cfg(unix)]
+        {
+            let _ = std::process::Command::new("renice")
+                .args(["-n", "10", "-p", &child.id().to_string()])
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .status();
+        }
         let mut server = EmbedServer { child, port, key: key.clone(), last_used: Instant::now() };
         let client = reqwest::Client::new();
         let t0 = Instant::now();
@@ -865,6 +874,16 @@ async fn start_embedder(model: &Path, kind: &str) -> Result<EmbedServer> {
 
 impl Knowledge {
     // ------------------------------------------------------------ the background indexer
+
+    /// Stop the reading engine (when TUNAS closes; Windows also closes it through its job object).
+    pub fn shutdown(&self) {
+        if let Ok(mut g) = self.embed.try_lock() {
+            if let Some(mut s) = g.take() {
+                let _ = s.child.kill();
+                let _ = s.child.wait();
+            }
+        }
+    }
 
     pub fn start_indexer(&self, app: AppHandle) {
         let k = self.clone();

@@ -865,6 +865,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .setup(|app| {
+            #[cfg(unix)]
+            engine::stop_stale_engines();
             app.state::<AppState>().knowledge.start_indexer(app.handle().clone());
             let g = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -891,7 +893,9 @@ pub fn run() {
         })
         .on_window_event(|w, ev| {
             if let tauri::WindowEvent::Destroyed = ev {
-                w.app_handle().state::<AppState>().engine.stop();
+                let st = w.app_handle().state::<AppState>();
+                st.engine.stop();
+                st.knowledge.shutdown();
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -945,6 +949,21 @@ pub fn run() {
             app_key_create,
             app_key_delete,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running TUNAS");
+        .build(tauri::generate_context!())
+        .expect("error while running TUNAS")
+        .run(|_app, _ev| {
+            // macOS hands a double-clicked .tunasbrand file to the running app as an "opened" event.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = &_ev {
+                for u in urls {
+                    if let Ok(p) = u.to_file_path() {
+                        let p = p.to_string_lossy().to_string();
+                        if p.to_lowercase().ends_with(".tunasbrand") {
+                            *_app.state::<AppState>().pending_pack.lock() = Some(p.clone());
+                            let _ = _app.emit("open-pack", p);
+                        }
+                    }
+                }
+            }
+        });
 }

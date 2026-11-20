@@ -38,11 +38,27 @@ pub fn reveal(stored: &str) -> Result<String> {
 }
 
 // Development builds on other systems only (TUNAS ships for Windows).
-#[cfg(not(windows))]
+/// macOS: the key is kept in the login Keychain; the database holds only a reference to it.
+#[cfg(target_os = "macos")]
+pub fn protect(plain: &str) -> Result<String> {
+    let id = uuid::Uuid::new_v4().to_string();
+    security_framework::passwords::set_generic_password("TUNAS", &id, plain.as_bytes()).map_err(|e| anyhow!("Keychain: {e}"))?;
+    Ok(format!("keychain:{id}"))
+}
+#[cfg(target_os = "macos")]
+pub fn reveal(stored: &str) -> Result<String> {
+    if let Some(id) = stored.strip_prefix("keychain:") {
+        let b = security_framework::passwords::get_generic_password("TUNAS", id).map_err(|e| anyhow!("Keychain: {e}"))?;
+        return Ok(String::from_utf8(b)?);
+    }
+    Ok(String::new())
+}
+
+#[cfg(all(not(windows), not(target_os = "macos")))]
 pub fn protect(plain: &str) -> Result<String> {
     Ok(format!("plain:{}", base64::engine::general_purpose::STANDARD.encode(plain)))
 }
-#[cfg(not(windows))]
+#[cfg(all(not(windows), not(target_os = "macos")))]
 pub fn reveal(stored: &str) -> Result<String> {
     let Some(b64) = stored.strip_prefix("plain:") else { return Ok(String::new()) };
     Ok(String::from_utf8(base64::engine::general_purpose::STANDARD.decode(b64)?)?)

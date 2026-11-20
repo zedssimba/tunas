@@ -13,6 +13,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
 
+/// The engine kinds: "cpu", and "vulkan" for the graphics build. On macOS the graphics build uses Metal
+/// (Apple silicon); the kind keeps its name so settings, logs and the interface stay the same everywhere.
 pub fn server_exe(kind: &str) -> PathBuf {
     let name = if cfg!(windows) { "llama-server.exe" } else { "llama-server" };
     crate::paths::engine_dir(kind).join(name)
@@ -303,4 +305,20 @@ fn random_key() -> String {
     use rand::Rng;
     let bytes: [u8; 24] = rand::thread_rng().gen();
     hex::encode(bytes)
+}
+
+/// macOS and Linux: engines left running by an earlier TUNAS that did not close cleanly (Windows closes
+/// them through the job object). Only processes started from this app's own engine folder are stopped.
+#[cfg(unix)]
+pub fn stop_stale_engines() {
+    let root = crate::paths::app_dir().join("engine");
+    let mut sys = sysinfo::System::new();
+    sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    for p in sys.processes().values() {
+        if let Some(exe) = p.exe() {
+            if exe.starts_with(&root) && exe.file_name().map(|n| n == "llama-server").unwrap_or(false) {
+                let _ = p.kill();
+            }
+        }
+    }
 }

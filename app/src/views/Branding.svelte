@@ -200,7 +200,9 @@
               </div>
               <span class="hint">A white logo disappears on light screens and a dark logo on dark ones. A light or dark background keeps it visible everywhere, including the icon.</span>
             {/if}
-            {#if form.logo_file || logoPath}
+            {#if (form.logo_file || logoPath) && app.info?.os === 'macos'}
+              <span class="hint" style="display:block;margin-top:10px">On a Mac, the app icon in the Dock and Finder stays the TUNAS mark; your logo shows inside the app and on documents.</span>
+            {:else if form.logo_file || logoPath}
               <label class="check" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px">
                 <input type="checkbox" bind:checked={form.logo_as_icon} />
                 <span><b>Also use as the app icon</b><span class="hint" style="display:block">Taskbar, desktop and Start menu. When off, the TUNAS icon stays and the logo shows inside the app only.</span></span>
@@ -269,7 +271,7 @@
         </div>
       </div>
 
-      <div class="small faint" style="margin:16px 0 8px">Desktop and Start menu</div>
+      <div class="small faint" style="margin:16px 0 8px">{app.info?.os === 'macos' ? 'Dock' : 'Desktop and Start menu'}</div>
       <div class="desk">
         <div class="dicon"><div class="dic">{#if form.logo_as_icon}<BrandLogo src={previewLogo} size={44} rounded={false} bg={form.logo_bg} shape={form.logo_shape} />{:else}<Mark size={44} />{/if}</div><span>{previewName}</span></div>
         <div class="taskbar">{#if form.logo_as_icon}<BrandLogo src={previewLogo} size={22} rounded={false} bg={form.logo_bg} shape={form.logo_shape} />{:else}<Mark size={22} />{/if}</div>

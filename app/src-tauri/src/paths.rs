@@ -5,6 +5,7 @@
 //! - Personal brand (per user): %LOCALAPPDATA%\TUNAS\brand\personal
 //! - Machine-wide (OEM / organisation image, written by the installer or IT):
 //!   %ProgramData%\TUNAS\brand\{oem,org}, %ProgramData%\TUNAS\policy.json
+//!   (macOS: /Library/Application Support/TUNAS; data in ~/Library/Application Support/TUNAS)
 //! - App resources (next to the exe): engine\cpu, engine\vulkan, catalog.json
 
 use std::path::PathBuf;
@@ -44,7 +45,11 @@ pub fn machine_dir() -> PathBuf {
         let pd = std::env::var("ProgramData").unwrap_or_else(|_| "C:\\ProgramData".into());
         PathBuf::from(pd).join("TUNAS")
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        PathBuf::from("/Library/Application Support/TUNAS")
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         PathBuf::from("/etc/tunas")
     }
@@ -52,10 +57,22 @@ pub fn machine_dir() -> PathBuf {
 
 /// Folder holding the exe (resources are installed next to it).
 pub fn app_dir() -> PathBuf {
-    std::env::current_exe()
+    let dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|p| p.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."))
+        .unwrap_or_else(|| PathBuf::from("."));
+    // In a macOS app bundle the program is in Contents/MacOS and its files in Contents/Resources.
+    #[cfg(target_os = "macos")]
+    {
+        if dir.file_name().map(|n| n == "MacOS").unwrap_or(false) {
+            if let Some(res) = dir.parent().map(|c| c.join("Resources")) {
+                if res.exists() {
+                    return res;
+                }
+            }
+        }
+    }
+    dir
 }
 
 pub fn engine_dir(kind: &str) -> PathBuf {

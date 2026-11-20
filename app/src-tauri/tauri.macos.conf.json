@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "icon": ["icons/icon.icns", "icons/128x128.png", "icons/128x128@2x.png"],
+    "resources": { "resources/catalog.json": "resources/catalog.json" },
+    "fileAssociations": [
+      { "ext": ["tunasbrand"], "name": "TUNAS branding pack", "description": "TUNAS branding pack", "role": "Viewer", "mimeType": "application/x-tunasbrand" }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-",
+      "dmg": { "appPosition": { "x": 180, "y": 170 }, "applicationFolderPosition": { "x": 480, "y": 170 }, "windowSize": { "width": 660, "height": 400 } }
+    }
+  }
+}

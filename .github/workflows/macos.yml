@@ -1,0 +1,109 @@
+# TUNAS for macOS: builds the app for Apple silicon (engine on Metal) and Intel (engine on the processor)
+# and uploads one .dmg for each. Run it from the Actions tab (Run workflow), or push a tag such as v0.5.0.
+name: macOS build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            target: aarch64-apple-darwin
+            label: apple-silicon
+          - arch: x86_64
+            target: x86_64-apple-darwin
+            label: intel
+    runs-on: macos-14
+    env:
+      LLAMA_COMMIT: 08c252e
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri -> target
+          key: ${{ matrix.target }}
+
+      - name: Version
+        id: ver
+        run: echo "v=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")" >> "$GITHUB_OUTPUT"
+
+      - name: Build the engine (llama.cpp ${{ env.LLAMA_COMMIT }})
+        run: |
+          git clone --filter=blob:none https://github.com/ggml-org/llama.cpp /tmp/llama
+          cd /tmp/llama && git checkout "$LLAMA_COMMIT"
+          COMMON="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DLLAMA_CURL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0"
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            EXTRA="-DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON"
+          else
+            # Intel Macs: no Metal; tuned for Haswell (2013) and later, not for the build machine.
+            EXTRA="-DGGML_METAL=OFF -DGGML_NATIVE=OFF -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON"
+          fi
+          cmake -B build $COMMON $EXTRA
+          cmake --build build --target llama-server -j 4
+          file build/bin/llama-server
+          if [ "${{ matrix.arch }}" = "arm64" ]; then ./build/bin/llama-server --version; fi
+
+      - name: Stage the engine and resources
+        run: |
+          V=${{ steps.ver.outputs.v }}
+          E=app/src-tauri/mac-engine/$V
+          mkdir -p "$E/cpu"
+          cp /tmp/llama/build/bin/llama-server "$E/cpu/"
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            # "vulkan" is TUNAS's name for the graphics build; on a Mac it is the Metal build.
+            mkdir -p "$E/vulkan" && cp /tmp/llama/build/bin/llama-server "$E/vulkan/"
+          fi
+          # List every engine file in the bundle's resources (Contents/Resources/engine/<version>/...).
+          python3 - <<'PY'
+          import json, os
+          p = 'app/src-tauri/tauri.macos.conf.json'
+          c = json.load(open(p))
+          res = c['bundle']['resources']
+          for root, _, files in os.walk('app/src-tauri/mac-engine'):
+              for f in files:
+                  src = os.path.relpath(os.path.join(root, f), 'app/src-tauri')
+                  res[src] = 'engine/' + os.path.relpath(os.path.join(root, f), 'app/src-tauri/mac-engine')
+          json.dump(c, open(p, 'w'), indent=2)
+          print(json.dumps(res, indent=2))
+          PY
+
+      - name: Build TUNAS
+        working-directory: app
+        run: |
+          npm ci
+          npx tauri build --target ${{ matrix.target }} --bundles app,dmg
+
+      - name: Check the app
+        run: |
+          APP=$(ls -d app/src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.app)
+          ls -R "$APP/Contents/Resources" | head -40
+          codesign -dv "$APP" 2>&1 | head -5
+          test -x "$APP/Contents/Resources/engine/${{ steps.ver.outputs.v }}/cpu/llama-server"
+
+      - name: Name the disk image
+        run: |
+          mkdir -p out
+          cp app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg "out/TUNAS_${{ steps.ver.outputs.v }}_mac_${{ matrix.label }}.dmg"
+          cp docs/TUNAS_Release_Notes.md out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TUNAS_${{ steps.ver.outputs.v }}_mac_${{ matrix.label }}
+          path: out/*

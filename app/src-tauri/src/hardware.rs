@@ -119,7 +119,32 @@ fn read_gpus() -> Vec<Gpu> {
         }
         vec![]
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        // Apple silicon and Intel Macs: what macOS reports about the graphics.
+        let mut cmd = std::process::Command::new("/usr/sbin/system_profiler");
+        cmd.args(["SPDisplaysDataType", "-json"]);
+        let txt = run_limited(cmd, std::time::Duration::from_secs(12), |_| false);
+        let v: serde_json::Value = serde_json::from_str(txt.trim()).unwrap_or(serde_json::Value::Null);
+        return v
+            .get("SPDisplaysDataType")
+            .and_then(|a| a.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|g| {
+                        let name = g.get("sppci_model").or_else(|| g.get("_name"))?.as_str()?.to_string();
+                        let vram_txt = g.get("spdisplays_vram").or_else(|| g.get("spdisplays_vram_shared")).and_then(|x| x.as_str()).unwrap_or("");
+                        let num: u64 = vram_txt.split_whitespace().next().and_then(|n| n.parse().ok()).unwrap_or(0);
+                        let vram_mb = if vram_txt.contains("GB") { num * 1024 } else { num };
+                        let l = name.to_lowercase();
+                        let integrated = l.contains("apple") || l.contains("intel");
+                        Some(Gpu { name, vram_mb, integrated })
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         vec![]
     }
@@ -149,12 +174,12 @@ pub fn vulkan_devices() -> Vec<String> {
     cmd.current_dir(exe.parent().unwrap());
     // Some drivers print the list and then never exit: stop once a device line is in, or after 15 s.
     let txt = run_limited(cmd, std::time::Duration::from_secs(15), |o| {
-        o.lines().any(|l| l.trim_start().starts_with("Vulkan")) || o.contains("no devices")
+        o.lines().any(|l| is_gpu_line(l)) || o.contains("no devices")
     });
     let list: Vec<String> = txt
         .lines()
         .map(|l| l.trim())
-        .filter(|l| l.starts_with("Vulkan"))
+        .filter(|l| is_gpu_line(l))
         .map(|l| l.to_string())
         .filter(|l| !l.to_lowercase().contains("llvmpipe") && !l.to_lowercase().contains("basic render"))
         .collect();
@@ -163,6 +188,12 @@ pub fn vulkan_devices() -> Vec<String> {
         let _ = std::fs::write(&cache, list.join("\n"));
     }
     list
+}
+
+/// A device line from `llama-server --list-devices`: Vulkan on Windows and Linux, Metal on macOS.
+fn is_gpu_line(l: &str) -> bool {
+    let t = l.trim_start();
+    t.starts_with("Vulkan") || t.starts_with("Metal") || t.starts_with("MTL")
 }
 
 /// A graphics card worth trying: one the engine listed, or a separate NVIDIA/AMD card Windows reports.

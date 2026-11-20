@@ -201,7 +201,7 @@
         <div class="row" style="align-items:flex-start">
           <div class="grow">
             <b>Allow cloud providers</b>
-            <div class="small mute">Off by default. When an assistant uses a cloud model, what you type in that chat, and any files you add, are sent to that provider over the internet. Keys are kept protected by Windows on this machine.</div>
+            <div class="small mute">Off by default. When an assistant uses a cloud model, what you type in that chat, and any files you add, are sent to that provider over the internet. Keys are kept protected by {app.info?.os === 'macos' ? 'the macOS Keychain' : 'Windows'} on this machine.</div>
           </div>
           <label class="switch" title={cloudAllowed ? '' : 'Not allowed by your organisation'}>
             <input type="checkbox" checked={cloudOn} disabled={!cloudAllowed} onchange={(e) => setCloud(e.target.checked)} /><span></span>
@@ -298,7 +298,7 @@
         {#if edit.kind === 'custom'}
           <label class="field">Address (OpenAI-compatible base URL)<input type="text" bind:value={edit.base_url} placeholder="https://api.example.com/v1" /></label>
         {/if}
-        <label class="field">API key <span class="hint">{edit.saved && edit.has_key ? 'Saved. Enter a new one only to replace it.' : 'Your own key from the provider. It is stored protected by Windows on this machine.'}</span>
+        <label class="field">API key <span class="hint">{edit.saved && edit.has_key ? 'Saved. Enter a new one only to replace it.' : `Your own key from the provider. It is stored protected by ${app.info?.os === 'macos' ? 'the macOS Keychain' : 'Windows'} on this machine.`}</span>
           <input type="password" bind:value={edit.key} autocomplete="off" placeholder={edit.saved && edit.has_key ? '••••••••••••' : 'Paste the key'} />
         </label>
         <div><button class="btn sm" disabled={eBusy} onclick={() => saveCloud(true)}>{eBusy ? 'Checking…' : edit.saved ? 'Save key and reload models' : 'Save and load models'}</button></div>
