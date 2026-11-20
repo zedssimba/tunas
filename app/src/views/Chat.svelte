@@ -133,7 +133,7 @@
   }
 
   // Documents: requests that ask for a document get a ready file card under the answer.
-  const DOC_WORDS = /\b(surat|letter|memo|memorandum|minit|minutes|laporan|report|kertas|proposal|cadangan|notis|notice|pekeliling|circular|jadual|table|senarai|invois|invoice|sebut harga|quotation|agenda|sijil|certificate|resume|cv|kenyataan|borang)\b/i;
+  const DOC_WORDS = /\b(pdf|word|excel|docx|xlsx|dokumen|document|surat|letter|memo|memorandum|minit|minutes|laporan|report|kertas|proposal|cadangan|notis|notice|pekeliling|circular|jadual|table|senarai|invois|invoice|sebut harga|quotation|agenda|sijil|certificate|resume|cv|kenyataan|borang)\b/i;
   function wantsDoc(i) {
     const prev = messages[i - 1];
     return prev?.role === 'user' && DOC_WORDS.test(prev.content || '');
@@ -151,16 +151,33 @@
     if (bold) return clean(bold);
     return (app.chats.find((c) => c.id === app.chatId)?.title || 'TUNAS document').slice(0, 60);
   }
+  // The document itself, without chat around it: text before the title ("Baik, ini laporannya:")
+  // and closing offers after it ("Kalau mahu…", "Let me know…") are left out of the file.
+  const OFFER = /^\s*[*_>-]*\s*(adakah|kalau (mahu|perlu|anda|tuan|puan|captain)|jika (anda|tuan|puan|captain|perlu)|sila beritahu|beritahu saya|semoga|harap|do you want|would you like|let me know|i hope|hope this|if you (want|need|would)|shall i|should i)\b/i;
+  function docBody(text) {
+    let lines = (text || '').replace(/\r/g, '').split('\n');
+    const h = lines.findIndex((l) => /^#{1,3}\s/.test(l.trim()));
+    if (h > 0 && h <= 6 && lines.slice(0, h).join(' ').length < 400) lines = lines.slice(h);
+    // Trailing offers and a closing rule before them.
+    for (;;) {
+      while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+      const last = lines[lines.length - 1] || '';
+      if (lines.length > 3 && (OFFER.test(last) || /^\s*(---|\*\*\*|___)\s*$/.test(last))) lines.pop();
+      else break;
+    }
+    return lines.join('\n');
+  }
   const hasTable = (text) => /^\s*\|.*\|\s*$/m.test(text || '') && /^\s*\|?\s*:?-{3,}/m.test(text || '');
   async function saveAs(m, format) {
     saveOpen = null;
-    const title = docTitle(m.content);
+    const body = docBody(m.content);
+    const title = docTitle(body);
     const safe = title.replace(/[\\/:*?"<>|]/g, '').trim() || 'TUNAS document';
     const names = { docx: 'Word document', xlsx: 'Excel workbook', pdf: 'PDF' };
     const path = await saveFile(`${safe}.${format}`, [{ name: names[format], extensions: [format] }], 'Save the document');
     if (!path) return;
     try {
-      await api.doc_export({ markdown: m.content, format, path, title, letterhead: true });
+      await api.doc_export({ markdown: body, format, path, title, letterhead: true });
       toast(`Saved ${safe}.${format}`, 'ok');
       api.open_written({ path }).catch(() => {});
     } catch (e) {

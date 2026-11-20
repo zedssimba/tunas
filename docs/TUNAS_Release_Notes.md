@@ -5,6 +5,20 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.4.1 — 20 November 2026 (documents that hold the document)
+
+- **Fixed: a saved Word or PDF held the last chat reply, not the document asked for.** TUNAS saves the answer as the file, and the answer was often a chat reply ("Baik, ini laporannya…", "Kalau mahu…"), or a short reply to "jadikan PDF" about something earlier in the chat.
+  - **When you ask for a document,** the assistant now answers with the document itself: a title, then the full content, with nothing before or after it. This works for local, cloud and TERAS models.
+  - **Turning earlier content into a document** ("jadikan laporan PDF", "make it a Word doc", "laporan tadi"): the assistant writes that content out again in full as the document, with the changes you asked for.
+  - **When saving,** any chat left before the title or closing offers after the document ("Kalau mahu…", "Let me know…") are left out of the file.
+  - **Such short "make it a document" requests no longer search your documents again,** which had brought in an unrelated file as a source.
+- More requests are recognised as documents: those naming PDF, Word, Excel, "dokumen" or "document".
+- Tested on the build machine with the Qwen 3.5 2B model: "Apakah 3 kelebihan bekerja dari rumah…?" then "jadikan laporan PDF". The second answer was the report (a title and a table, no chat); the saved PDF held the letterhead, the title, the table and the note, with no chat lines and no citation numbers.
+- Tip: the letterhead at the top of a document is the **letterhead organisation** in Branding › More options, or the brand's name when that is empty. Set it to your department's name if the brand is the AI's own name.
+- Install over 0.4.0 directly. Everything is kept.
+
+---
+
 ## 0.4.0 — 20 November 2026 (working with TERAS, About me, better letters)
 
 ### Working with TERAS models

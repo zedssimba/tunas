@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Administrator Guide
 
-TUNAS 0.4.0 · November 2026 · https://www.salt.ci
+TUNAS 0.4.1 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.4.0). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
+This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.4.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
 
 This guide is for IT departments, trainers, resellers and OEM partners who install TUNAS on many computers, brand it, set the organisation's rules, and look after it.
 

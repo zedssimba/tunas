@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: User Guide
 
-TUNAS 0.4.0 · November 2026 · https://www.salt.ci
+TUNAS 0.4.1 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.4.0). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
+This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.4.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
 
 This guide is for the person using TUNAS on their own Windows computer.
 
@@ -122,6 +122,9 @@ On the Knowledge page, each set shows its folders and files and how far reading 
 - **Exact references** such as "PK 3/2026" or a version number are searched as exact words as well as by meaning.
 
 ## 8. Documents: Word, Excel and PDF
+
+- **Ask for the document you want** ("Tulis surat rasmi…", "Buat laporan PDF tentang…"): the answer is the document itself, ready to save.
+- **Turn an earlier answer into a document** with a short request such as "jadikan laporan PDF" or "make it a Word document": the assistant writes it out again in full as a document.
 
 - When an answer looks like a document (a letter, minutes, a report), a card says **Your document is ready**, with **Word** and **PDF** buttons.
 - Any answer can be saved with **Save as Word, PDF or Excel** under it.

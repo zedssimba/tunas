@@ -111,6 +111,35 @@ fn about_me_block(app: &AppHandle) -> Option<String> {
     ))
 }
 
+/// The user asks for a document (a letter, report, minutes, a table...) or a file format.
+fn wants_document(text: &str) -> bool {
+    let t = text.to_lowercase();
+    const WORDS: &[&str] = &[
+        "pdf", "word", "excel", "docx", "xlsx", "dokumen", "document", "surat", "letter", "memo", "memorandum", "minit", "minutes",
+        "laporan", "report", "kertas kerja", "kertas cadangan", "proposal", "cadangan", "notis", "notice", "pekeliling", "circular",
+        "jadual", "table", "senarai", "invois", "invoice", "sebut harga", "quotation", "agenda", "sijil", "certificate", "resume",
+        "kenyataan", "borang", "ringkasan", "summary",
+    ];
+    const ASK: &[&str] = &[
+        "buat", "tulis", "sediakan", "siapkan", "karang", "draf", "jadikan", "tukar", "hasilkan", "bina", "create", "make", "write",
+        "draft", "prepare", "produce", "generate", "turn", "convert", "put", "export", "give me", "can u", "can you", "boleh",
+    ];
+    let has = |w: &&str| {
+        if w.contains(' ') {
+            t.contains(*w)
+        } else {
+            t.split(|c: char| !c.is_alphanumeric()).any(|x| x == *w)
+        }
+    };
+    WORDS.iter().any(has) && ASK.iter().any(has)
+}
+
+const DOCUMENT_RULE: &str = "\n\nThe user is asking for a document. TUNAS turns your answer into a Word, PDF or Excel file, so your answer must be the document itself: \
+start with a title line beginning with \"# \", then the complete content in Markdown (headings, paragraphs, lists and tables). \
+Write nothing before the title and nothing after the document: no \"here is\", no offers, no questions to the user. \
+If the user refers to something earlier in this chat (\"this\", \"the above\", \"tadi\", \"ini\", \"jadikan PDF\"), write that content out again in full as the document, with any changes they asked for. \
+Never say you cannot create files: TUNAS creates the file from your answer.";
+
 /// Sampling settings that TERAS and cloud models may refuse.
 const SAMPLING: &[&str] = &["temperature", "top_p", "top_k", "min_p", "presence_penalty", "frequency_penalty", "repeat_penalty"];
 
@@ -331,6 +360,20 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
         // About me goes to local and cloud models; TERAS has the person's own personalisation.
         let to_teras = matches!(&target, Target::Provider(p, _) if p.kind == "teras");
         let mut sys = system_prompt(&app, assistant.as_ref(), &last_user, !to_teras);
+        // TUNAS's chat turns an answer into a Word, PDF or Excel file, so a request for a document must
+        // get the document itself, not a chat reply about it.
+        if !ctx.external {
+            let latest = messages
+                .iter()
+                .rev()
+                .find(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"))
+                .and_then(|m| m.get("content"))
+                .map(|c| if let Some(s) = c.as_str() { s.to_string() } else { c.to_string() })
+                .unwrap_or_default();
+            if wants_document(&latest) {
+                sys.push_str(DOCUMENT_RULE);
+            }
+        }
         // Knowledge: the assistant's sets plus any picked for this chat.
         let mut sets: Vec<String> = assistant.as_ref().map(|a| state.knowledge.assistant_sets(&a.id)).unwrap_or_default();
         if !ctx.external {
@@ -342,7 +385,19 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 }
             }
         }
-        if !sets.is_empty() {
+        // A short request to turn earlier content into a document ("jadikan laporan PDF", "make it a Word
+        // doc") is about the chat, not the documents: searching again would bring unrelated passages.
+        let reshape = !ctx.external && {
+            let latest = messages
+                .iter()
+                .rev()
+                .find(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"))
+                .and_then(|m| m.get("content").and_then(|c| c.as_str()))
+                .unwrap_or("");
+            let has_answer = messages.iter().any(|m| m.get("role").and_then(|r| r.as_str()) == Some("assistant"));
+            has_answer && latest.chars().count() < 80 && wants_document(latest)
+        };
+        if !sets.is_empty() && !reshape {
             // Short follow-ups ("and the deadline?") are searched together with the question before.
             let users: Vec<String> = messages
                 .iter()
