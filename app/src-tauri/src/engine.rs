@@ -129,6 +129,7 @@ impl Engine {
                 }
                 Err(e) => {
                     if kind == "vulkan" {
+                        let _ = std::fs::remove_file(crate::paths::data_dir().join("gpu-ok"));
                         note = format!("Graphics did not start: {e}. Running on the processor instead.");
                         use tauri::Manager;
                         let st = app.state::<crate::AppState>();
@@ -220,6 +221,13 @@ impl Engine {
             tokio::time::sleep(Duration::from_millis(400)).await;
         }
 
+        // Remember whether graphics works here, so the Knowledge search engine can use it too.
+        let flag = crate::paths::data_dir().join("gpu-ok");
+        if kind == "vulkan" {
+            let _ = std::fs::write(&flag, env!("CARGO_PKG_VERSION"));
+        } else if prefer == "cpu" {
+            let _ = std::fs::remove_file(&flag);
+        }
         let mut ready = status.clone();
         ready.state = "ready".into();
         ready.message = "Ready".into();

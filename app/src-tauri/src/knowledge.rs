@@ -28,8 +28,23 @@ const DIM: usize = 512;
 const CHUNK_CHARS: usize = 1200;
 const OVERLAP_CHARS: usize = 200;
 const MAX_FILES_PER_SET: usize = 20_000;
-const EMBED_BATCH: usize = 8;
+const EMBED_BATCH: usize = 16;
 const QUERY_PREFIX: &str = "Instruct: Given a question, retrieve passages from the user's documents that answer it\nQuery: ";
+
+// ---------------------------------------------------------------- log
+
+/// A short record of what reading does (logs\\knowledge.log), so a slow or stuck reading explains itself.
+pub fn klog(msg: &str) {
+    use std::io::Write;
+    let path = crate::paths::logs_dir().join("knowledge.log");
+    // Keep the log small: start again when it passes 1 MB.
+    if std::fs::metadata(&path).map(|m| m.len() > 1 << 20).unwrap_or(false) {
+        let _ = std::fs::remove_file(&path);
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = writeln!(f, "{} {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), msg);
+    }
+}
 
 // ---------------------------------------------------------------- chat activity (indexing yields to chat)
 
@@ -714,20 +729,59 @@ impl Knowledge {
         }
         *g = None;
         let model = embed_model_path().ok_or_else(|| anyhow!("the search model is not downloaded yet"))?;
-        let exe = crate::engine::server_exe("cpu");
+        // Graphics when the chat engine has run on graphics on this machine; it is many times faster.
+        let gpu = crate::paths::data_dir().join("gpu-ok").exists() && crate::engine::server_exe("vulkan").exists();
+        let mut kinds = vec![];
+        if gpu {
+            kinds.push("vulkan");
+        }
+        kinds.push("cpu");
+        let mut last = anyhow!("the search engine could not start");
+        for kind in kinds {
+            match start_embedder(&model, kind).await {
+                Ok(server) => {
+                    let (port, key) = (server.port, server.key.clone());
+                    klog(&format!("search engine started on {} (port {port})", if kind == "vulkan" { "graphics" } else { "processor" }));
+                    *g = Some(server);
+                    return Ok((port, key));
+                }
+                Err(e) => {
+                    klog(&format!("search engine could not start on {kind}: {e}"));
+                    last = e;
+                }
+            }
+        }
+        Err(last)
+    }
+
+    pub async fn stop_embedder(&self) {
+        if let Some(mut s) = self.embed.lock().await.take() {
+            let _ = s.child.kill();
+            let _ = s.child.wait();
+        }
+    }
+
+}
+
+async fn start_embedder(model: &Path, kind: &str) -> Result<EmbedServer> {
+    {
+        let exe = crate::engine::server_exe(kind);
         if !exe.exists() {
             return Err(anyhow!("the engine is not installed"));
         }
         let port = std::net::TcpListener::bind("127.0.0.1:0")?.local_addr()?.port();
         let key = uuid::Uuid::new_v4().simple().to_string();
-        let threads = (sysinfo::System::new().physical_core_count().unwrap_or(4) / 2).clamp(1, 8);
+        // Low priority (below), so all processor cores can be used without slowing the user down.
+        let threads = sysinfo::System::new().physical_core_count().unwrap_or(4).clamp(1, 16);
         let log = crate::paths::logs_dir().join("engine-search.log");
+        let _ = std::fs::remove_file(&log);
         let mut cmd = std::process::Command::new(&exe);
         cmd.current_dir(exe.parent().unwrap())
-            .arg("-m").arg(&model)
+            .arg("-m").arg(model)
             .args(["--host", "127.0.0.1", "--port", &port.to_string(), "--api-key", &key])
+            // One piece at a time (measured: several at once is no faster on the processor).
             .args(["--embedding", "-c", "8192", "-b", "8192", "-ub", "2048", "-np", "1"])
-            .args(["-t", &threads.to_string(), "-ngl", "0", "--no-webui"])
+            .args(["-t", &threads.to_string(), "-ngl", if kind == "vulkan" { "99" } else { "0" }, "--no-webui"])
             .arg("--log-file").arg(&log)
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
@@ -753,23 +807,17 @@ impl Knowledge {
                     break;
                 }
             }
-            if t0.elapsed() > Duration::from_secs(120) {
+            if t0.elapsed() > Duration::from_secs(if kind == "vulkan" { 180 } else { 120 }) {
                 let _ = server.child.kill();
                 return Err(anyhow!("the search engine took too long to load"));
             }
             tokio::time::sleep(Duration::from_millis(300)).await;
         }
-        *g = Some(server);
-        Ok((port, key))
+        Ok(server)
     }
+}
 
-    pub async fn stop_embedder(&self) {
-        if let Some(mut s) = self.embed.lock().await.take() {
-            let _ = s.child.kill();
-            let _ = s.child.wait();
-        }
-    }
-
+impl Knowledge {
     // ------------------------------------------------------------ the background indexer
 
     pub fn start_indexer(&self, app: AppHandle) {
@@ -797,8 +845,9 @@ impl Knowledge {
                 }
                 k.current.lock().insert(set_id.clone(), file_name(&path));
                 let _ = app.emit("knowledge-changed", json!({ "set_id": set_id }));
-                let res = k.index_file(file_id, &set_id, &path).await;
+                let res = k.index_file(Some(&app), file_id, &set_id, &path).await;
                 if let Err(e) = &res {
+                    klog(&format!("could not read {path}: {e}"));
                     let _ = k.db.lock().execute("UPDATE kfiles SET status = 'error', error = ?2 WHERE id = ?1", params![file_id, e.to_string()]);
                 }
                 k.current.lock().remove(&set_id);
@@ -827,7 +876,7 @@ impl Knowledge {
         }
     }
 
-    async fn index_file(&self, file_id: i64, set_id: &str, path: &str) -> Result<()> {
+    async fn index_file(&self, app: Option<&AppHandle>, file_id: i64, set_id: &str, path: &str) -> Result<()> {
         self.wait_for_chat().await;
         let p = PathBuf::from(path);
         if !self.is_allowed(path) {
@@ -841,12 +890,29 @@ impl Knowledge {
                 pieces.push((part.page, part.label.clone(), t));
             }
         }
+        let t0 = Instant::now();
+        klog(&format!("reading {path}: {} part(s), {} piece(s)", parts.len(), pieces.len()));
         let mut vecs: Vec<Vec<f32>> = Vec::with_capacity(pieces.len());
+        let mut last_emit = Instant::now();
         for batch in pieces.chunks(EMBED_BATCH) {
-            self.wait_for_chat().await;
+            if CHATS_ACTIVE.load(Ordering::SeqCst) > 0 {
+                klog("waiting: an answer is being written");
+                self.wait_for_chat().await;
+            }
             let inputs: Vec<String> = batch.iter().map(|(_, label, t)| format!("{name} {label}\n{t}")).collect();
             vecs.extend(self.embed_texts(&inputs).await?);
+            // Show progress inside big files ("SOP.pdf · 120 of 800 pieces").
+            if pieces.len() > EMBED_BATCH {
+                self.current.lock().insert(set_id.to_string(), format!("{name} · {} of {} pieces", vecs.len(), pieces.len()));
+                if let Some(a) = app {
+                    if last_emit.elapsed() > Duration::from_secs(2) {
+                        let _ = a.emit("knowledge-changed", json!({ "set_id": set_id }));
+                        last_emit = Instant::now();
+                    }
+                }
+            }
         }
+        klog(&format!("done {path}: {} piece(s) in {:.1} s", pieces.len(), t0.elapsed().as_secs_f32()));
         let mut c = self.db.lock();
         let tx = c.transaction()?;
         tx.execute("DELETE FROM kfts WHERE rowid IN (SELECT id FROM kchunks WHERE file_id = ?1)", [file_id])?;
@@ -1040,13 +1106,13 @@ mod tests {
     #[ignore]
     async fn e2e() {
         let k = Knowledge::open().unwrap();
-        k.grant("/tmp/kdocs").unwrap();
+        let dir = std::env::var("KDIR").unwrap_or("/tmp/kdocs".into()); k.grant(&dir).unwrap();
         let id = k.create_set("E2E test").unwrap();
         assert!(k.add_source(&id, "/tmp/nowhere").is_err(), "must refuse a place that was not allowed");
-        k.add_source(&id, "/tmp/kdocs").unwrap();
+        k.add_source(&id, &dir).unwrap();
         let t0 = Instant::now();
         while let Some((fid, sid, path)) = k.next_pending() {
-            if let Err(e) = k.index_file(fid, &sid, &path).await {
+            if let Err(e) = k.index_file(None, fid, &sid, &path).await {
                 eprintln!("FAILED {path}: {e}");
                 k.db.lock().execute("UPDATE kfiles SET status='error', error=?2 WHERE id=?1", params![fid, e.to_string()]).unwrap();
             }
@@ -1068,7 +1134,7 @@ mod tests {
             }
         }
         k.delete_set(&id).unwrap();
-        k.revoke("/tmp/kdocs").unwrap();
+        k.revoke(&dir).unwrap();
         k.stop_embedder().await;
     }
 

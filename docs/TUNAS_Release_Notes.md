@@ -5,6 +5,18 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.2 — 20 November 2026 (faster reading for Knowledge)
+
+- **Reading uses the graphics card when it can.** On .76, Knowledge read about one piece of text per second on the processor (low priority, half the cores) while the Quadro sat idle.
+  - Once the chat engine has run on graphics on a machine, the search engine uses graphics too: many times faster.
+  - If graphics cannot start, it falls back to the processor.
+- **On the processor, all cores are used,** still at low priority, so the machine stays responsive. Measured on the build machine: twice as fast as using half the cores.
+- **Progress inside big files:** the Knowledge page now shows, for example, "SOP.pdf · 120 of 800 pieces" instead of only the file name.
+- **A reading log** (`logs\knowledge.log`) records each file read, how long it took, waits while an answer is being written, which processor the search engine runs on, and anything that could not be read.
+- Install over 0.3.1 directly. Reading carries on where it stopped.
+
+---
+
 ## 0.3.1 — 20 November 2026 (fixes from the first Knowledge test on .76)
 
 - **Fixed: an assistant with Knowledge answered from the built-in S.A.L.T reference instead of your documents.**
