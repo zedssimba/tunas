@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Product Brief
 
-TUNAS 0.3.3 · Product brief 1.0 · November 2026 · https://www.salt.ci
+TUNAS 0.4.0 · Product brief 1.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.3.3). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
+This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.4.0). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
 
 ## 1. What TUNAS is
 
@@ -27,9 +27,16 @@ The name: *tunas* is Malay for a young shoot, the first growth of a plant. TUNAS
 - **Streaming answers:** answers appear word by word as the model writes them.
 - **Per-chat choices:** at the top of each chat, the assistant, the model and the thinking mode can be changed.
 - **History:** chats are saved on the computer, titled automatically, and searchable from the side bar.
+- **TERAS at work:** with a TERAS model, the chat shows each tool step as it happens (making a document, searching the web), lists TERAS's own sources, and gives files TERAS makes a download card.
 - **Where the answer is made:** the chat shows "Offline & private" for local models, "Your organisation's server" for TERAS, and "Online · leaves this machine" for cloud models.
 
-## 3. TUNAS thinking
+## 3. TUNAS About me
+
+- **A short brief about the person** (Settings › About me): what to call them, position, organisation, what they work on, languages and how they like answers.
+- **Sent with each message** to local and cloud models, so answers fit the person and documents can be signed for them; TERAS models use the person's own TERAS personalisation instead.
+- **Kept on the computer only,** with a switch to turn it off.
+
+## 4. TUNAS thinking
 
 Models that can reason (the Qwen 3.5 models) can think before they answer.
 
@@ -38,7 +45,7 @@ Models that can reason (the Qwen 3.5 models) can think before they answer.
 - **The choice is kept per model** across all chats, and can be changed from the chat's thinking chip or the Models page.
 - **Use in teaching:** shown thinking lets a lecturer or trainer walk a class through how an answer was reached.
 
-## 4. TUNAS assistants
+## 5. TUNAS assistants
 
 TUNAS comes with seven ready-made assistants:
 
@@ -56,7 +63,7 @@ TUNAS comes with seven ready-made assistants:
 - **Users make their own** for any task, unless the organisation's policy turns this off.
 - **Shared by branding packs:** an organisation's assistants travel with its branding pack, so every computer has the same set.
 
-## 5. TUNAS Knowledge
+## 6. TUNAS Knowledge
 
 TUNAS reads the user's folders where they already are, with permission, and answers from them with their sources. Nothing is uploaded or copied elsewhere.
 
@@ -73,7 +80,7 @@ TUNAS reads the user's folders where they already are, with permission, and answ
 - **Quiet in the background:** the reading model uses the graphics card when TUNAS runs on it, uses all processor cores at low priority otherwise, and pauses while a chat is answering.
 - **The reading model:** Qwen 3 Embedding 0.6B, downloaded automatically the first time a knowledge set is made.
 
-## 6. TUNAS Documents
+## 7. TUNAS Documents
 
 When an assistant writes a letter, minutes, a report or a table, TUNAS offers it as a finished file.
 
@@ -81,9 +88,10 @@ When an assistant writes a letter, minutes, a report or a table, TUNAS offers it
 - **Letterhead:** the logo, organisation name and address from the app's branding, at the top of Word and PDF documents.
 - **Excel:** tables become sheets, with numbers kept as numbers.
 - **Clean copy:** citation markers such as [1] are removed from the saved document; the sources stay in the chat.
+- **From the user, not the AI:** letters and documents are written from the user and their organisation, using the Branding letterhead as the sender, or placeholders such as [Nama Jabatan] when it is not set. The assistant never signs as itself.
 - **Where:** "Your document is ready" appears under answers that look like documents, and **Save as Word, PDF or Excel** is on every answer. After saving, open the file or its folder.
 
-## 7. TUNAS models and engine
+## 8. TUNAS models and engine
 
 - **Check my machine:** reads memory, processor and graphics, runs a short speed test, and recommends models that will run well.
 - **The catalogue:**
@@ -103,7 +111,7 @@ When an assistant writes a letter, minutes, a report or a table, TUNAS offers it
 - **Run AI on:** Automatic, Graphics or Processor. Graphics are used through Vulkan (Metal on Mac) where they are faster; the processor is always the fallback.
 - **One model at a time:** chats and other apps take turns on the same loaded model, so the computer never loads two chat models at once.
 
-## 8. TUNAS branding
+## 9. TUNAS branding
 
 TUNAS takes the name, logo and colours of whoever gives it out.
 
@@ -121,7 +129,7 @@ TUNAS takes the name, logo and colours of whoever gives it out.
 - **Branding packs:** one signed .tunasbrand file carries the brand, the logo, optionally the organisation's assistants, and optionally the organisation's rules. Double-click it, or use Import branding pack.
 - **Organisation rules:** a pack or a machine policy file can lock the organisation brand, stop personal brands, stop new assistants, and turn off cloud providers, cloud use with knowledge, or the local AI API.
 
-## 9. TUNAS connections
+## 10. TUNAS connections
 
 Everything in TUNAS works on the computer alone. Connections adds more, when the user or the organisation chooses.
 
@@ -130,7 +138,7 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 - **Let other apps use TUNAS (local AI API):** the private AI engine for S.A.L.T CI desktop apps such as NEXUS, WARKAH, NASKAH, Kembara and MOM Studio, and for other programs the user allows. An OpenAI-compatible API (`/v1/models`, `/v1/chat/completions` with streaming) on this computer only (127.0.0.1, port 11435 by default). Each app gets its own key from TUNAS; keys can be removed at any time and the list shows when each was last used. Apps can ask for an assistant by name (its persona and knowledge apply) or for a model. Off by default.
 - **Built-in S.A.L.T reference:** TUNAS knows the basic facts about S.A.L.T CI and its products, so it can answer questions about TERAS and the platform. The user's own documents always come first.
 
-## 10. TUNAS privacy and security
+## 11. TUNAS privacy and security
 
 - **On the device:** chats, assistants, knowledge indexes, branding and saved documents stay on the computer.
 - **Offline:** once installed with its models, TUNAS needs no internet and no account.
@@ -141,7 +149,7 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 - **No usage data:** TUNAS sends no content and no usage reports anywhere.
 - **Checked models:** downloaded and imported catalogue models are checked against their checksums.
 
-## 11. How TUNAS is built
+## 12. How TUNAS is built
 
 | Part | Technology |
 |---|---|
@@ -154,7 +162,7 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 | Local AI API | An OpenAI-compatible gateway on 127.0.0.1 |
 | Installers | Per-user installers for Windows, macOS (signed and notarised) and Linux, and an Android app; silent install with a settings file |
 
-## 12. Deploying TUNAS
+## 13. Deploying TUNAS
 
 | Item | Details |
 |---|---|
@@ -168,11 +176,11 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 | Organisation set-up | A branding pack, or machine-wide brand and policy files placed by IT |
 | TERAS | Optional; address and key in Connections |
 
-## 13. TUNAS trainer kit
+## 14. TUNAS trainer kit
 
 For workshops and trainings, the TUNAS trainer kit is one folder with the installers, the models on USB, branding packs and a handout, so every seat runs its own AI without the internet. It is arranged through Pemangkin Teknologi.
 
-## 14. TUNAS limits
+## 15. TUNAS limits
 
 | Limit | Details |
 |---|---|
@@ -183,7 +191,7 @@ For workshops and trainings, the TUNAS trainer kit is one folder with the instal
 | Installer checks | Some antivirus tools scan or delay the installer the first time |
 | Small models | Answers from small local models can be wrong; check important facts |
 
-## 15. Questions and answers
+## 16. Questions and answers
 
 **Does TUNAS need the internet?**
 Only to download models. After that it works fully offline, or models can be copied from a USB stick.
@@ -218,7 +226,7 @@ Yes, in Settings › Branding, or for a whole department with a branding pack.
 **Which model should I use?**
 Check my machine recommends one. On most 8 GB notebooks, Qwen 3.5 2B is the everyday choice; Qwen 3.5 4B writes better where there is enough memory or a graphics card.
 
-## 16. Words used
+## 17. Words used
 
 | Word | Meaning |
 |---|---|

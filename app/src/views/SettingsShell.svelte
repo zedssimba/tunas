@@ -5,11 +5,13 @@
   import Branding from './Branding.svelte';
   import Settings from './Settings.svelte';
   import About from './About.svelte';
+  import AboutMe from './AboutMe.svelte';
   import Connections from './Connections.svelte';
   import { app, closeSettings } from '../lib/state.svelte.js';
 
   const tabs = [
     ['general', 'settings', 'General', 'Default model, engine, appearance'],
+    ['me', 'user', 'About me', 'So answers fit you and your work'],
     ['models', 'models', 'Models', 'Check my machine, download, USB'],
     ['branding', 'brush', 'Branding', 'Name, logo, branding packs'],
     ['connections', 'globe', 'Connections', 'TERAS, cloud, apps that use TUNAS'],
@@ -38,6 +40,7 @@
   </nav>
   <section>
     {#if app.settingsTab === 'general'}<Settings />
+    {:else if app.settingsTab === 'me'}<AboutMe />
     {:else if app.settingsTab === 'models'}<Models />
     {:else if app.settingsTab === 'branding'}<Branding />
     {:else if app.settingsTab === 'connections'}<Connections />

@@ -6,7 +6,7 @@
   import { api, pickFiles, saveFile } from '../lib/api.js';
   import { kn, newSetFromFolder, setLabel, refreshKnowledge } from '../lib/knowledge.svelte.js';
   import { md } from '../lib/markdown.js';
-  import { buildMessages, streamChat, makeTitle } from '../lib/chat.js';
+  import { buildMessages, streamChat, makeTitle, terasFiles, withoutTerasFileLinks } from '../lib/chat.js';
   import { app, toast, refreshChats, assistantName, currentAssistant, modelName, openSettings } from '../lib/state.svelte.js';
 
   let messages = $state([]);
@@ -53,6 +53,27 @@
   let assistantSets = $state([]);
   let kOpen = $state(false);
   let liveSources = $state([]);
+  let liveActivity = $state([]);
+  // Friendly names for what TERAS is doing.
+  const TOOL_NAMES = { create_document: 'Making the document', render_document: 'Checking the document', web_search: 'Searching the web', fetch_url: 'Reading a web page', knowledge_search: 'Searching knowledge', search_knowledge: 'Searching knowledge', run_code: 'Running code', python: 'Running code' };
+  const toolName = (t) => TOOL_NAMES[t] || (t || 'Tool').replace(/[_-]+/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  const provOf = (model) => (typeof model === 'string' && model.startsWith('prov:') ? model.split(':')[1] : '');
+  async function terasDownload(st, f) {
+    const pid = provOf(st?.model);
+    const path = await saveFile(f.name, [{ name: 'File', extensions: [f.name.split('.').pop() || '*'] }], 'Save the file from TERAS');
+    if (!path) return;
+    try {
+      await api.teras_download({ providerId: pid, filePath: f.path, saveTo: path });
+      toast(`Saved ${f.name}`, 'ok');
+      api.open_written({ path }).catch(() => {});
+    } catch (e) {
+      const msg = String(e);
+      if (msg.startsWith('auth')) {
+        toast('TERAS asked for your sign-in for this file, so it opens in your browser.', 'ok', 6000);
+        api.teras_open({ providerId: pid, filePath: f.path }).catch((x) => toast(String(x), 'error'));
+      } else toast(msg, 'error', 8000);
+    }
+  }
   let saveOpen = $state(null);
   $effect(() => {
     const id = assistant?.id;
@@ -105,8 +126,9 @@
     }
     return [...by.values()];
   }
-  const srcTitle = (g) => [g.path, ...g.items.map((x) => `[${x.n}] ${x.label || 'whole file'}`)].join('\n');
+  const srcTitle = (g) => [g.path || 'From TERAS', ...g.items.map((x) => `[${x.n}] ${x.label || 'whole file'}`)].join('\n');
   async function openSource(src) {
+    if (!src.path) return; // TERAS's own sources live on TERAS
     try { await api.open_file({ path: src.path }); } catch (e) { toast(String(e), 'error'); }
   }
 
@@ -117,8 +139,16 @@
     return prev?.role === 'user' && DOC_WORDS.test(prev.content || '');
   }
   function docTitle(text) {
-    const h = (text || '').split('\n').find((l) => /^#{1,3}\s/.test(l));
-    if (h) return h.replace(/^#+\s*/, '').replace(/[*_`]/g, '').trim().slice(0, 60);
+    const lines = (text || '').split('\n').map((l) => l.trim());
+    const clean = (l) => l.replace(/^#+\s*/, '').replace(/[*_`]/g, '').replace(/\s*\[\d+\]/g, '').trim().slice(0, 60);
+    const h = lines.find((l) => /^#{1,3}\s/.test(l));
+    if (h) return clean(h);
+    // Letters and memos: the subject line.
+    const subj = lines.find((l) => /^\**\s*(perkara|tajuk|subject|re|ref\.? ?:? ?perkara)\s*[:：]/i.test(l));
+    if (subj) { const t = clean(subj.replace(/^\**\s*[^:：]+[:：]\s*/, '')); if (t) return t; }
+    // A short line in bold on its own, such as **MINIT MESYUARAT ...**.
+    const bold = lines.find((l) => /^\*\*[^*]{6,80}\*\*$/.test(l));
+    if (bold) return clean(bold);
     return (app.chats.find((c) => c.id === app.chatId)?.title || 'TUNAS document').slice(0, 60);
   }
   const hasTable = (text) => /^\s*\|.*\|\s*$/m.test(text || '') && /^\s*\|?\s*:?-{3,}/m.test(text || '');
@@ -270,6 +300,7 @@
     const mode = r.kind === 'local' ? (app.thinkModes[r.model_id] || 'off') : 'off';
     streaming = '…';
     liveSources = [];
+    liveActivity = [];
     thinkText = '';
     thinkStart = 0;
     thinkOpen = mode === 'shown';
@@ -289,6 +320,7 @@
         think: mode !== 'off',
         knowledge: $state.snapshot(chatSets),
         onSources: (src) => { liveSources = src; },
+        onActivity: (a) => { liveActivity = a; scrollDown(); },
         onThinking: (t) => { if (!thinkStart) thinkStart = performance.now(); if (mode === 'shown') { thinkText = t; scrollDown(); } },
         onToken: (t) => {
           if (thinkStart && streaming === '…' && mode === 'shown') thinkOpen = false; // fold the thoughts when the answer starts
@@ -319,6 +351,7 @@
       text = '_No answer was produced. Try again, or try another model._';
     }
     const extra = { model: route.kind === 'local' ? app.engine?.model_id : effModel, engine: route.kind === 'local' ? app.engine?.engine : route.kind };
+    liveActivity = [];
     if (mode === 'shown' && reasoning) extra.reasoning = reasoning;
     if (sources.length) extra.sources = sources;
     const am = await api.message_add({
@@ -606,12 +639,12 @@
                   <button class="thought" onclick={() => (openThoughts = { ...openThoughts, [m.id]: !openThoughts[m.id] })}>
                     <Icon name="bulb" size={13} /> Thought for {secs(st.think_ms)} s <Icon name="chevron" size={11} class={openThoughts[m.id] ? 'down' : ''} />
                   </button>
-                  {#if openThoughts[m.id]}<div class="thinkbox">{st.reasoning}</div>{/if}
+                  {#if openThoughts[m.id]}<div class="thinkbox md">{@html md(st.reasoning)}</div>{/if}
                 {:else}
                   <div class="thought plain"><Icon name="bulb" size={13} /> Thought for {secs(st.think_ms)} s</div>
                 {/if}
               {/if}
-              <div class="md">{@html md(m.content)}</div>
+              <div class="md">{@html md(withoutTerasFileLinks(m.content))}</div>
               {#if groupSources(st?.sources, m.content).length}
                 <div class="sources">
                   <span class="small faint">Sources</span>
@@ -622,7 +655,15 @@
                   {/each}
                 </div>
               {/if}
-              {#if wantsDoc(i) && !st?.stopped}
+              {#if terasFiles(m.content).length && provOf(st?.model)}
+                {#each terasFiles(m.content) as f (f.path)}
+                  <div class="doccard">
+                    <Icon name="file" size={18} />
+                    <div class="grow"><b>{f.name}</b><div class="small mute">Made by TERAS{f.size ? ` · ${f.size}` : ''}</div></div>
+                    <button class="btn sm primary" onclick={() => terasDownload(st, f)}>Download</button>
+                  </div>
+                {/each}
+              {:else if wantsDoc(i) && !st?.stopped}
                 <div class="doccard">
                   <Icon name="file" size={18} />
                   <div class="grow"><b>Your document is ready</b><div class="small mute">{docTitle(m.content)} · with your letterhead</div></div>
@@ -647,7 +688,9 @@
                 {#if i === messages.length - 1}
                   <button class="icon-btn" title="Answer again" disabled={busy} onclick={regenerate}><Icon name="refresh" size={14} /></button>
                 {/if}
-                {#if st?.tps}<span class="faint small">{modelName(st.model) || st.model} · {st.est ? '~' : ''}{st.tps} tokens/s</span>{/if}
+                {#if st?.remote}<span class="faint small">{modelName(st.model) || st.model} · {secs(st.total_ms)} s{#if st.tools?.length} · {st.tools.length} tool {st.tools.length === 1 ? 'step' : 'steps'}{/if}</span>
+                {:else if st?.tps && !st?.est}<span class="faint small">{modelName(st.model) || st.model} · {st.tps} tokens/s</span>
+                {:else if st?.model}<span class="faint small">{modelName(st.model) || st.model}</span>{/if}
                 {#if st?.stopped}<span class="faint small">Stopped</span>{/if}
                 {#if st?.finish === 'length'}<span class="faint small">Answer reached the length limit</span>{/if}
               </div>
@@ -665,10 +708,20 @@
                 <button class="thought live" onclick={() => (thinkOpen = !thinkOpen)}>
                   <Icon name="bulb" size={13} /> {streaming === '…' ? 'Thinking' : 'Thought'} · {secs(thinkNow - thinkStart)} s <Icon name="chevron" size={11} class={thinkOpen ? 'down' : ''} />
                 </button>
-                {#if thinkOpen}<div class="thinkbox live">{thinkText}</div>{/if}
+                {#if thinkOpen}<div class="thinkbox live md">{@html md(thinkText)}</div>{/if}
               {:else if streaming === '…'}
                 <div class="thought plain pulse"><Icon name="bulb" size={13} /> Thinking… {secs(thinkNow - thinkStart)} s</div>
               {/if}
+            {/if}
+            {#if liveActivity.length}
+              <div class="activity">
+                {#each liveActivity as a (a.id)}
+                  <span class="act" class:run={a.state === 'running'} class:bad={a.state === 'failed'}>
+                    {#if a.state === 'running'}<i class="spin"></i>{:else if a.state === 'failed'}<Icon name="x" size={12} />{:else}<Icon name="check" size={12} />{/if}
+                    {toolName(a.tool)}{#if a.state === 'failed'} · failed, retrying{:else if a.state === 'done' && a.ms} · {secs(a.ms)} s{:else if a.state === 'running'}…{/if}
+                  </span>
+                {/each}
+              </div>
             {/if}
             {#if streaming === '…'}
               {#if !thinkStart}
@@ -748,6 +801,14 @@
   button.srcchip:hover { border-color: var(--brand1); color: var(--brand1); }
   .srcchip .nums { display: inline-flex; gap: 3px; }
   .srcchip b { color: var(--brand1); font-size: 11px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; display: inline-grid; place-items: center; background: color-mix(in srgb, var(--brand1) 12%, transparent); }
+.activity { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+  .act { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; padding: 3px 10px; border-radius: 99px; background: var(--soft); color: var(--mute); border: 1px solid var(--line); }
+  .act.run { color: var(--brand1); border-color: color-mix(in srgb, var(--brand1) 35%, transparent); }
+  .act.bad { color: #b45309; }
+  .act .spin { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .thinkbox.md :global(p) { margin: 0 0 6px; }
+  .thinkbox.md { white-space: normal; }
   .doccard { display: flex; gap: 10px; align-items: center; margin: 10px 0 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); max-width: 560px; }
   .savewrap, .kwrap { position: relative; display: inline-flex; }
   .savemenu { top: auto; bottom: 30px; width: 220px; }

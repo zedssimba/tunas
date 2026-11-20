@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Administrator Guide
 
-TUNAS 0.3.3 · November 2026 · https://www.salt.ci
+TUNAS 0.4.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.3.3). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
+This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.4.0). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
 
 This guide is for IT departments, trainers, resellers and OEM partners who install TUNAS on many computers, brand it, set the organisation's rules, and look after it.
 
@@ -129,6 +129,8 @@ Settings left out of the file count as allowed. The policy's source (machine, pa
 - **TERAS:** give users the organisation's TERAS address and a TERAS key for TUNAS. In **Settings › Connections › Connect to TERAS**, TUNAS lists the TERAS models by name; users pick them as an assistant's base model or per chat. Questions sent to TERAS are answered on the organisation's own server.
 - **Cloud providers:** off until the user switches on **Allow cloud providers**. The main providers are listed by name, and any OpenAI-compatible address can be added. Users bring their own keys and choose which models their assistants may use. Block with `allow_cloud: false`.
 - **Keys:** TERAS and cloud keys are kept encrypted with Windows' DPAPI, tied to the Windows user. They don't travel in branding packs and can't be read on another account or computer.
+- **TERAS tools and files:** TUNAS asks TERAS for its tool and source events, shows the person what TERAS is doing, and turns files TERAS makes (linked as `/api/files/…`) into download cards. The download uses the TERAS key; if TERAS refuses the key, the file opens in the browser, where the person signs in.
+- **About me and TERAS:** the person's About me (Settings) is not sent to TERAS models, which use the person's own TERAS personalisation.
 - **Knowledge with remote models:** when an assistant on TERAS or a cloud model has knowledge sets, the question and the matching passages from the user's documents are sent with the question. Use local models for documents that must stay on the computer.
 
 ## 7. The local AI API
@@ -146,7 +148,13 @@ TUNAS can be the AI engine for other apps on the same computer, such as S.A.L.T 
 - **One engine:** API requests and the TUNAS chat share the same loaded model and take turns.
 - **Block** with `allow_local_api: false`.
 
-## 8. Knowledge on managed computers
+## 8. About me
+
+- **Stored** in `tunas.db` (the `about_me` setting), on the computer only, per Windows user.
+- **Sent** as a short note with each message to local and cloud models, and with requests from other apps through the local AI API that use local or cloud models. Never sent to TERAS models.
+- **Letterhead:** documents use the Branding letterhead organisation and address as the sender. Set them in a branding pack so every computer writes from the organisation.
+
+## 9. Knowledge on managed computers
 
 - **Permissions are per user:** TUNAS reads only folders the user allowed, never writes to them, and stops reading a folder when its permission is removed.
 - **Index:** kept in `%LOCALAPPDATA%\TUNAS\knowledge.db`, separate from chats. It holds extracted text and search vectors, so treat it as as sensitive as the documents.
@@ -155,14 +163,14 @@ TUNAS can be the AI engine for other apps on the same computer, such as S.A.L.T 
 - **Network drives and cloud folders:** work as long as the files can be opened. Files kept only online are downloaded by the drive's own app when read.
 - **Refreshing:** each time TUNAS starts, and on the set's refresh button.
 
-## 9. Engines and graphics
+## 10. Engines and graphics
 
 - TUNAS ships two builds of the llama.cpp engine: processor and Vulkan graphics.
 - **Run AI on** (Settings › General): Automatic, Graphics or Processor. Automatic tests the graphics card once, remembers the result, and uses the processor if the card fails or has too little memory.
 - On some computers with built-in graphics, the processor is faster. Compare with **Test speed** in Settings › Models.
 - Changing Run AI on restarts the engine with the new choice.
 
-## 10. Logs and troubleshooting
+## 11. Logs and troubleshooting
 
 Logs are in `%LOCALAPPDATA%\TUNAS\logs`:
 
@@ -170,7 +178,8 @@ Logs are in `%LOCALAPPDATA%\TUNAS\logs`:
 |---|---|
 | `engine-cpu.log`, `engine-vulkan.log` | The chat engine on the processor or the graphics card: loading, devices found, errors |
 | `engine-search.log` | The Knowledge reading engine |
-| `knowledge.log` | Knowledge reading: each file, its pieces, timings and errors |
+| `knowledge.log` | Knowledge reading and each search: the scores, word matches and whether the documents were used |
+| `teras.log` | The tool and source events TERAS sends to TUNAS's chat |
 
 **PowerShell checks** (run in a normal PowerShell window):
 
@@ -192,7 +201,7 @@ Get-Process llama-server -ErrorAction SilentlyContinue | Select-Object Id, Start
 | Assistant ignores the documents | Check the set is Ready and is in the assistant's Knowledge field; update to 0.3.1 or later |
 | Taskbar shows an old icon | Unpin and pin again, or clear the Windows icon cache |
 
-## 11. Rolling out to a class or a department
+## 12. Rolling out to a class or a department
 
 1. Prepare one computer: install TUNAS, the models (and the reading model), and the brand.
 2. **Make a pack…** with the organisation's brand, its assistants and its rules.
@@ -202,7 +211,7 @@ Get-Process llama-server -ErrorAction SilentlyContinue | Select-Object Id, Start
 
 Silent installation with a settings file is on the roadmap; today each install runs the normal per-user installer.
 
-## 12. Questions and answers
+## 13. Questions and answers
 
 **Can users install TUNAS without administrator rights?**
 Yes. It installs per user. Only the machine-wide brand and policy under `%ProgramData%\TUNAS` need administrator rights.

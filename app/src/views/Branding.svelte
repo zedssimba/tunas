@@ -324,11 +324,11 @@
 </div>
 
 <style>
-  .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .layers { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
   .layer { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); min-width: 0; }
   .layer.sel { border-color: var(--brand1); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand1) 15%, transparent); }
   .layer.salt { background: var(--soft); }
-  .split { display: grid; grid-template-columns: minmax(380px, 1fr) 420px; gap: 18px; margin-top: 18px; align-items: start; }
+  .split { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; margin-top: 18px; align-items: start; }
   fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
   fieldset:disabled { opacity: .55; }
   .locked { display: flex; gap: 10px; align-items: center; padding: 12px; margin-bottom: 16px; border-radius: 10px; background: var(--soft); color: var(--mute); }

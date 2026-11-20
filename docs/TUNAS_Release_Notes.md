@@ -5,6 +5,46 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.4.0 — 20 November 2026 (working with TERAS, About me, better letters)
+
+### Working with TERAS models
+- **You can see what TERAS is doing.** When a TERAS model uses a tool, the answer shows it as it happens: "Making the document…", "Searching the web…", with a tick when a step is done, or "failed, retrying" when TERAS tries again. Before, the chat looked stuck while TERAS worked.
+- **Files TERAS makes get a proper download card.** A report, a deck or a sheet made by TERAS appears under the answer with its name, size and a **Download** button. TUNAS fetches it with your TERAS key and saves it where you choose. If TERAS asks for your sign-in for that file, it opens in your browser instead.
+- **No second document card.** When TERAS made the file, TUNAS no longer offers its own "Your document is ready" card for the same answer (that card turned the chat text itself into a PDF).
+- **TERAS's own sources** are listed under the answer, beside your local ones.
+- **No more clashing citation numbers.** TERAS numbers its own sources [1], [2]…; with a TERAS model, passages from your own folders are numbered from [51], so each number points to one source.
+- **Time instead of a made-up speed.** For TERAS and cloud models, the answer shows how long it took (for example "TERAS · eltee · 8.0 s · 2 tool steps"). The tokens per second shown before (such as 6,650/s) were not real for TERAS.
+- **A TERAS log** (`logs\teras.log`) records the tool and source events TERAS sends, for checking.
+
+### About me
+- **Settings › About me:** what to call you, your position, organisation or department, what you work on, your languages and how you like answers. Fill in only what you like.
+- Sent as a short note with each message to the models on this machine and to cloud models, so answers fit you, address you as you asked, and documents can be signed with your details. A switch turns it off.
+- **Not sent to TERAS models:** TERAS already has your own personalisation for your TERAS account.
+- Kept on this machine only, and never given to other apps.
+
+### Better letters and documents
+- **The AI's own identity stays out of what it writes.** Letters, minutes and emails are from you and your organisation. The assistant no longer puts its own name, "TUNAS", "S.A.L.T CI", "Pemangkin Teknologi" or the app's brand into them as the sender, reference or signature. (Seen in testing: a Surat Rasmi letter signed "Surat Rasmi, TUNAS" with "Rujukan: S.A.L.T CI".)
+- **The sender comes from your letterhead.** If Branding › More options has a letterhead organisation and address, they are used as the sender. If not, the assistant writes placeholders such as [Nama Jabatan] and [Alamat] instead of inventing one.
+- **Correct weekdays.** The assistant is given the dates and weekdays of the next two weeks, so "25 November 2026" is a Wednesday, not a Thursday.
+- **The S.A.L.T CI facts are only given when you ask about S.A.L.T CI,** not with every message.
+- **Better file names:** a saved document is named from its heading, the subject line of a letter ("PERKARA: …", "Subject: …") or a bold title line.
+
+### Also
+- **The thinking box shows formatting** (lists, bold and headings) instead of raw `**` marks.
+- **The Branding page fits narrower windows:** the preview moves under the form instead of running off the side.
+- Install over 0.3.6 directly. Everything is kept, including your TERAS connection.
+
+### Tested before release
+- On the build machine, with a stand-in TERAS that sends tool events, a source and a file link like the real one:
+  - "Making the document…" showed while the tool ran, the failed first attempt showed as "failed, retrying", and the answer ended with "8.0 s · 2 tool steps";
+  - the file card appeared with its size; **Download** fetched it with the TERAS key (the name with spaces was sent correctly) and saved it;
+  - TUNAS's own document card did not appear for that answer.
+- The instructions sent to a cloud model carried About me, the next 14 days with weekdays (Wed 25 Nov), the identity rule and placeholders for the sender; the same request to TERAS carried no About me.
+- About me and Branding pages checked at a 1240-pixel-wide window.
+- Not tested here: a real TERAS. Whether TERAS lets a personal API key download its files is being confirmed with TERAS; until then, TUNAS opens the file in the browser if TERAS refuses the key.
+
+---
+
 ## 0.3.6 — 20 November 2026 (sources back for questions about your documents)
 
 - **Fixed: questions about the documents got citation numbers but no sources listed.** 0.3.5 judged relevance mostly by closeness of meaning, with a line measured on the demo documents. On a folder of release notes the scores came out differently: "what is in our new product release" scored 0.497 with 30 matching passages, just under the line, so no passages were given to the model. It answered from earlier in the chat, with old citation numbers and nothing to list.

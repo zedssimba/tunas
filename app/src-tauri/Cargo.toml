@@ -1,6 +1,6 @@
 [package]
 name = "tunas"
-version = "0.3.6"
+version = "0.4.0"
 description = "TUNAS - personal AI for your notebook. S.A.L.T CI"
 authors = ["S.A.L.T. CI TECHNOLOGY"]
 edition = "2021"

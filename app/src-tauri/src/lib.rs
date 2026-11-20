@@ -785,10 +785,54 @@ async fn doc_export(markdown: String, format: String, path: String, title: Strin
         .map_err(e)
 }
 
-/// Open a file TUNAS has just written for the user.
+/// The full address of a file TERAS made (answers link to it as /api/files/...).
+fn teras_file_url(st: &AppState, provider_id: &str, file_path: &str) -> Result<(reqwest::Url, String), String> {
+    let p = db::get_provider(&st.db.lock(), provider_id).ok_or("This TERAS connection no longer exists.")?;
+    if p.kind != "teras" {
+        return Err("Not a TERAS connection.".into());
+    }
+    if !file_path.starts_with("/api/files/") {
+        return Err("Not a TERAS file.".into());
+    }
+    let base = p.base_url.trim_end_matches('/').trim_end_matches("/v1").to_string() + "/";
+    let url = reqwest::Url::parse(&base).and_then(|b| b.join(file_path.trim_start_matches('/'))).map_err(e)?;
+    Ok((url, secret::reveal(&p.key_enc).unwrap_or_default()))
+}
+
+/// Download a file TERAS made into `save_to` (chosen by the user), with the TERAS key.
+/// "auth" in the error means TERAS would not give the file to the key (open it in the browser instead).
+#[tauri::command]
+async fn teras_download(st: State<'_, AppState>, provider_id: String, file_path: String, save_to: String) -> R<()> {
+    let (url, key) = teras_file_url(&st, &provider_id, &file_path)?;
+    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).build().map_err(e)?;
+    let mut req = client.get(url);
+    if !key.is_empty() {
+        req = req.bearer_auth(&key);
+    }
+    let resp = req.send().await.map_err(|x| format!("Could not reach TERAS: {x}"))?;
+    let code = resp.status().as_u16();
+    if code == 401 || code == 403 {
+        return Err(format!("auth: TERAS did not allow this download with the TUNAS key ({code})."));
+    }
+    if !resp.status().is_success() {
+        return Err(format!("TERAS answered {code} for this file."));
+    }
+    let bytes = resp.bytes().await.map_err(e)?;
+    std::fs::write(&save_to, &bytes).map_err(e)?;
+    Ok(())
+}
+
+/// Open a file TERAS made in the browser (the person signs in to TERAS there if needed).
+#[tauri::command]
+fn teras_open(st: State<AppState>, provider_id: String, file_path: String) -> R<()> {
+    let (url, _) = teras_file_url(&st, &provider_id, &file_path)?;
+    tauri_plugin_opener::open_url(url.as_str(), None::<&str>).map_err(e)
+}
+
+/// Open a file TUNAS has just written or downloaded for the user.
 #[tauri::command]
 fn open_written(path: String) -> R<()> {
-    let ok = ["docx", "xlsx", "pdf"].iter().any(|x| path.to_lowercase().ends_with(&format!(".{x}")));
+    let ok = ["docx", "xlsx", "pdf", "pptx", "csv", "md", "txt", "png", "jpg", "zip"].iter().any(|x| path.to_lowercase().ends_with(&format!(".{x}")));
     if !ok {
         return Err("Only documents made by TUNAS can be opened here.".into());
     }
@@ -851,7 +895,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            doc_export, open_written, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
+            doc_export, open_written, teras_download, teras_open, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
             app_info,
             setting_get,
             setting_set,

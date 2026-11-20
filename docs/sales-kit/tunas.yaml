@@ -23,6 +23,7 @@ cover:
   - Answers with their sources
   - Word, Excel and PDF with your letterhead
   - Thinking you can see
+  - About me, so answers fit you
   - Check my machine picks the models
   - Graphics card or processor
   - Models from a USB stick
@@ -418,7 +419,7 @@ pages:
     - icon: server
       color: navy
       title: Connect to TERAS
-      text: The organisation's TERAS models and knowledge collections appear by name, for any assistant, with the key kept protected on the device.
+      text: The organisation's TERAS models and knowledge by name, with TERAS's tool steps and files shown in the chat.
     - icon: globe
       color: blue
       title: Cloud, only if allowed

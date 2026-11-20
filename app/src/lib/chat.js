@@ -33,7 +33,7 @@ export function buildMessages(assistant, history, ctx) {
 /**
  * Stream a chat completion. Calls onToken(textSoFar). Returns { text, stats }.
  */
-export async function streamChat({ messages, signal, onToken, onThinking, onSources, maxTokens = 2048, assistant = null, model = '', raw = false, think = false, knowledge = [] }) {
+export async function streamChat({ messages, signal, onToken, onThinking, onSources, onActivity, maxTokens = 2048, assistant = null, model = '', raw = false, think = false, knowledge = [] }) {
   const gw = app.gateway;
   const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
     method: 'POST',
@@ -64,6 +64,8 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
   let text = '';
   let reasoning = '';
   let sources = [];
+  let terasSources = [];
+  const activity = [];
   let tThinkStart = 0;
   let tThinkEnd = 0;
   let stats = null;
@@ -83,7 +85,23 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
       if (data === '[DONE]') continue;
       let j;
       try { j = JSON.parse(data); } catch { continue; }
-      if (j.tunas_sources) { sources = j.tunas_sources; onSources?.(sources); continue; }
+      if (j.tunas_sources) { sources = j.tunas_sources; onSources?.([...sources, ...terasSources]); continue; }
+      // TERAS events (asked for by TUNAS's gateway): tools at work, and TERAS's own sources.
+      if (j.teras && typeof j.teras === 'object') {
+        const ev = j.teras;
+        if (ev.event === 'tool.start') {
+          activity.push({ id: ev.call_id || String(activity.length), tool: ev.tool || 'tool', state: 'running', t0: performance.now() });
+          onActivity?.(activity.map((a) => ({ ...a })));
+        } else if (ev.event === 'tool.done') {
+          const a = activity.find((x) => x.id === ev.call_id) || activity.findLast?.((x) => x.state === 'running');
+          if (a) { a.state = ev.ok === false ? 'failed' : 'done'; a.ms = ev.ms; }
+          onActivity?.(activity.map((a) => ({ ...a })));
+        } else if (ev.event === 'sources' || (ev.event === 'answer.done' && Array.isArray(ev.sources) && !terasSources.length)) {
+          terasSources = terasSourceList(ev.sources);
+          onSources?.([...sources, ...terasSources]);
+        }
+        if (!j.choices?.length) continue;
+      }
       const ch = j.choices?.[0];
       const rpiece = ch?.delta?.reasoning_content || '';
       if (rpiece) {
@@ -113,12 +131,13 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
   const think_ms = tThinkStart ? Math.round((tThinkEnd || performance.now()) - tThinkStart) : 0;
   if (stats) { stats.finish = finish; if (think_ms) stats.think_ms = think_ms; }
   else if (text) {
-    // Cloud providers send no timings: estimate from the text.
-    const secs = Math.max(0.001, (performance.now() - (tFirst || t0)) / 1000);
-    stats = { first_ms: Math.round((tFirst || performance.now()) - t0), tps: Math.round((text.length / 4 / secs) * 10) / 10, est: true, finish };
+    // TERAS and cloud models send no timings, and TERAS may run tools in the middle of an answer,
+    // so a speed would be meaningless: keep the time the whole answer took.
+    stats = { first_ms: Math.round((tFirst || performance.now()) - t0), total_ms: Math.round(performance.now() - t0), remote: true, finish };
     if (think_ms) stats.think_ms = think_ms;
   }
-  return { text, reasoning, stats, sources };
+  if (activity.length) stats = { ...(stats || {}), tools: activity.map(({ tool, state, ms }) => ({ tool, state, ms })) };
+  return { text, reasoning, stats, sources: [...sources, ...terasSources] };
 }
 
 /** Ask the model for a short chat title from the first exchange. */
@@ -158,4 +177,32 @@ export async function speedTest(model) {
   ];
   const { stats } = await streamChat({ messages, maxTokens: 96, model, raw: true });
   return stats;
+}
+
+/** TERAS's own sources, in the shape the chat shows (no local path: they live on TERAS). */
+function terasSourceList(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((x, i) => {
+    const o = typeof x === 'object' && x ? x : { title: String(x) };
+    const name = o.document || o.title || o.name || o.filename || o.file || o.source || o.url || `TERAS source ${i + 1}`;
+    const n = Number(o.n ?? o.index ?? o.number ?? o.id ?? i + 1);
+    return { n: Number.isFinite(n) ? n : i + 1, name: String(name), path: '', label: o.page ? `page ${o.page}` : (o.section || o.collection || ''), url: o.url || '', teras: true };
+  });
+}
+
+/** Files TERAS made, linked from its answer as [name](/api/files/...). */
+export function terasFiles(text) {
+  const out = [];
+  for (const m of (text || '').matchAll(/\[([^\]]+)\]\((\/api\/files\/[^)]+)\)(?:\s*·\s*([\d.,]+\s*[KMG]?B))?/g)) {
+    if (!out.some((f) => f.path === m[2])) out.push({ name: m[1].trim(), path: m[2], size: m[3] || '' });
+  }
+  return out;
+}
+
+/** The answer without TERAS file links (they are shown as file cards instead). */
+export function withoutTerasFileLinks(text) {
+  let t = (text || '').replace(/^[ \t>*-]*\[([^\]]+)\]\((\/api\/files\/[^)]+)\)(\s*·\s*[\d.,]+\s*[KMG]?B)?[ \t]*$/gm, '');
+  t = t.replace(/\[([^\]]+)\]\((\/api\/files\/[^)]+)\)(\s*·\s*[\d.,]+\s*[KMG]?B)?/g, '**$1**');
+  // A "Files" heading left with nothing under it.
+  return t.replace(/\n+[ \t#>*]*(files|fail|lampiran|attachments?)[*: \t]*\s*$/i, '').trimEnd();
 }

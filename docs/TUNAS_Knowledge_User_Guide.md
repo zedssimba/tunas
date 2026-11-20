@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: User Guide
 
-TUNAS 0.3.3 · November 2026 · https://www.salt.ci
+TUNAS 0.4.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.3.3). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
+This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.4.0). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
 
 This guide is for the person using TUNAS on their own Windows computer.
 
@@ -33,13 +33,19 @@ This guide is for the person using TUNAS on their own Windows computer.
 - **At the top of the chat:**
   - **the assistant** (who answers);
   - **the model** (which AI model it uses for this chat);
-  - **the thinking chip** (section 5);
+  - **the thinking chip** (section 6);
   - **Processor** or **Graphics:** where the model is running;
   - **where the answer is made:** "Offline & private" for models on this computer, "Your organisation's server" for TERAS, "Online · leaves this machine" for a cloud model.
 - **Stop** ends an answer early. Moving to another chat also stops the answer in progress.
-- **Under each answer:** copy, **Save as Word, PDF or Excel** (section 7), the model and the time it took.
+- **Under each answer:** copy, **Save as Word, PDF or Excel** (section 8), the model and the time it took.
 - **Chats** are kept on the side bar under Today, Previous 7 days and Earlier, with a title made automatically. **Search chats** finds them by words. Hover a chat for its **Rename** and **Delete** buttons.
 - The first answer after starting TUNAS, or after switching models, takes longer while the model loads.
+
+### Chatting with a TERAS model
+- **TERAS at work:** when the TERAS model uses a tool, the answer shows it as it happens, such as "Making the document…" or "Searching the web…", with a tick when a step is done.
+- **Files from TERAS:** a document TERAS makes appears as a card under the answer with a **Download** button. TUNAS saves it where you choose. If TERAS asks for your sign-in for that file, it opens in your browser.
+- **Sources:** TERAS's own sources are listed with yours. With a TERAS model, passages from your own folders are numbered from [51].
+- **Time:** under the answer you see how long it took and how many tool steps TERAS used.
 
 ## 4. My assistants
 
@@ -51,13 +57,23 @@ This guide is for the person using TUNAS on their own Windows computer.
   - **name, icon and colour;**
   - **persona:** how it writes, what it asks, and which language it answers in;
   - **starters:** the prompts shown on the welcome screen;
-  - **Knowledge:** the knowledge sets it answers from (section 6), or **New from folder**;
+  - **Knowledge:** the knowledge sets it answers from (section 7), or **New from folder**;
   - **Base model:** a model on this computer, a TERAS model, or a cloud model.
 - **Delete** removes an assistant you made.
 
 Example persona for Surat Rasmi: "Anda membantu menulis surat rasmi dalam Bahasa Melayu mengikut format surat kerajaan Malaysia: alamat pengirim, rujukan dan tarikh, alamat penerima, salam hormat, tajuk huruf besar dan tebal, perenggan bernombor, penutup, dan tandatangan."
 
-## 5. Thinking
+## 5. About me
+
+**Settings › About me** tells TUNAS a little about you, so answers fit you and your work.
+
+- **Fields:** what to call you, your position, organisation or department, what you work on, your languages, and how you like answers (for example "ringkas", "formal", "with examples"). Fill in only what you like.
+- **Use this in my chats** turns it on or off.
+- It goes with each message to the models on this machine and to cloud models. **TERAS models** use your own TERAS personalisation instead.
+- Letters and documents can be signed with your name and position from here.
+- It is kept on this computer only and is never given to other apps.
+
+## 6. Thinking
 
 The Qwen 3.5 models can think before answering. The thinking chip at the top of the chat (or the Models page) sets it **for that model**, in every chat:
 
@@ -68,7 +84,7 @@ The Qwen 3.5 models can think before answering. The thinking chip at the top of 
 
 Thinking is for models on this computer; TERAS and cloud models answer as their servers decide.
 
-## 6. Knowledge: answers from your own folders
+## 7. Knowledge: answers from your own folders
 
 Knowledge lets assistants answer from documents already on your computer, without uploading them anywhere.
 
@@ -105,18 +121,20 @@ On the Knowledge page, each set shows its folders and files and how far reading 
 - **Reading runs in the background** and pauses while an answer is being written, so the computer stays responsive. On a machine running TUNAS on its graphics card, reading is much faster.
 - **Exact references** such as "PK 3/2026" or a version number are searched as exact words as well as by meaning.
 
-## 7. Documents: Word, Excel and PDF
+## 8. Documents: Word, Excel and PDF
 
 - When an answer looks like a document (a letter, minutes, a report), a card says **Your document is ready**, with **Word** and **PDF** buttons.
 - Any answer can be saved with **Save as Word, PDF or Excel** under it.
 - **Word and PDF** have your letterhead (logo, organisation name and address from Branding) at the top.
 - **Excel** turns the answer's tables into sheets, with numbers kept as numbers.
 - Citation numbers such as [1] are left out of the saved file.
+- **The sender:** letters are written from you and your organisation, never from the assistant. Fill in the letterhead organisation and address in **Settings › Branding › More options**; without them, the assistant writes placeholders such as [Nama Jabatan] for you to fill in.
+- **File name:** taken from the document's heading or a letter's subject line (PERKARA, Subject).
 - Choose where to save it; TUNAS then opens the saved file.
 
 Small models can make mistakes in names, addresses and dates. Check every document before sending it.
 
-## 8. Models
+## 9. Models
 
 **Settings › Models** (the gear at the bottom of the side bar).
 
@@ -133,7 +151,7 @@ Small models can make mistakes in names, addresses and dates. Check every docume
 - **Appearance:** Light or Dark;
 - **Data folder:** where TUNAS keeps your chats, models and settings, with **Open**.
 
-## 9. Branding: your name and logo
+## 10. Branding: your name and logo
 
 **Settings › Branding.**
 
@@ -146,7 +164,7 @@ Small models can make mistakes in names, addresses and dates. Check every docume
 
 If the taskbar still shows the old icon after a change, unpin TUNAS and pin it again; Windows keeps its own copy of icons.
 
-## 10. Connections
+## 11. Connections
 
 **Settings › Connections.**
 
@@ -168,7 +186,7 @@ For S.A.L.T desktop apps and other programs that should use TUNAS as their AI:
 
 Only programs on this computer can reach it.
 
-## 11. Questions and answers
+## 12. Questions and answers
 
 **The answer is slow.**
 Use a smaller model (Qwen 3.5 2B or 0.8B), turn thinking off, or set Run AI on to Graphics if the computer has a graphics card. The first answer after starting is slower while the model loads.
@@ -184,6 +202,9 @@ Pastikan set itu Ready di halaman Knowledge dan ada dalam medan Knowledge pemban
 
 **Reading a folder takes very long.**
 Large PDFs and files kept only in a cloud drive take longest. Reading pauses while you chat. On a computer with a graphics card, set Run AI on to Graphics for faster reading.
+
+**TERAS's file opens in the browser instead of downloading.**
+TERAS asked for your sign-in for that file. Sign in to TERAS in the browser and the download starts.
 
 **Thinking goes on for a long time.**
 Set How long to think to short, or switch to On, hidden or Thinking off.

@@ -74,6 +74,43 @@ const FOOD: &[&str] = &[
     "salt water", "air garam", "teaspoon", "tsp", "sudu",
 ];
 
+/// TERAS events seen by TUNAS's chat (tools and sources), in logs\\teras.log, for checking what TERAS sends.
+fn teras_log(line: &str) {
+    use std::io::Write;
+    let path = crate::paths::logs_dir().join("teras.log");
+    if std::fs::metadata(&path).map(|m| m.len() > 2_000_000).unwrap_or(false) {
+        let _ = std::fs::remove_file(&path);
+    }
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+        let _ = writeln!(f, "{} {}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), line);
+    }
+}
+
+/// The person's "About me" from Settings, as a short block for the model (empty fields left out).
+fn about_me_block(app: &AppHandle) -> Option<String> {
+    use tauri::Manager;
+    let st = app.state::<crate::AppState>();
+    let raw = crate::db::get_setting(&st.db.lock(), "about_me")?;
+    let v: Value = serde_json::from_str(&raw).ok()?;
+    if v.get("on").and_then(|x| x.as_bool()) == Some(false) {
+        return None;
+    }
+    let f = |k: &str| v.get(k).and_then(|x| x.as_str()).map(|x| x.trim().chars().take(240).collect::<String>()).filter(|x| !x.is_empty());
+    let mut lines = vec![];
+    for (k, label) in [("call", "Call them"), ("position", "Position"), ("organisation", "Organisation"), ("work", "Works on"), ("languages", "Languages"), ("style", "Likes answers")] {
+        if let Some(x) = f(k) {
+            lines.push(format!("- {label}: {x}"));
+        }
+    }
+    if lines.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "\n\nAbout the user (from their settings; use it to fit your answers, address them as they asked, and sign documents for them with it; do not repeat it back unless it helps):\n{}",
+        lines.join("\n")
+    ))
+}
+
 /// Sampling settings that TERAS and cloud models may refuse.
 const SAMPLING: &[&str] = &["temperature", "top_p", "top_k", "min_p", "presence_penalty", "frequency_penalty", "repeat_penalty"];
 
@@ -100,7 +137,7 @@ pub fn wants_reference(text: &str) -> bool {
 }
 
 /// The base instruction plus the assistant's persona (same text the chat has always used).
-pub fn system_prompt(app: &AppHandle, a: Option<&crate::db::Assistant>, last_user: &str) -> String {
+pub fn system_prompt(app: &AppHandle, a: Option<&crate::db::Assistant>, last_user: &str, about_me: bool) -> String {
     let st = crate::brand::state();
     let brand = if st.effective_name != "TUNAS" { st.effective_name.clone() } else { String::new() };
     let name = match a {
@@ -108,15 +145,39 @@ pub fn system_prompt(app: &AppHandle, a: Option<&crate::db::Assistant>, last_use
         Some(a) => a.name.clone(),
         None => "TUNAS".into(),
     };
-    let today = chrono::Local::now().format("%A, %-d %B %Y").to_string();
+    let now = chrono::Local::now();
+    let today = now.format("%A, %-d %B %Y").to_string();
+    // Small models get weekdays wrong ("25 November 2026 (Khamis)"): give them the next two weeks.
+    let days: Vec<String> = (1..=14)
+        .map(|d| (now + chrono::Duration::days(d)).format("%a %-d %b").to_string())
+        .collect();
     let mut s = format!(
-        "You are {name}{}.\nYou run privately on this machine in TUNAS, powered by S.A.L.T CI.\n\
+        "You are {name}{}.\nYou are part of TUNAS, powered by S.A.L.T CI.\n\
          Always reply in the language of the user's latest message: English if they write in English, Malay (Bahasa Melayu) if they write in Malay, and natural mixed Malay-English if they mix both. If they ask for a specific language, use it.\n\
          Be clear, accurate and well organised. Use Markdown for headings, lists and tables when it helps. If you are not sure, say so instead of guessing.\n\
-         Today is {today}.\n\
-         Fact (always true): S.A.L.T CI (S.A.L.T Central Intelligence; S.A.L.T = Scalable, Advanced AI, Local, Trustworthy) is a Malaysian sovereign AI platform, owned by S.A.L.T. CI TECHNOLOGY and distributed by Pemangkin Teknologi; TUNAS is its free personal AI app. Never invent other meanings for S.A.L.T.",
-        if !brand.is_empty() && brand != name { format!(", the AI assistant of {brand}") } else { String::new() }
+         Today is {today}. The next days are: {}. Use these weekdays; never work one out yourself.\n\
+         Who you are (your name, the app, the brand and S.A.L.T CI) is about you, the assistant, not about the user. When you write a letter, memo, minutes, email or any document for the user, it is from the user and their organisation: never put your own name, TUNAS, S.A.L.T CI, Pemangkin Teknologi or the app's brand in it as the sender, signature, reference, letterhead or content, unless the user asks for them.",
+        if !brand.is_empty() && brand != name { format!(", the AI assistant of {brand}") } else { String::new() },
+        days.join(", ")
     );
+    // The sender for documents: the letterhead from Branding, else placeholders.
+    // Only an organisation set as the letterhead counts: the brand's name may be the AI's own name.
+    let org = st.letterhead_org.clone();
+    let addr = crate::brand::letterhead().address;
+    if !org.trim().is_empty() {
+        s.push_str(&format!(
+            "\n\nThe user's organisation for letters and documents: {}{}. Use it as the sender where a sender is needed.",
+            org.trim(),
+            if addr.trim().is_empty() { String::new() } else { format!(", {}", addr.trim().replace('\n', ", ")) }
+        ));
+    } else {
+        s.push_str("\n\nWhen a letter or document needs a sender, an address, a reference number or a signature you do not know, write a placeholder in square brackets, such as [Nama Jabatan], [Alamat], [No. Rujukan] or [Nama Pegawai], instead of inventing one.");
+    }
+    if about_me {
+        if let Some(me) = about_me_block(app) {
+            s.push_str(&me);
+        }
+    }
     if let Some(a) = a {
         if !a.persona.trim().is_empty() {
             s.push_str("\n\nYour role:\n");
@@ -124,6 +185,7 @@ pub fn system_prompt(app: &AppHandle, a: Option<&crate::db::Assistant>, last_use
         }
     }
     if wants_reference(last_user) {
+        s.push_str("\n\nFact (always true): S.A.L.T CI (S.A.L.T Central Intelligence; S.A.L.T = Scalable, Advanced AI, Local, Trustworthy) is a Malaysian sovereign AI platform, owned by S.A.L.T. CI TECHNOLOGY and distributed by Pemangkin Teknologi; TUNAS is its free personal AI app. Never invent other meanings for S.A.L.T.");
         s.push_str("\n\nWhen the user asks about S.A.L.T CI, TERAS, TUNAS, S.A.L.T. CI TECHNOLOGY, Pemangkin Teknologi or the S.A.L.T CI apps, answer only from this reference:\n\n");
         s.push_str(SALT_REFERENCE);
     }
@@ -266,7 +328,9 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
             .map(|c| if let Some(s) = c.as_str() { s.chars().take(2000).collect::<String>() } else { c.to_string() })
             .collect::<Vec<_>>()
             .join("\n");
-        let mut sys = system_prompt(&app, assistant.as_ref(), &last_user);
+        // About me goes to local and cloud models; TERAS has the person's own personalisation.
+        let to_teras = matches!(&target, Target::Provider(p, _) if p.kind == "teras");
+        let mut sys = system_prompt(&app, assistant.as_ref(), &last_user, !to_teras);
         // Knowledge: the assistant's sets plus any picked for this chat.
         let mut sets: Vec<String> = assistant.as_ref().map(|a| state.knowledge.assistant_sets(&a.id)).unwrap_or_default();
         if !ctx.external {
@@ -305,6 +369,13 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                     sys.push_str(&format!("\n\nNote: the knowledge set \"{name}\" has not been read yet because TUNAS's search model is still downloading. If the user asks about those documents, tell them the documents are not ready yet and to try again when the Knowledge page shows them as ready."));
                 } else {
                     sys.push_str(&format!("\n\nNote: the knowledge set \"{name}\" is still being read ({done} of {total} files). If the answer is not in the excerpts, tell the user that the documents are still being read and to try again shortly."));
+                }
+            }
+            // A TERAS model may cite its own knowledge as [1], [2]...; the user's local excerpts
+            // start at [51] so the two never share a number.
+            if matches!(&target, Target::Provider(p, _) if p.kind == "teras") {
+                for (i, h) in hits.iter_mut().enumerate() {
+                    h.n = 51 + i;
                 }
             }
             if !hits.is_empty() {
@@ -374,6 +445,10 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 // Settings sent by other apps through the API are passed on as they are.
                 if !ctx.external {
                     for k in SAMPLING { o.remove(*k); }
+                    // TUNAS's chat asks TERAS for its tool and source events, to show what TERAS is doing.
+                    if p.kind == "teras" {
+                        o.insert("teras".into(), json!({"events": true}));
+                    }
                 }
             }
             let key = crate::secret::reveal(&p.key_enc).unwrap_or_default();
@@ -429,8 +504,17 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
     let ctype = resp.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or(if stream { "text/event-stream" } else { "application/json" }).to_string();
     // Indexing waits while this answer is being written (the guard lives as long as the stream).
     let guard = crate::knowledge::ChatGuard::new();
+    let log_teras = !ctx.external && matches!(&target, Target::Provider(p, _) if p.kind == "teras");
     let upstream = resp.bytes_stream().map(move |x| {
         let _ = &guard;
+        if log_teras {
+            if let Ok(b) = &x {
+                let t = String::from_utf8_lossy(b);
+                for line in t.lines().filter(|l| l.contains("\"teras\"")) {
+                    teras_log(&line.chars().take(1500).collect::<String>());
+                }
+            }
+        }
         x
     });
     // TUNAS's own chat gets the sources first, as one extra event before the answer.
