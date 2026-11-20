@@ -5,6 +5,41 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.5.1 — 21 November 2026 (documents from TERAS models)
+
+- **TERAS models now make documents with TERAS's own document tool.** Until now TUNAS gave every model the same instruction for documents: "write the document in your answer, TUNAS makes the file". TERAS models also have their own document tool, and the two instructions worked against each other. TERAS's tool log showed about 13 failed attempts from TUNAS (for example, the tool received empty or broken content three times before a PDF was made).
+  - With a TERAS model, the assistant is now told to make the file with TERAS's tool, in the format you asked for: Word, PDF, PowerPoint, Excel, CSV or Markdown (Word if you didn't say).
+  - It puts the whole document into the file, sends the tool correct content, tries again quietly if a try fails, and ends with a short line and the file's download card. The answer no longer describes each failed attempt.
+  - A TERAS document uses what TERAS has: your organisation's templates and branding, and more formats than TUNAS makes on its own.
+- **Local and cloud models are unchanged:** TUNAS makes the PDF, Word or Excel file itself, on this machine.
+- If TERAS does not return a file, TUNAS still offers its own document card from the answer.
+- The rest of the fix is on TERAS's side (logging why a tool call failed, and accepting slightly broken content), and has been sent to the TERAS team. A **Rich document** switch for TERAS models (cover page, charts, every page checked) will follow once TERAS supports it.
+- **Also for macOS:** this release is built for Windows and for Mac (Intel and Apple silicon).
+- Install over 0.4.1 or 0.5.0 directly. Everything is kept.
+- Not tested here: a real TERAS. Please try the same document request a few times with a TERAS model and check TERAS's tool log.
+
+---
+
+## 0.5.0 — 21 November 2026 (TUNAS for macOS, first build)
+
+- **TUNAS runs on macOS 11 (Big Sur) and later,** with one package for each kind of Mac:
+  - `TUNAS_0.5.0_mac_apple-silicon.dmg` for M1 and later: the engine runs on the graphics chip (Metal).
+  - `TUNAS_0.5.0_mac_intel.dmg` for Intel Macs from 2013 on: the engine runs on the processor.
+- **Everything works as on Windows:** chat, your folders as knowledge, documents, TERAS and cloud connections, About me, branding and the local AI service for other apps.
+- **Mac differences:**
+  - Keys for TERAS and cloud services are kept in the **macOS Keychain**.
+  - Your chats, models and settings are in your home folder, under `Library/Application Support/TUNAS`. IT can put a brand pack and policy for every user in `/Library/Application Support/TUNAS`.
+  - Double-clicking a `.tunasbrand` file opens it in TUNAS.
+  - The Dock icon stays the TUNAS mark; your logo shows inside TUNAS and on documents.
+  - When TUNAS starts, it stops any engine left running from an earlier session.
+- **Installing:** open the .dmg and drag TUNAS into Applications. This first build is not yet signed by Apple, so run this once in Terminal before opening it:
+  `xattr -dr com.apple.quarantine /Applications/TUNAS.app`
+  The first time TUNAS saves a key, macOS may ask to allow Keychain access: choose **Always Allow**.
+- Built by GitHub Actions on Apple's build machines. Checked: both packages built, the app and engine are made for the right kind of Mac, and the engine uses only libraries that are part of macOS. Not yet tried on a real Mac.
+- Windows is unchanged in 0.5.0 (no Windows package for this number).
+
+---
+
 ## 0.4.1 — 20 November 2026 (documents that hold the document)
 
 - **Fixed: a saved Word or PDF held the last chat reply, not the document asked for.** TUNAS saves the answer as the file, and the answer was often a chat reply ("Baik, ini laporannya…", "Kalau mahu…"), or a short reply to "jadikan PDF" about something earlier in the chat.
