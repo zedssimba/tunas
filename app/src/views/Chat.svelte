@@ -1,5 +1,5 @@
 <script>
-  import { onMount, tick } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
@@ -44,6 +44,10 @@
   function stopPump() { cancelAnimationFrame(raf); raf = 0; }
 
   let abort = null;
+  let titleCtl = null;
+  // Leaving the chat screen stops the answer (what was written so far is kept), so the engine is free
+  // for the next question instead of finishing an answer nobody is watching.
+  onDestroy(() => { abort?.abort(); titleCtl?.abort(); stopPump(); });
   let scroller;
   let ta;
   let dragging = $state(false);
@@ -57,6 +61,8 @@
   $effect(() => {
     const id = app.chatId;
     if (id !== loadedChat) {
+      // Switching to another chat stops the answer in the one being left.
+      abort?.abort();
       loadedChat = id;
       load(id);
     }
@@ -130,6 +136,7 @@
     if (noModels) { openSettings('models'); return; }
     if (files.some((f) => f.loading)) { toast('Still reading your files…'); return; }
     busy = true;
+    titleCtl?.abort(); // a chat title still being written must not make this question wait
     const sentFiles = files.map(({ name, kind, text, chars, truncated, warning }) => ({ name, kind, text, chars, truncated, warning }));
     input = '';
     files = [];
@@ -200,11 +207,13 @@
         stats = { stopped: true };
       } else {
         stopPump();
+        if (e instanceof TypeError) throw new Error('The answer stopped because the engine was stopped or restarted. Send your message again to continue.');
         throw e;
       }
     }
-    // Let the last words appear before saving.
-    while (shownLen < target.length) await new Promise((r) => setTimeout(r, 16));
+    // Let the last words appear before saving (at most 1.5 s; not when stopped).
+    const tEnd = Date.now() + 1500;
+    while (raf && !stats?.stopped && shownLen < target.length && Date.now() < tEnd) await new Promise((r) => setTimeout(r, 16));
     stopPump();
     if (!text.trim()) {
       if (stats?.stopped) { streaming = ''; return; }
@@ -215,15 +224,20 @@
     const am = await api.message_add({
       message: { id: '', chat_id: chatId, role: 'assistant', content: text, files: [], stats: JSON.stringify({ ...(stats || {}), ...extra }), created: '' },
     });
-    messages = [...messages, am];
+    if (app.chatId === chatId) messages = [...messages, am];
     streaming = '';
     thinkText = '';
     thinkStart = 0;
     await scrollDown();
     if (first && !stats?.stopped) {
+      // The title is written in the background: the user can ask the next question straight away.
       const userText = messages[0]?.content || '';
-      const title = await makeTitle({ model: effModel, userText, answer: text });
-      if (title) { await api.chat_rename({ id: chatId, title }); refreshChats(); }
+      const ctl = new AbortController();
+      titleCtl = ctl;
+      setTimeout(() => ctl.abort(), 60000);
+      makeTitle({ model: effModel, userText, answer: text, signal: ctl.signal }).then(async (title) => {
+        if (title) { await api.chat_rename({ id: chatId, title }); refreshChats(); }
+      });
     } else {
       refreshChats();
     }

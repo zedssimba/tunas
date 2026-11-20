@@ -74,6 +74,19 @@ Function .onInit
   ${If} $R0 == 183
     Abort
   ${EndIf}
+  ; A second start of this same installer right after it finished (some antivirus tools hold the first
+  ; start back, then release it again): quit quietly instead of installing twice and closing TUNAS.
+  ReadRegStr $2 HKCU "${APPKEY}" "SetupDoneTick"
+  ReadRegStr $3 HKCU "${APPKEY}" "Version"
+  ${If} $2 != ""
+  ${AndIf} $3 == "${VERSION}"
+    System::Call 'kernel32::GetTickCount() i .r4'
+    IntOp $5 $4 - $2
+    ${If} $5 >= 0
+    ${AndIf} $5 < 180000
+      Quit
+    ${EndIf}
+  ${EndIf}
   ; Close a running copy so files can be replaced.
   nsExec::Exec 'taskkill /IM TUNAS.exe /F'
   nsExec::Exec 'taskkill /IM llama-server.exe /F'
@@ -124,6 +137,8 @@ Section "TUNAS" SecMain
   ; Apps & features entry.
   WriteRegStr HKCU "${APPKEY}" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "${APPKEY}" "Version" "${VERSION}"
+  System::Call 'kernel32::GetTickCount() i .r4'
+  WriteRegStr HKCU "${APPKEY}" "SetupDoneTick" "$4"
   WriteRegStr HKCU "${REGKEY}" "DisplayName" "TUNAS"
   WriteRegStr HKCU "${REGKEY}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKCU "${REGKEY}" "Publisher" "${PUBLISHER}"

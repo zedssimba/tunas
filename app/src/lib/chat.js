@@ -44,7 +44,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
       tunas_raw: raw,
       messages,
       stream: true,
-      max_tokens: think ? undefined : maxTokens,
+      max_tokens: think ? Math.max(maxTokens, 6144) : maxTokens,
       temperature: 0.6,
       top_p: 0.9,
       chat_template_kwargs: { enable_thinking: !!think },
@@ -118,7 +118,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
 }
 
 /** Ask the model for a short chat title from the first exchange. */
-export async function makeTitle({ model, userText, answer }) {
+export async function makeTitle({ model, userText, answer, signal }) {
   try {
     const gw = app.gateway;
     const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
@@ -135,6 +135,7 @@ export async function makeTitle({ model, userText, answer }) {
         temperature: 0.3,
         chat_template_kwargs: { enable_thinking: false },
       }),
+      signal,
     });
     const j = await res.json();
     let t = (j.choices?.[0]?.message?.content || '').split('\n')[0].replace(/^["'#*\s]+|["'.*\s]+$/g, '');

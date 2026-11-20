@@ -27,11 +27,14 @@ pub struct EngineStatus {
     pub key: String,
     pub ctx: u32,
     pub message: String,
+    /// Why the engine is not on graphics, when graphics was tried and failed.
+    pub note: String,
 }
 
 pub struct Running {
     child: Child,
     status: EngineStatus,
+    prefer: String,
 }
 
 #[derive(Clone, Default)]
@@ -70,29 +73,67 @@ impl Engine {
             let mut g = self.inner.lock();
             if let Some(r) = g.as_mut() {
                 let alive = matches!(r.child.try_wait(), Ok(None));
-                if alive && r.status.model_id == model_id && r.status.state == "ready" {
+                // Restart when the model or the "Run AI on" choice changed.
+                if alive && r.status.model_id == model_id && r.status.state == "ready" && r.prefer == prefer {
                     return Ok(r.status.clone());
                 }
             }
         }
         self.stop();
 
-        let hw_vk = if prefer == "cpu" { vec![] } else { crate::hardware::vulkan_devices() };
+        // Graphics first when asked for, or on "auto" when a usable graphics card was found and graphics
+        // has not already failed with this engine version on this machine.
+        let vk_failed_key = format!("vk_failed:{}", env!("CARGO_PKG_VERSION"));
+        let vk_failed = {
+            use tauri::Manager;
+            let st = app.state::<crate::AppState>();
+            let c = st.db.lock();
+            crate::db::get_setting(&c, &vk_failed_key).filter(|v| !v.is_empty())
+        };
+        let try_vk = match prefer {
+            "vulkan" => true,
+            "cpu" => false,
+            _ => vk_failed.is_none() && crate::hardware::has_usable_gpu(),
+        };
         let mut order: Vec<&str> = vec![];
-        if prefer == "vulkan" || (prefer == "auto" && !hw_vk.is_empty()) {
+        if try_vk {
             order.push("vulkan");
         }
         order.push("cpu");
 
         let mut last_err = anyhow!("no engine available");
+        let mut note = String::new();
+        if !try_vk && prefer == "auto" {
+            if let Some(why) = &vk_failed {
+                note = format!("Graphics did not start earlier on this machine ({why}). Choose Graphics in Settings to try again.");
+            }
+        }
         for kind in order {
             if !server_exe(kind).exists() {
                 last_err = anyhow!("engine '{}' is not installed", kind);
                 continue;
             }
-            match self.start(app, model_id, &model_path, kind).await {
-                Ok(s) => return Ok(s),
+            match self.start(app, model_id, &model_path, kind, prefer).await {
+                Ok(mut s) => {
+                    if kind == "vulkan" && vk_failed.is_some() {
+                        use tauri::Manager;
+                        let st = app.state::<crate::AppState>();
+                        let _ = crate::db::set_setting(&st.db.lock(), &vk_failed_key, "");
+                    }
+                    if !note.is_empty() {
+                        s.note = note.clone();
+                        if let Some(r) = self.inner.lock().as_mut() { r.status.note = note.clone(); }
+                        self.set_status(app, s.clone());
+                    }
+                    return Ok(s);
+                }
                 Err(e) => {
+                    if kind == "vulkan" {
+                        note = format!("Graphics did not start: {e}. Running on the processor instead.");
+                        use tauri::Manager;
+                        let st = app.state::<crate::AppState>();
+                        let _ = crate::db::set_setting(&st.db.lock(), &vk_failed_key, &e.to_string());
+                    }
                     last_err = e;
                     self.stop();
                 }
@@ -103,14 +144,15 @@ impl Engine {
         Err(last_err)
     }
 
-    async fn start(&self, app: &AppHandle, model_id: &str, model_path: &PathBuf, kind: &str) -> Result<EngineStatus> {
+    async fn start(&self, app: &AppHandle, model_id: &str, model_path: &PathBuf, kind: &str, prefer: &str) -> Result<EngineStatus> {
         let port = free_port()?;
         let key = random_key();
         let hw = sysinfo_ram_gb();
         let ctx: u32 = if hw >= 15.0 { 16384 } else { 8192 };
         let threads = sysinfo::System::new().physical_core_count().unwrap_or(4).clamp(1, 16);
         let exe = server_exe(kind);
-        let log_path = crate::paths::logs_dir().join("engine.log");
+        let log_path = crate::paths::logs_dir().join(format!("engine-{kind}.log"));
+        let _ = std::fs::remove_file(&log_path);
 
         let mut cmd = Command::new(&exe);
         cmd.current_dir(exe.parent().unwrap())
@@ -142,13 +184,14 @@ impl Engine {
             key: key.clone(),
             ctx,
             message: format!("Loading the model ({})...", if kind == "vulkan" { "graphics" } else { "processor" }),
+            note: String::new(),
         };
         self.set_status(app, status.clone());
 
         let child = cmd.spawn().map_err(|e| anyhow!("could not start the engine: {e}"))?;
         #[cfg(windows)]
         self.attach_job(&child);
-        *self.inner.lock() = Some(Running { child, status: status.clone() });
+        *self.inner.lock() = Some(Running { child, status: status.clone(), prefer: prefer.to_string() });
 
         // Wait for /health to answer 200.
         let client = reqwest::Client::new();
@@ -159,7 +202,7 @@ impl Engine {
                 let mut g = self.inner.lock();
                 if let Some(r) = g.as_mut() {
                     if let Ok(Some(code)) = r.child.try_wait() {
-                        return Err(anyhow!("the engine stopped while loading (exit {code}); see logs\\engine.log"));
+                        return Err(anyhow!("the engine stopped while loading (exit {code}); see logs\\engine-{kind}.log"));
                     }
                 } else {
                     return Err(anyhow!("engine was stopped"));
@@ -170,7 +213,8 @@ impl Engine {
                     break;
                 }
             }
-            if t0.elapsed() > Duration::from_secs(180) {
+            // Graphics can need extra time the first time it prepares its programs.
+            if t0.elapsed() > Duration::from_secs(if kind == "vulkan" { 300 } else { 180 }) {
                 return Err(anyhow!("the engine took too long to load the model"));
             }
             tokio::time::sleep(Duration::from_millis(400)).await;

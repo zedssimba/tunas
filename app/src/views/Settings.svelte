@@ -58,8 +58,9 @@
           {:else if app.engine?.state === 'error'}Problem: {app.engine.message}
           {:else}Not running. It starts with your next message.{/if}
         </div>
+        {#if app.engine?.note}<div class="small" style="color:var(--warn, #b7791f);margin-top:4px">{app.engine.note}</div>{/if}
       </div>
-      <button class="btn sm" onclick={() => api.engine_stop()}>Stop engine</button>
+      {#if app.engine?.state === 'ready' || app.engine?.state === 'starting'}<button class="btn sm" onclick={() => api.engine_stop()}>Stop engine</button>{/if}
     </div>
 
     <div class="card set">

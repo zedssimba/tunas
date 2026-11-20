@@ -133,6 +133,13 @@ pub fn vulkan_devices() -> Vec<String> {
     if let Some(v) = VK_CACHE.lock().unwrap().clone() {
         return v;
     }
+    // Remembered on disk per engine version, so the check runs once after an install, not at every start.
+    let cache = crate::paths::data_dir().join(format!("vk-devices-{}.txt", env!("CARGO_PKG_VERSION")));
+    if let Ok(t) = std::fs::read_to_string(&cache) {
+        let v: Vec<String> = t.lines().filter(|l| !l.trim().is_empty()).map(|l| l.to_string()).collect();
+        *VK_CACHE.lock().unwrap() = Some(v.clone());
+        return v;
+    }
     let exe = crate::engine::server_exe("vulkan");
     if !exe.exists() {
         return vec![];
@@ -152,7 +159,21 @@ pub fn vulkan_devices() -> Vec<String> {
         .filter(|l| !l.to_lowercase().contains("llvmpipe") && !l.to_lowercase().contains("basic render"))
         .collect();
     *VK_CACHE.lock().unwrap() = Some(list.clone());
+    if !txt.is_empty() {
+        let _ = std::fs::write(&cache, list.join("\n"));
+    }
     list
+}
+
+/// A graphics card worth trying: one the engine listed, or a separate NVIDIA/AMD card Windows reports.
+pub fn has_usable_gpu() -> bool {
+    if !vulkan_devices().is_empty() {
+        return true;
+    }
+    read_gpus().iter().any(|g| {
+        let n = g.name.to_lowercase();
+        !g.integrated && (n.contains("nvidia") || n.contains("quadro") || n.contains("geforce") || n.contains("radeon") || n.contains("amd"))
+    })
 }
 
 pub fn check() -> Hardware {

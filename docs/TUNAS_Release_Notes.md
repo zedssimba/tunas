@@ -5,6 +5,23 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.2.4 — 20 November 2026 (fixes from testing 0.2.3 on .76)
+
+- **Fixed: chats got stuck after the first answer.**
+  - The cause: an answer kept running in the background after you moved to another chat or to Settings. TUNAS has one engine, so every new question waited behind it. With thinking on there was no length limit, so it could keep going for a very long time on a processor.
+  - Now moving to another chat or leaving the chat screen stops the answer and keeps what was written so far. The engine is free straight away.
+  - Thinking now has a limit (about 6,000 tokens), so it always ends.
+- **The Send button is ready as soon as the answer ends.** The chat title is now written in the background. Sending your next message cancels it, so it never makes you wait.
+- **"Network error" replaced.** If the engine is stopped during an answer, the chat now says so and asks you to send again. The Stop engine button updates the Engine line right away, and only shows while the engine is running.
+- **Run AI on (Processor / Graphics) now takes effect with the next message.** Before, a running engine kept its old choice until TUNAS was restarted.
+- **When graphics cannot start, TUNAS says why.** The reason shows under Engine in Settings, and TUNAS stops retrying graphics on "Auto" until you choose Graphics again. Each mode keeps its own log: `logs\engine-vulkan.log` and `logs\engine-cpu.log`. Graphics may take up to 5 minutes to load the first time.
+- **The graphics card check runs once per install** instead of at every start. That check is what made antivirus tools pop up a scan window showing "Available devices: Vulkan0 …" when a chat started.
+- **Installer no longer runs twice.** Some antivirus tools hold the installer back and then start it again after the first run ends. A second start of the same version within 3 minutes now quits quietly instead of installing again and closing TUNAS.
+- **The taskbar icon no longer changes after start.** When a branding logo is set, it becomes the app icon (that is the co-branding feature). The window now waits until the icon is ready before it appears.
+- Install over 0.2.3 directly. Everything is kept.
+
+---
+
 ## 0.2.3 — 20 November 2026 (smoother typing, thinking per model)
 
 - **Smoother typing.** Answers now appear at an even pace instead of in jumps.

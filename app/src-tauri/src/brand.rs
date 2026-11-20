@@ -551,8 +551,13 @@ pub fn apply_to_system(app: &tauri::AppHandle) -> Result<()> {
         }
     }
 
+    // Shortcuts are slow to update (PowerShell); do it in the background so the window is not held up.
     #[cfg(windows)]
-    update_shortcuts(app, &st.effective_name, if ico_path.exists() { Some(ico_path) } else { None });
+    {
+        let a = app.clone();
+        let name = st.effective_name.clone();
+        std::thread::spawn(move || update_shortcuts(&a, &name, if ico_path.exists() { Some(ico_path) } else { None }));
+    }
     Ok(())
 }
 

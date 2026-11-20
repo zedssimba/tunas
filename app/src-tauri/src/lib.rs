@@ -208,8 +208,9 @@ fn engine_status(st: State<AppState>) -> engine::EngineStatus {
 }
 
 #[tauri::command]
-fn engine_stop(st: State<AppState>) {
+fn engine_stop(app: AppHandle, st: State<AppState>) {
     st.engine.stop();
+    let _ = app.emit("engine-status", st.engine.status());
 }
 
 #[tauri::command]
@@ -695,10 +696,13 @@ pub fn run() {
                 }
             });
             let h = app.handle().clone();
-            // Apply the brand to the window title and icon at start.
-            std::thread::spawn(move || {
-                let _ = brand::apply_to_system(&h);
-            });
+            // Apply the brand to the window title and icon before the window appears, so the taskbar icon
+            // does not change a few seconds after start.
+            let _ = brand::apply_to_system(&h);
+            if let Some(w) = h.get_webview_window("main") {
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
             Ok(())
         })
         .on_window_event(|w, ev| {

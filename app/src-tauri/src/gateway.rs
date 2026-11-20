@@ -280,8 +280,10 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                     .unwrap_or(mode != "off");
                 o.insert("chat_template_kwargs".into(), json!({"enable_thinking": think}));
                 if think {
-                    // Thinking needs room: let the answer run to the end of the context.
-                    o.remove("max_tokens");
+                    // Thinking needs room, but never without a limit: on a slow machine endless thinking
+                    // would hold the engine for hours.
+                    let asked = o.get("max_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+                    o.insert("max_tokens".into(), json!(asked.max(6144)));
                 }
             }
             (format!("http://127.0.0.1:{}/v1/chat/completions", st.port), st.key)
