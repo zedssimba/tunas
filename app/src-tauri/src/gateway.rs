@@ -140,6 +140,15 @@ Write nothing before the title and nothing after the document: no \"here is\", n
 If the user refers to something earlier in this chat (\"this\", \"the above\", \"tadi\", \"ini\", \"jadikan PDF\"), write that content out again in full as the document, with any changes they asked for. \
 Never say you cannot create files: TUNAS creates the file from your answer.";
 
+/// For TERAS models: TERAS makes the file with its own document tool, which gives more formats,
+/// the organisation's templates and branding. TUNAS's own rule above would fight that tool.
+const TERAS_DOCUMENT_RULE: &str = "\n\nThe user is asking for a document. Make it with your document tool (create_document), choosing the format the user asked for \
+(Word, PDF, PowerPoint, Excel, CSV or Markdown; Word if they did not say). Put the complete document in the tool's content as Markdown: \
+a title, then all headings, paragraphs, lists and tables in full. Send the tool valid arguments with every quote and line break escaped. \
+If the user refers to something earlier in this chat (\"this\", \"the above\", \"tadi\", \"ini\", \"jadikan PDF\"), put that content in the document in full, with any changes they asked for. \
+If a tool call fails, correct the arguments and call it again without describing the failure in your answer. \
+When the file is made, answer with one or two short lines and the file link; do not repeat the document in the answer.";
+
 /// Sampling settings that TERAS and cloud models may refuse.
 const SAMPLING: &[&str] = &["temperature", "top_p", "top_k", "min_p", "presence_penalty", "frequency_penalty", "repeat_penalty"];
 
@@ -371,7 +380,7 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 .map(|c| if let Some(s) = c.as_str() { s.to_string() } else { c.to_string() })
                 .unwrap_or_default();
             if wants_document(&latest) {
-                sys.push_str(DOCUMENT_RULE);
+                sys.push_str(if to_teras { TERAS_DOCUMENT_RULE } else { DOCUMENT_RULE });
             }
         }
         // Knowledge: the assistant's sets plus any picked for this chat.
