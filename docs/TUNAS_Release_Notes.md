@@ -5,6 +5,20 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.5 — 20 November 2026 (sources only when they are used)
+
+- **Fixed: every answer listed the documents, even for "hi", "salam" or "terima kasih".**
+  - Before, an assistant with Knowledge always took the 6 closest passages, however unrelated the message, and the chat listed all of them under the answer.
+  - Now TUNAS checks that the message is really about the documents before using them. Greetings, thanks and unrelated questions get a normal answer with no sources.
+  - Measured with the demo set: greetings and unrelated requests scored 0.17 to 0.47 by meaning; questions about the documents scored 0.55 to 0.76. Documents are used from 0.56, or from 0.50 when words from the documents also match.
+- **Short messages are no longer joined to the previous question.** "terima kasih" after a question about the circular no longer brings the circular back. A short follow-up question ("bila tarikhnya?", "and the deadline?") is still searched together with the question before it when it finds nothing on its own.
+- **Sources list only what the answer cites.** If the answer uses [1] and [3], only those files are listed. An answer that cites nothing lists no sources. Older chats show the same, without changing what is saved.
+- **The Knowledge log** (`logs\knowledge.log`) records each search: how close the best passage was, the word matches, and whether the documents were used.
+- Tested on the build machine: "Berapa hari seminggu pegawai boleh bekerja dari rumah?" was answered from the circular with one source chip (before: 6 sources from 4 files); "terima kasih" in the same chat got a plain reply with no sources.
+- Install over 0.3.4 directly. Everything is kept.
+
+---
+
 ## 0.3.4 — 20 November 2026 (chatting with TERAS models)
 
 - **Fixed: chatting with a TERAS model failed with "`temperature` is deprecated for this model".**

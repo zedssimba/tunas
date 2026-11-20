@@ -84,7 +84,7 @@ Knowledge lets assistants answer from documents already on your computer, withou
 - **For an assistant:** add the set to the assistant's **Knowledge** field. Every chat with that assistant answers from it.
 - **For one chat:** type **#** in the message box and pick a set. "Answering from" above the box shows the sets in use: the assistant's own sets, and sets picked for this chat, which have an ✕ to take them away.
 - **Ask normally:** "Berapa hari seminggu pegawai boleh bekerja dari rumah?" The answer comes from your documents first, with numbered points.
-- **Sources** under the answer show each file once, with the numbers of the points that came from it. Hover a source for the pages or sections; click it to open the file.
+- **Sources** under the answer show each file the answer cites, once, with the numbers of the points that came from it. Greetings and questions that have nothing to do with your documents get a normal answer with no sources. Hover a source for the pages or sections; click it to open the file.
 - If a set is still being read, the assistant tells you to try again shortly instead of guessing.
 
 ### Look after your sets

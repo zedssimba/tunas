@@ -19,6 +19,7 @@
   let target = '';
   let shownLen = 0;
   let streamHtml = $state('');
+  let liveText = $state('');
   let lastRender = 0;
   let raf = 0;
   let thinkText = $state('');
@@ -33,7 +34,8 @@
       const gap = target.length - shownLen;
       shownLen += Math.max(1, Math.ceil(gap / 10));
       if (ts - lastRender > 60 || shownLen >= target.length) {
-        streamHtml = md(target.slice(0, shownLen));
+        liveText = target.slice(0, shownLen);
+        streamHtml = md(liveText);
         lastRender = ts;
         scrollDown();
       }
@@ -41,7 +43,7 @@
     if (thinkStart) thinkNow = performance.now();
     raf = requestAnimationFrame(pump);
   }
-  function startPump() { target = ''; shownLen = 0; streamHtml = ''; lastRender = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(pump); }
+  function startPump() { target = ''; shownLen = 0; streamHtml = ''; liveText = ''; lastRender = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(pump); }
   function stopPump() { cancelAnimationFrame(raf); raf = 0; }
 
   let abort = null;
@@ -79,10 +81,24 @@
     if (ks.state === 'empty') return ' · no readable files';
     return '';
   }
+  // The citation numbers an answer actually uses: [2], [1][3], [1, 4], [2-3].
+  function citedNumbers(text) {
+    const set = new Set();
+    for (const m of (text || '').matchAll(/\[(\d+(?:\s*[,\u2013-]\s*\d+)*)\]/g)) {
+      for (const part of m[1].split(',')) {
+        const [a, b] = part.split(/[\u2013-]/).map((x) => parseInt(x.trim(), 10));
+        if (Number.isFinite(b) && b >= a && b - a < 20) { for (let i = a; i <= b; i++) set.add(i); }
+        else if (Number.isFinite(a)) set.add(a);
+      }
+    }
+    return set;
+  }
   // One entry per file, with all its citation numbers: "Release_Notes.md [1][2][5]".
-  function groupSources(list) {
+  // Only the pieces the answer cites are listed; an answer that cites nothing lists no sources.
+  function groupSources(list, text) {
+    const cited = citedNumbers(text);
     const by = new Map();
-    for (const src of list || []) {
+    for (const src of (list || []).filter((x) => cited.has(x.n))) {
       const g = by.get(src.path) || { path: src.path, name: src.name, set: src.set, items: [] };
       g.items.push(src);
       by.set(src.path, g);
@@ -596,10 +612,10 @@
                 {/if}
               {/if}
               <div class="md">{@html md(m.content)}</div>
-              {#if st?.sources?.length}
+              {#if groupSources(st?.sources, m.content).length}
                 <div class="sources">
                   <span class="small faint">Sources</span>
-                  {#each groupSources(st.sources) as g}
+                  {#each groupSources(st.sources, m.content) as g}
                     <button class="srcchip" title={srcTitle(g)} onclick={() => openSource(g)}>
                       <span class="nums">{#each g.items as x}<b>{x.n}</b>{/each}</span> {g.name}
                     </button>
@@ -661,10 +677,10 @@
             {:else}
               <div class="md">{@html streamHtml}</div>
             {/if}
-            {#if liveSources.length}
+            {#if groupSources(liveSources, liveText).length}
               <div class="sources">
                 <span class="small faint">Sources</span>
-                {#each groupSources(liveSources) as g}<span class="srcchip" title={srcTitle(g)}><span class="nums">{#each g.items as x}<b>{x.n}</b>{/each}</span> {g.name}</span>{/each}
+                {#each groupSources(liveSources, liveText) as g}<span class="srcchip" title={srcTitle(g)}><span class="nums">{#each g.items as x}<b>{x.n}</b>{/each}</span> {g.name}</span>{/each}
               </div>
             {/if}
           </div>

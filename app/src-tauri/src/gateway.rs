@@ -77,6 +77,16 @@ const FOOD: &[&str] = &[
 /// Sampling settings that TERAS and cloud models may refuse.
 const SAMPLING: &[&str] = &["temperature", "top_p", "top_k", "min_p", "presence_penalty", "frequency_penalty", "repeat_penalty"];
 
+/// A short message that asks something ("and the deadline?", "bila?"), as opposed to "hi" or "terima kasih".
+fn looks_like_question(text: &str) -> bool {
+    let t = text.to_lowercase();
+    if t.contains('?') {
+        return true;
+    }
+    const Q: &[&str] = &["what", "when", "where", "which", "who", "why", "how", "and the", "what about", "apa", "bila", "mana", "siapa", "kenapa", "mengapa", "bagaimana", "macam mana", "berapa", "adakah", "bolehkah", "yang mana"];
+    t.split(|c: char| !c.is_alphanumeric()).any(|w| Q.contains(&w)) || Q.iter().any(|q| q.contains(' ') && t.contains(q))
+}
+
 pub fn wants_reference(text: &str) -> bool {
     let t = text.to_lowercase();
     if TRIGGERS.iter().any(|k| t.contains(k)) || (t.contains("nexus") && (t.contains("salt") || t.contains("app"))) {
@@ -277,12 +287,18 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 .take(2)
                 .filter_map(|m| m.get("content").and_then(|c| c.as_str()).map(|s| s.chars().take(1500).collect::<String>()))
                 .collect();
-            let query = match users.as_slice() {
-                [last, prev, ..] if last.chars().count() < 60 => format!("{prev}\n{last}"),
-                [last, ..] => last.clone(),
-                _ => String::new(),
-            };
-            hits = state.knowledge.search(&sets, &query, 6).await;
+            // The latest message on its own first. A short follow-up question ("and the deadline?",
+            // "bila tarikhnya?") that finds nothing alone is searched again with the question before it.
+            // Greetings and thanks are never joined to an earlier question.
+            let last = users.first().cloned().unwrap_or_default();
+            hits = state.knowledge.search(&sets, &last, 6).await;
+            if hits.is_empty() {
+                if let Some(prev) = users.get(1) {
+                    if last.chars().count() < 60 && looks_like_question(&last) {
+                        hits = state.knowledge.search(&sets, &format!("{prev}\n{last}"), 6).await;
+                    }
+                }
+            }
             let pending = state.knowledge.not_ready(&sets);
             for (name, done, total, no_model) in &pending {
                 if *no_model {
@@ -295,7 +311,7 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 let outline = state.knowledge.outline(&hits[0].path);
                 sys.push_str(&crate::knowledge::prompt_block(&hits, &outline));
             } else {
-                sys.push_str("\n\nThe user's knowledge sets were searched but nothing relevant was found for this message. If the user asks about their documents, say that you could not find it in them.");
+                sys.push_str("\n\nNo passages from the user's documents match this message. Answer it normally, without mentioning the documents and without citation numbers. Only if the user asks about their documents, say that you could not find it in them.");
             }
         }
         // Keep an app's own system message after ours.

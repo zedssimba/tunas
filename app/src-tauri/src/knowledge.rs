@@ -100,6 +100,24 @@ pub struct FailedFile {
     pub error: String,
 }
 
+/// Similarity by meaning above which a piece is about the question on its own. Measured with the
+/// Qwen3 embedding model: greetings and unrelated requests scored 0.17-0.47, document questions 0.55-0.76.
+const MEANING_STRONG: f32 = 0.56;
+/// Similarity by meaning that is enough when content words also match.
+const MEANING_WITH_WORDS: f32 = 0.50;
+/// Similarity by meaning that is enough when a reference or version number also matches.
+const MEANING_WITH_IDENTIFIER: f32 = 0.40;
+/// Common words that say nothing about a document (English and Malay), plus greetings.
+const STOPWORDS: &[&str] = &[
+    "the", "and", "for", "you", "your", "are", "was", "what", "how", "who", "why", "when", "where", "which", "this", "that",
+    "with", "from", "have", "has", "can", "could", "would", "should", "please", "about", "tell", "give", "any", "all", "our",
+    "hello", "thanks", "thank", "good", "morning", "afternoon", "evening", "night", "okay", "yes", "hey", "hai", "helo",
+    "salam", "assalamualaikum", "waalaikumsalam", "selamat", "pagi", "petang", "malam", "tengahari", "terima", "kasih", "apa",
+    "khabar", "baik", "yang", "dan", "untuk", "dengan", "ini", "itu", "ada", "boleh", "saya", "kami", "kita", "anda", "awak",
+    "dia", "mereka", "adalah", "dalam", "pada", "kepada", "dari", "daripada", "tidak", "tak", "bagaimana", "kenapa", "mengapa",
+    "siapa", "bila", "mana", "berapa", "tolong", "sila", "nak", "mahu", "ke", "lah", "pun", "juga", "sahaja", "saja",
+];
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Hit {
     pub n: usize,
@@ -504,6 +522,10 @@ impl Knowledge {
             return vec![];
         }
         let mut ranks: HashMap<i64, f32> = HashMap::new();
+        let mut best_meaning: f32 = 0.0;
+        let mut meaning_ok = false;
+        let mut word_hits = 0usize;
+        let mut ident_hits = 0usize;
 
         // By meaning.
         if let Ok(v) = self.embed_texts(&[format!("{QUERY_PREFIX}{}", query.chars().take(2000).collect::<String>())]).await {
@@ -514,6 +536,8 @@ impl Knowledge {
                     scored.extend(vecs.iter().map(|(id, e)| (*id, dot(q, e))));
                 }
                 scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                best_meaning = scored.first().map(|x| x.1).unwrap_or(0.0);
+                meaning_ok = true;
                 for (rank, (id, score)) in scored.into_iter().take(30).enumerate() {
                     if score < 0.2 {
                         break;
@@ -529,6 +553,7 @@ impl Knowledge {
             .split(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '.')
             .map(|w| w.trim_matches(|c: char| c == '/' || c == '-' || c == '.'))
             .filter(|w| w.chars().count() >= 3 || (w.chars().any(|c| c.is_ascii_digit()) && !w.is_empty()))
+            .filter(|w| !STOPWORDS.contains(&w.to_lowercase().as_str()))
             .map(|w| format!("\"{}\"", w.replace('"', "")))
             .take(24)
             .collect();
@@ -549,6 +574,7 @@ impl Knowledge {
                 }
                 v
             };
+            word_hits = ids.len();
             for (rank, id) in ids.into_iter().enumerate() {
                 *ranks.entry(id).or_default() += 1.0 / (60.0 + rank as f32);
             }
@@ -568,12 +594,30 @@ impl Knowledge {
                     }
                     v
                 };
+                ident_hits = ids.len();
                 for (rank, id) in ids.into_iter().take(10).enumerate() {
                     *ranks.entry(id).or_default() += 2.0 / (60.0 + rank as f32);
                 }
             }
         }
 
+        // Only use the documents when the message is really about them. Greetings and small talk
+        // ("hi", "salam", "terima kasih") score low by meaning and match no content words.
+        // Without the reading model (not downloaded yet, or it could not start), content words decide.
+        let relevant = if meaning_ok {
+            best_meaning >= MEANING_STRONG || (ident_hits > 0 && best_meaning >= MEANING_WITH_IDENTIFIER) || (word_hits > 0 && best_meaning >= MEANING_WITH_WORDS)
+        } else {
+            word_hits > 0 || ident_hits > 0
+        };
+        klog(&format!(
+            "search: meaning {}, word matches {word_hits}, identifier matches {ident_hits}: {} for \"{}\"",
+            if meaning_ok { format!("{best_meaning:.3}") } else { "unavailable".into() },
+            if relevant { "used" } else { "not relevant" },
+            query.chars().take(80).collect::<String>().replace('\n', " ")
+        ));
+        if !relevant {
+            return vec![];
+        }
         let mut best: Vec<(i64, f32)> = ranks.into_iter().collect();
         best.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         // "Latest / newest / terkini" questions: what is newest is usually at the start of a document
