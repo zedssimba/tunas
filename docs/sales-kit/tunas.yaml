@@ -11,9 +11,10 @@ cover:
   top_right: S.A.L.T TUNAS
   eyebrow: PRODUCT BRIEF · S.A.L.T CI
   title: S.A.L.T <em>TUNAS</em>
-  subtitle: Personal AI that lives on your own computer. Chat, ready-made assistants, answers from your own folders and finished Word, Excel and PDF documents, all running on the machine itself, offline and private.
-    Free to install, with your organisation's name and logo on it, and a straight path to TERAS when the whole organisation is ready.
+  subtitle: The lightweight edition of TERAS, the core of the S.A.L.T CI framework, made to run on your own notebook, locally and privately. It works on its own or connected to your organisation's TERAS, and is the private AI engine for S.A.L.T CI desktop apps.
+    Small enough for an everyday notebook, capable enough for everyday work, it gives every person their own AI.
   chips:
+  - The lightweight edition of TERAS
   - Runs on the computer, works offline
   - Malay, English and mixed
   - Seven ready-made assistants
@@ -27,7 +28,7 @@ cover:
   - Your name and logo on the app
   - Branding packs for whole departments
   - Connect to TERAS
-  - An AI engine for other apps
+  - AI engine for S.A.L.T CI apps
   - Free, with no licence key
   hero:
   - type: image
@@ -91,8 +92,11 @@ pages:
     - - A dead end
       - Connect to TERAS, and the same app becomes a window on the organisation's AI
   - type: navybox
-    title: Free for everyone, owned by no one else
-    text: TUNAS is free to install, with no licence key, activation or expiry. Every copy carries the organisation's own brand and "Powered by S.A.L.T CI", and the path to TERAS when the organisation is ready for shared AI.
+    title: TERAS, made personal
+    text: TUNAS is the lightweight edition of TERAS, the core of the S.A.L.T CI framework, built to run on a person's own notebook, locally and privately. It works fully on its own, connects to the organisation's TERAS when there is one, and serves as the private AI engine for S.A.L.T CI desktop apps. Small, yet capable enough for the daily work of writing, summarising and finding answers, it gives each person their own AI, with their own documents, on their own machine.
+  - type: goldbox
+    title: Free to install
+    text: No licence key, activation or expiry. Every copy carries the organisation's own brand and "Powered by S.A.L.T CI".
 - kicker: Chat
   color: blue
   h1: An AI chat that *stays on the machine*
@@ -399,8 +403,8 @@ pages:
       text: Title bar, taskbar and desktop icon, Start menu, welcome screen, About page and the documents' letterhead.
 - kicker: Connections
   color: navy
-  h1: Local first, *connected when you choose*
-  lead: Everything in TUNAS works on the computer alone. When the organisation has TERAS, or the user has a cloud AI account, Connections adds those models alongside the local ones, and lets other apps on the same computer use TUNAS as their AI engine.
+  h1: On its own, *or part of S.A.L.T CI*
+  lead: TUNAS works fully on the computer alone. Connected to TERAS, the core of the S.A.L.T CI framework, it brings the organisation's models to the user's desk. And for S.A.L.T CI desktop apps such as NEXUS, WARKAH, NASKAH, Kembara and MOM Studio, it is the private AI engine on the same machine.
   blocks:
   - type: image
     src: /img/shots/connections.jpg
@@ -420,8 +424,8 @@ pages:
       text: The main cloud AI providers with the user's own key, off until the user turns it on, and blockable by the organisation.
     - icon: code
       color: violet
-      title: An engine for other apps
-      text: A standard AI API on this computer only, with keys TUNAS issues, so S.A.L.T desktop apps can run on the user's own AI.
+      title: The engine for S.A.L.T CI apps
+      text: NEXUS, WARKAH, NASKAH, Kembara, MOM Studio and more can use TUNAS as their private AI, through a standard AI API on this computer only, with keys TUNAS issues.
   - type: tiers
     tiers:
     - cls: t3
@@ -438,8 +442,8 @@ pages:
       note: 127.0.0.1 · app keys
       chips:
       - Local AI API
-      - S.A.L.T desktop apps
-      - Other apps the user allows
+      - NEXUS, WARKAH, NASKAH
+      - Kembara, MOM Studio and more
     - cls: t1
       label: When connected
       note: user's choice · organisation's rules
@@ -576,25 +580,22 @@ pages:
       title: Trainings
       text: Workshops where every seat runs its own AI.
   - type: sub
-    text: On the roadmap
+    text: TUNAS and TERAS
   - type: table
     head:
-    - Coming
-    - What it adds
+    - S.A.L.T TUNAS
+    - S.A.L.T TERAS
     widths:
-    - 26%
-    - 74%
+    - 50%
+    - 50%
     rows:
-    - - macOS
-      - TUNAS on Apple silicon and Intel Macs, signed and notarised
-    - - Trainer kit
-      - One folder with installers, models on USB, branding packs and a handout for workshops
-    - - Android
-      - TUNAS on phones and tablets with enough memory, with chat, assistants and TERAS
-    - - Linux and rollout tools
-      - Linux desktop, silent install with a settings file, signed branding packs and update checks
-    - - TERAS knowledge
-      - The organisation's TERAS knowledge collections alongside the user's own folders
-  - type: tintbox
-    title: Start personal, grow into TERAS
-    text: People start with TUNAS on their own computers, with their own folders and assistants. When the organisation is ready to share AI across teams, Connect to TERAS turns the same app into a window on the organisation's own S.A.L.T CI.
+    - - One person, on their own notebook or PC
+      - The whole organisation, on its own servers
+    - - Local models, plus TERAS and the user's own cloud keys
+      - Shared models, local and cloud, chosen per task and secrecy level
+    - - Knowledge sets from the user's own folders
+      - Knowledge collections for teams and the organisation, with permissions
+    - - Personal assistants and simple documents
+      - Organisation assistants, templates and the document sandbox
+    - - The AI engine for S.A.L.T CI apps on the same computer
+      - The AI for every S.A.L.T CI app and every user, with sign-in and audit

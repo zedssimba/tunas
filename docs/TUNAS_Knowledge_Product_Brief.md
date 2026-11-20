@@ -7,7 +7,11 @@ This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TU
 
 ## 1. What TUNAS is
 
-S.A.L.T TUNAS is S.A.L.T CI's personal AI app for one person on one computer. It runs AI models on the computer itself, so chats, documents and answers stay on the machine and work without the internet.
+S.A.L.T TUNAS is the lightweight edition of TERAS, the core of the S.A.L.T CI framework, made to run on a person's own notebook or PC, locally and privately. It runs AI models on the computer itself, so chats, documents and answers stay on the machine and work without the internet.
+
+- **On its own or with TERAS:** TUNAS works fully on its own, and connects to the organisation's TERAS when there is one.
+- **The AI engine for S.A.L.T CI desktop apps:** apps such as NEXUS, WARKAH, NASKAH, Kembara and MOM Studio can use TUNAS as their private, personal AI engine on the same computer.
+- **Small, yet capable:** light enough for an everyday notebook, and capable enough for daily work such as writing, summarising and finding answers in the user's own documents. It gives each person their own AI, with their own documents and assistants, on their own machine.
 
 - **What it does:** chat in Bahasa Melayu, English or both; ready-made assistants for letters, minutes, emails and summaries; answers from the user's own folders with their sources; and finished Word, Excel and PDF documents with the organisation's letterhead.
 - **Who it is for:** staff in agencies, universities and companies who handle internal documents; lecturers, students and AI classes; trainers running workshops; and notebook makers, leasing companies and resellers who want a co-branded AI app on every machine they ship.
@@ -122,7 +126,7 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 
 - **Connect to TERAS:** the organisation's TERAS address and a key. The organisation's TERAS models then appear by name, and any assistant can use them.
 - **Cloud AI providers:** the main cloud AI providers, or any OpenAI-compatible service, with the user's own key. Off until the user switches on "Allow cloud providers", and the organisation can block it.
-- **Let other apps use TUNAS (local AI API):** an OpenAI-compatible API (`/v1/models`, `/v1/chat/completions` with streaming) on this computer only (127.0.0.1, port 11435 by default). Each app gets its own key from TUNAS; keys can be removed at any time and the list shows when each was last used. Apps can ask for an assistant by name (its persona and knowledge apply) or for a model. Off by default.
+- **Let other apps use TUNAS (local AI API):** the private AI engine for S.A.L.T CI desktop apps such as NEXUS, WARKAH, NASKAH, Kembara and MOM Studio, and for other programs the user allows. An OpenAI-compatible API (`/v1/models`, `/v1/chat/completions` with streaming) on this computer only (127.0.0.1, port 11435 by default). Each app gets its own key from TUNAS; keys can be removed at any time and the list shows when each was last used. Apps can ask for an assistant by name (its persona and knowledge apply) or for a model. Off by default.
 - **Built-in S.A.L.T reference:** TUNAS knows the basic facts about S.A.L.T CI and its products, so it can answer questions about TERAS and the platform. The user's own documents always come first.
 
 ## 10. TUNAS privacy and security
@@ -162,28 +166,20 @@ Everything in TUNAS works on the computer alone. Connections adds more, when the
 | Organisation set-up | A branding pack, or machine-wide brand and policy files placed by IT |
 | TERAS | Optional; address and key in Connections |
 
-## 13. TUNAS limits today
+## 13. TUNAS limits
 
 | Limit | Details |
 |---|---|
-| Windows only | macOS, Android and Linux are on the roadmap |
+| Windows | Windows 10 and 11, 64-bit |
 | One person, one computer | Sharing AI and knowledge across people is what TERAS does |
 | Local API on the same computer | Other computers on the network can't reach it |
 | Interface in English | Chats and assistants work in Malay and English |
-| No silent install yet | Each install runs the normal installer; machine-wide brand and policy are placed by IT |
-| Not code-signed yet | Some antivirus tools scan or delay the installer the first time |
+| Installation | Each install runs the normal per-user installer; machine-wide brand and policy are placed by IT |
+| Installer checks | Some antivirus tools scan or delay the installer the first time |
 | Small models | Answers from small local models can be wrong; check important facts |
-| TERAS knowledge | TERAS models are available; TERAS knowledge collections are not yet |
+| TERAS knowledge | TERAS models are used from TUNAS; TERAS knowledge collections are used in TERAS itself |
 
-## 14. On the roadmap
-
-- **TUNAS for macOS:** Apple silicon and Intel, signed and notarised.
-- **Trainer kit:** one folder with installers, models on USB, branding packs and a handout, for workshops and trainings.
-- **TUNAS for Android:** chat, assistants and TERAS on phones and tablets with enough memory.
-- **Linux desktop and rollout tools:** Linux packages, silent install with a settings file, signed branding packs, update checks and an offline update file.
-- **TERAS knowledge in TUNAS:** the organisation's TERAS knowledge collections alongside the user's own folders.
-
-## 15. Questions and answers
+## 14. Questions and answers
 
 **Does TUNAS need the internet?**
 Only to download models. After that it works fully offline, or models can be copied from a USB stick.
@@ -201,10 +197,16 @@ Tidak. TUNAS membaca folder yang dibenarkan dan menjawab di komputer itu sendiri
 Yes, with no licence key, activation or expiry. Co-branded OEM, leasing and reseller images are arranged through Pemangkin Teknologi.
 
 **What is the difference between TUNAS and TERAS?**
-TUNAS is for one person on one computer. TERAS is the organisation's own AI server, shared by everyone, with team knowledge, permissions, sign-in, audit and the S.A.L.T apps. Connect to TERAS links the two.
+TUNAS is the lightweight edition of TERAS, for one person on one computer. TERAS is the organisation's own AI server, shared by everyone, with team knowledge, permissions, sign-in, audit and the S.A.L.T apps. Connect to TERAS links the two.
 
 **Apakah beza TUNAS dan TERAS?**
-TUNAS untuk seorang pengguna pada satu komputer. TERAS ialah pelayan AI organisasi sendiri yang dikongsi semua, dengan pengetahuan pasukan, kebenaran, log masuk, audit dan aplikasi S.A.L.T. Connect to TERAS menghubungkan kedua-duanya.
+TUNAS ialah edisi ringan TERAS, untuk seorang pengguna pada satu komputer. TERAS ialah pelayan AI organisasi sendiri yang dikongsi semua, dengan pengetahuan pasukan, kebenaran, log masuk, audit dan aplikasi S.A.L.T. Connect to TERAS menghubungkan kedua-duanya.
+
+**Can S.A.L.T CI desktop apps use TUNAS?**
+Yes. NEXUS, WARKAH, NASKAH, Kembara, MOM Studio and other S.A.L.T CI desktop apps can use TUNAS as their private AI engine through its local AI API, with a key made in TUNAS.
+
+**Bolehkah aplikasi desktop S.A.L.T CI menggunakan TUNAS?**
+Boleh. NEXUS, WARKAH, NASKAH, Kembara, MOM Studio dan aplikasi desktop S.A.L.T CI lain boleh menggunakan TUNAS sebagai enjin AI peribadi mereka melalui API AI tempatan, dengan kunci yang dibuat dalam TUNAS.
 
 **Can we put our own name and logo on it?**
 Yes, in Settings › Branding, or for a whole department with a branding pack.
@@ -212,7 +214,7 @@ Yes, in Settings › Branding, or for a whole department with a branding pack.
 **Which model should I use?**
 Check my machine recommends one. On most 8 GB notebooks, Qwen 3.5 2B is the everyday choice; Qwen 3.5 4B writes better where there is enough memory or a graphics card.
 
-## 16. Words used
+## 15. Words used
 
 | Word | Meaning |
 |---|---|
