@@ -207,6 +207,44 @@ pub struct LogoCheck {
 }
 
 /// Load any logo (PNG, JPG or SVG) as an RGBA image.
+/// What goes at the top of a document: organisation name, address and logo (as PNG), from the brand layers.
+pub struct Letterhead {
+    pub org: String,
+    pub address: String,
+    pub logo_png: Option<Vec<u8>>,
+}
+
+pub fn letterhead() -> Letterhead {
+    let st = state();
+    let usable = |l: &&LayerView| l.layer != "personal" || st.policy.allow_personal_brand;
+    let pick = |f: &dyn Fn(&Brand) -> String| -> String {
+        st.layers.iter().filter(usable).filter_map(|l| l.brand.as_ref()).map(f).find(|s| !s.trim().is_empty()).unwrap_or_default()
+    };
+    let org = {
+        let o = pick(&|b| b.letterhead_org.clone());
+        if o.is_empty() { pick(&|b| b.name.clone()) } else { o }
+    };
+    let address = pick(&|b| b.letterhead_address.clone());
+    let logo_png = st
+        .layers
+        .iter()
+        .filter(usable)
+        .find_map(|l| {
+            let b = l.brand.as_ref()?;
+            if b.logo_file.is_empty() {
+                return None;
+            }
+            Some(layer_dir(&l.layer).0.join(&b.logo_file))
+        })
+        .and_then(|p| load_logo(&p).ok())
+        .and_then(|img| {
+            let mut buf = std::io::Cursor::new(vec![]);
+            image::DynamicImage::ImageRgba8(img).write_to(&mut buf, image::ImageFormat::Png).ok()?;
+            Some(buf.into_inner())
+        });
+    Letterhead { org, address, logo_png }
+}
+
 fn load_logo(path: &Path) -> Result<image::RgbaImage> {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
     if ext == "svg" {

@@ -224,3 +224,62 @@ fn strip_tags(html: &str) -> String {
     }
     out.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
 }
+
+/// A piece of a file with where it came from: page (PDF), slide (PowerPoint) or sheet (Excel).
+#[derive(Clone, Debug)]
+pub struct Part {
+    /// Page or slide number, 0 when not paged.
+    pub page: u32,
+    /// "p. 3", "slide 4", "sheet Budget" or "".
+    pub label: String,
+    pub text: String,
+}
+
+/// Read a file as parts, so search results can point at the page. Used by Knowledge.
+pub fn extract_parts(path: &Path) -> Result<Vec<Part>> {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+    let meta = std::fs::metadata(path)?;
+    if meta.len() > 100 << 20 {
+        return Err(anyhow!("too large (over 100 MB)"));
+    }
+    let split = |text: String, marker: &str, slide: bool| -> Vec<Part> {
+        let mut parts = vec![];
+        for chunk in text.split(marker).skip(1) {
+            let (head, body) = chunk.split_once(" ---").unwrap_or(("", chunk));
+            let head = head.trim().to_string();
+            let page = head.parse::<u32>().unwrap_or(0);
+            let label = if slide { format!("slide {head}") } else { format!("sheet {head}") };
+            parts.push(Part { page, label, text: normalise(body) });
+        }
+        parts
+    };
+    let parts = match ext.as_str() {
+        "pdf" => {
+            let bytes = std::fs::read(path)?;
+            let pages = match std::panic::catch_unwind(|| pdf_extract::extract_text_from_mem_by_pages(&bytes)) {
+                Ok(Ok(p)) => p,
+                Ok(Err(e)) => return Err(anyhow!("could not read this PDF: {e}")),
+                Err(_) => return Err(anyhow!("could not read this PDF")),
+            };
+            pages
+                .into_iter()
+                .enumerate()
+                .map(|(i, t)| Part { page: i as u32 + 1, label: format!("p. {}", i + 1), text: normalise(&t) })
+                .collect()
+        }
+        "pptx" => split(pptx(path)?, "--- Slide ", true),
+        "xlsx" | "xlsm" | "xls" => split(excel(path)?, "--- Sheet: ", false),
+        "docx" => vec![Part { page: 0, label: String::new(), text: normalise(&office_xml(path, &["word/document.xml"], "w:p")?) }],
+        "txt" | "md" | "csv" | "log" => vec![Part { page: 0, label: String::new(), text: normalise(&read_text(path)?) }],
+        "html" | "htm" => vec![Part { page: 0, label: String::new(), text: normalise(&strip_tags(&read_text(path)?)) }],
+        _ => return Err(anyhow!("this file type is not supported")),
+    };
+    let parts: Vec<Part> = parts.into_iter().filter(|p| !p.text.trim().is_empty()).collect();
+    if parts.is_empty() {
+        return Err(anyhow!(if ext == "pdf" { "no text found (maybe a scanned PDF; scanned PDFs are not supported yet)" } else { "no text found" }));
+    }
+    Ok(parts)
+}
+
+/// File types Knowledge reads.
+pub const KNOWLEDGE_TYPES: &[&str] = &["pdf", "docx", "xlsx", "xlsm", "xls", "pptx", "txt", "md", "csv", "html", "htm"];

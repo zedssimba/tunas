@@ -111,6 +111,7 @@
 
   <nav>
     <button class:active={app.view === 'assistants'} onclick={() => (app.view = 'assistants')}><Icon name="user" size={17} /> My assistants</button>
+    <button class:active={app.view === 'knowledge'} onclick={() => (app.view = 'knowledge')}><Icon name="book" size={17} /> Knowledge</button>
   </nav>
 
   <div class="foot">

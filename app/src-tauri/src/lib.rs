@@ -4,10 +4,12 @@
 
 mod brand;
 mod db;
+mod documents;
 mod engine;
 mod extract;
 mod gateway;
 mod hardware;
+mod knowledge;
 mod models;
 mod paths;
 mod secret;
@@ -24,6 +26,7 @@ pub struct AppState {
     pub transfers: models::Transfers,
     pub pending_pack: Mutex<Option<String>>,
     pub gateway: gateway::Gateway,
+    pub knowledge: knowledge::Knowledge,
 }
 
 type R<T> = Result<T, String>;
@@ -657,6 +660,141 @@ fn pack_from_args(args: &[String]) -> Option<String> {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+
+// ---------------------------------------------------------------- knowledge and folder access
+
+#[tauri::command]
+fn folders_list(st: State<AppState>) -> R<Vec<knowledge::Grant>> {
+    st.knowledge.grants().map_err(e)
+}
+
+#[tauri::command]
+fn folder_allow(st: State<AppState>, path: String) -> R<()> {
+    st.knowledge.grant(&path).map_err(e)
+}
+
+#[tauri::command]
+async fn folder_revoke(st: State<'_, AppState>, path: String) -> R<()> {
+    let k = st.knowledge.clone();
+    tokio::task::spawn_blocking(move || k.revoke(&path)).await.map_err(e)?.map_err(e)
+}
+
+#[tauri::command]
+fn folder_is_allowed(st: State<AppState>, path: String) -> bool {
+    st.knowledge.is_allowed(&path)
+}
+
+#[derive(Serialize)]
+struct KnowledgeOverview {
+    model_ready: bool,
+    sets: Vec<knowledge::SetInfo>,
+}
+
+#[tauri::command]
+fn knowledge_list(st: State<AppState>) -> R<KnowledgeOverview> {
+    let names: std::collections::HashMap<String, String> =
+        db::list_assistants(&st.db.lock()).unwrap_or_default().into_iter().map(|a| (a.id, a.name)).collect();
+    Ok(KnowledgeOverview { model_ready: knowledge::embed_model_path().is_some(), sets: st.knowledge.sets(&names).map_err(e)? })
+}
+
+#[tauri::command]
+async fn knowledge_create(st: State<'_, AppState>, name: String, paths: Vec<String>) -> R<String> {
+    let k = st.knowledge.clone();
+    tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
+        let id = k.create_set(&name)?;
+        for p in paths {
+            k.add_source(&id, &p)?;
+        }
+        Ok(id)
+    })
+    .await
+    .map_err(e)?
+    .map_err(e)
+}
+
+#[tauri::command]
+fn knowledge_rename(st: State<AppState>, id: String, name: String) -> R<()> {
+    st.knowledge.rename_set(&id, &name).map_err(e)
+}
+
+#[tauri::command]
+fn knowledge_delete(st: State<AppState>, id: String) -> R<()> {
+    st.knowledge.delete_set(&id).map_err(e)
+}
+
+#[tauri::command]
+fn knowledge_pause(st: State<AppState>, id: String, paused: bool) -> R<()> {
+    st.knowledge.set_paused(&id, paused).map_err(e)
+}
+
+#[tauri::command]
+async fn knowledge_add_source(st: State<'_, AppState>, id: String, path: String) -> R<()> {
+    let k = st.knowledge.clone();
+    tokio::task::spawn_blocking(move || k.add_source(&id, &path)).await.map_err(e)?.map_err(e)
+}
+
+#[tauri::command]
+async fn knowledge_remove_source(st: State<'_, AppState>, id: String, path: String) -> R<()> {
+    let k = st.knowledge.clone();
+    tokio::task::spawn_blocking(move || k.remove_source(&id, &path)).await.map_err(e)?.map_err(e)
+}
+
+#[tauri::command]
+async fn knowledge_reindex(st: State<'_, AppState>, id: String, force: bool) -> R<()> {
+    let k = st.knowledge.clone();
+    tokio::task::spawn_blocking(move || k.rescan(&id, force)).await.map_err(e)?.map_err(e)
+}
+
+#[tauri::command]
+fn knowledge_failed(st: State<AppState>, id: String) -> R<Vec<knowledge::FailedFile>> {
+    st.knowledge.failed_files(&id).map_err(e)
+}
+
+#[tauri::command]
+fn knowledge_for_assistant(st: State<AppState>, assistant_id: String) -> Vec<String> {
+    st.knowledge.assistant_sets(&assistant_id)
+}
+
+#[tauri::command]
+fn knowledge_set_for_assistant(st: State<AppState>, assistant_id: String, set_ids: Vec<String>) -> R<()> {
+    st.knowledge.set_assistant_sets(&assistant_id, &set_ids).map_err(e)
+}
+
+#[tauri::command]
+fn knowledge_kick(st: State<AppState>) {
+    st.knowledge.kick();
+}
+
+/// Open one of the user's files (a knowledge source) in its usual app. Only places TUNAS may read.
+#[tauri::command]
+fn open_file(st: State<AppState>, path: String) -> R<()> {
+    if !st.knowledge.is_allowed(&path) {
+        return Err("TUNAS is not allowed to open this file.".into());
+    }
+    tauri_plugin_opener::open_path(&path, None::<&str>).map_err(e)
+}
+
+// ---------------------------------------------------------------- documents
+
+/// Write an answer as a Word, Excel or PDF file at `path` (chosen by the user in a save dialog).
+#[tauri::command]
+async fn doc_export(markdown: String, format: String, path: String, title: String, letterhead: bool) -> R<()> {
+    tokio::task::spawn_blocking(move || documents::export(&markdown, &format, std::path::Path::new(&path), &title, letterhead))
+        .await
+        .map_err(e)?
+        .map_err(e)
+}
+
+/// Open a file TUNAS has just written for the user.
+#[tauri::command]
+fn open_written(path: String) -> R<()> {
+    let ok = ["docx", "xlsx", "pdf"].iter().any(|x| path.to_lowercase().ends_with(&format!(".{x}")));
+    if !ok {
+        return Err("Only documents made by TUNAS can be opened here.".into());
+    }
+    tauri_plugin_opener::open_path(&path, None::<&str>).map_err(e)
+}
+
 pub fn run() {
     let conn = db::open().expect("could not open the TUNAS database");
     let args: Vec<String> = std::env::args().collect();
@@ -666,6 +804,7 @@ pub fn run() {
         transfers: models::Transfers::default(),
         pending_pack: Mutex::new(pack_from_args(&args)),
         gateway: gateway::Gateway::default(),
+        knowledge: knowledge::Knowledge::open().expect("could not open the TUNAS knowledge index"),
     };
 
     tauri::Builder::default()
@@ -682,6 +821,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .setup(|app| {
+            app.state::<AppState>().knowledge.start_indexer(app.handle().clone());
             let g = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 let _ = gateway::start_internal(g.clone()).await;
@@ -711,6 +851,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            doc_export, open_written, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
             app_info,
             setting_get,
             setting_set,

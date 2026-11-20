@@ -257,6 +257,29 @@ impl Engine {
     }
 }
 
+/// Put another TUNAS helper process (the search engine) in a job that Windows closes with TUNAS.
+#[cfg(windows)]
+pub fn attach_to_job(child: &Child) {
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::System::JobObjects::*;
+    static JOB: std::sync::OnceLock<isize> = std::sync::OnceLock::new();
+    unsafe {
+        let h = *JOB.get_or_init(|| {
+            let h = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+            if h.is_null() {
+                return 0;
+            }
+            let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            SetInformationJobObject(h, JobObjectExtendedLimitInformation, &info as *const _ as *const _, std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32);
+            h as isize
+        });
+        if h != 0 {
+            AssignProcessToJobObject(h as _, child.as_raw_handle() as _);
+        }
+    }
+}
+
 fn sysinfo_ram_gb() -> f64 {
     let mut s = sysinfo::System::new();
     s.refresh_memory();

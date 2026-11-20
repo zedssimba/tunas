@@ -33,7 +33,7 @@ export function buildMessages(assistant, history, ctx) {
 /**
  * Stream a chat completion. Calls onToken(textSoFar). Returns { text, stats }.
  */
-export async function streamChat({ messages, signal, onToken, onThinking, maxTokens = 2048, assistant = null, model = '', raw = false, think = false }) {
+export async function streamChat({ messages, signal, onToken, onThinking, onSources, maxTokens = 2048, assistant = null, model = '', raw = false, think = false, knowledge = [] }) {
   const gw = app.gateway;
   const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
     method: 'POST',
@@ -42,6 +42,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
       model,
       tunas_assistant: assistant?.id,
       tunas_raw: raw,
+      tunas_knowledge: knowledge,
       messages,
       stream: true,
       // With thinking, TUNAS sets the length and sampling for the model (see the gateway).
@@ -62,6 +63,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
   let buf = '';
   let text = '';
   let reasoning = '';
+  let sources = [];
   let tThinkStart = 0;
   let tThinkEnd = 0;
   let stats = null;
@@ -81,6 +83,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
       if (data === '[DONE]') continue;
       let j;
       try { j = JSON.parse(data); } catch { continue; }
+      if (j.tunas_sources) { sources = j.tunas_sources; onSources?.(sources); continue; }
       const ch = j.choices?.[0];
       const rpiece = ch?.delta?.reasoning_content || '';
       if (rpiece) {
@@ -115,7 +118,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, maxTok
     stats = { first_ms: Math.round((tFirst || performance.now()) - t0), tps: Math.round((text.length / 4 / secs) * 10) / 10, est: true, finish };
     if (think_ms) stats.think_ms = think_ms;
   }
-  return { text, reasoning, stats };
+  return { text, reasoning, stats, sources };
 }
 
 /** Ask the model for a short chat title from the first exchange. */

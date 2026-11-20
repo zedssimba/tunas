@@ -40,6 +40,12 @@ Svelte - MIT - https://svelte.dev
 GCC runtime libraries (libgcc, libstdc++, libgomp) - GPL with the GCC Runtime Library Exception
 mingw-w64 winpthreads - MIT / BSD-style licence
 Plus Jakarta Sans font - SIL Open Font License 1.1
+Liberation Sans fonts (used in PDF documents) - SIL Open Font License 1.1 - Copyright (c) 2012 Red Hat, Inc.
+genpdf, printpdf, rusttype - MIT or Apache-2.0
+docx-rs - MIT
+rust_xlsxwriter - MIT or Apache-2.0
+pulldown-cmark - MIT
+SQLite (with FTS5) - Public domain
 
 AI models are not part of this installer. Each model keeps its own licence, shown in TUNAS on the Models page.
 

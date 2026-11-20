@@ -1,6 +1,6 @@
 [package]
 name = "tunas"
-version = "0.2.5"
+version = "0.3.0"
 description = "TUNAS - personal AI for your notebook. S.A.L.T CI"
 authors = ["S.A.L.T. CI TECHNOLOGY"]
 edition = "2021"
@@ -23,6 +23,11 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
 tokio = { version = "1", features = ["full"] }
 futures-util = "0.3"
+bytes = "1"
+docx-rs = "0.4"
+rust_xlsxwriter = "0.90"
+pulldown-cmark = { version = "0.13", default-features = false }
+genpdf = { version = "0.2", features = ["images"] }
 sha2 = "0.10"
 hex = "0.4"
 sysinfo = "0.33"

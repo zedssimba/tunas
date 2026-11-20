@@ -3,6 +3,15 @@
   import { api } from '../lib/api.js';
   import { ASSISTANT_ICONS, ASSISTANT_COLORS } from '../lib/icons.js';
   import { app, toast, refreshAssistants, refreshProviders, assistantName, modelName } from '../lib/state.svelte.js';
+  import { kn, newSetFromFolder, setLabel, refreshKnowledge } from '../lib/knowledge.svelte.js';
+
+  let editSets = $state([]);
+  let addOpen = $state(false);
+  const isCloud = $derived(!!edit?.model_id?.startsWith('prov:') && !app.providers.some((p) => p.kind === 'teras' && edit.model_id.startsWith(`prov:${p.id}:`)));
+  async function newSet() {
+    const id = await newSetFromFolder();
+    if (id) editSets = [...editSets, id];
+  }
 
   let edit = $state(null); // working copy
   let confirmDel = $state(false);
@@ -13,12 +22,20 @@
     return { id: '', name: '', icon: 'chat', color: ASSISTANT_COLORS[Math.floor(Math.random() * 6)], persona: '', model_id: '', starter: false, sort: 100, created: '', updated: '' };
   }
 
-  function open(a) { edit = a ? { ...a } : blank(); confirmDel = false; }
-  function duplicate(a) { edit = { ...a, id: '', name: `${assistantName(a)} (copy)`, starter: false }; }
+  async function open(a) {
+    edit = a ? { ...a } : blank();
+    confirmDel = false;
+    addOpen = false;
+    editSets = a?.id ? await api.knowledge_for_assistant({ assistantId: a.id }) : [];
+    refreshKnowledge();
+  }
+  async function duplicate(a) { const sets = await api.knowledge_for_assistant({ assistantId: a.id }); edit = { ...a, id: '', name: `${assistantName(a)} (copy)`, starter: false }; editSets = sets; }
 
   async function save() {
     try {
       const saved = await api.assistant_save({ assistant: $state.snapshot(edit) });
+      await api.knowledge_set_for_assistant({ assistantId: saved.id, setIds: $state.snapshot(editSets) });
+      refreshKnowledge();
       await refreshAssistants();
       toast(`${saved.name} saved.`, 'ok');
       edit = null;
@@ -120,6 +137,35 @@
           {/each}
         </div>
 
+        <div class="field">Knowledge
+          <span class="hint">Folders of your documents this assistant answers from. Read where they are; nothing is copied.</span>
+          <div class="kchips">
+            {#each editSets as id}
+              {@const ks = kn.sets.find((x) => x.id === id)}
+              {#if ks}
+                <span class="kchip" title={setLabel(ks)}><Icon name="book" size={13} /> {ks.name}
+                  <button aria-label="Remove" onclick={() => (editSets = editSets.filter((x) => x !== id))}><Icon name="x" size={12} /></button></span>
+              {/if}
+            {/each}
+            <button class="pill" onclick={newSet}><Icon name="folder" size={13} /> New from folder</button>
+            {#if kn.sets.some((x) => !editSets.includes(x.id))}
+              <span class="addwrap">
+                <button class="pill" onclick={() => (addOpen = !addOpen)}><Icon name="plus" size={13} /> Add existing</button>
+                {#if addOpen}
+                  <div class="menu card kmenu">
+                    {#each kn.sets.filter((x) => !editSets.includes(x.id)) as ks}
+                      <button class="mi" onclick={() => { editSets = [...editSets, ks.id]; addOpen = false; }}><Icon name="book" size={14} /><span class="grow">{ks.name}<span class="d">{setLabel(ks)}</span></span></button>
+                    {/each}
+                  </div>
+                {/if}
+              </span>
+            {/if}
+          </div>
+          {#if editSets.length && isCloud}
+            <span class="hint" style="color:var(--warn)">This assistant uses a cloud model: the parts of your documents used in an answer are sent to that provider.</span>
+          {/if}
+        </div>
+
         <label class="field">Base model
           <span class="hint">A model on this machine, your organisation's TERAS, or a cloud model. Connect TERAS and cloud providers in Connections.</span>
           <select bind:value={edit.model_id}>
@@ -162,6 +208,15 @@
   .acard { display: flex; flex-direction: column; gap: 12px; }
   .av { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: #fff; flex: none; }
   .av.lg { width: 48px; height: 48px; border-radius: 13px; }
+  .kchips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+  .kchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 6px 4px 9px; border-radius: 99px; background: var(--soft); font-size: 12.5px; font-weight: 600; }
+  .kchip button { opacity: .6; display: inline-flex; }
+  .kchip button:hover { opacity: 1; }
+  .addwrap { position: relative; }
+  .kmenu { position: absolute; top: 110%; left: 0; z-index: 20; width: 280px; padding: 6px; }
+  .kmenu .mi { display: flex; gap: 8px; align-items: center; width: 100%; padding: 7px 8px; border-radius: 8px; text-align: left; font-size: 13px; }
+  .kmenu .mi:hover { background: var(--soft); }
+  .kmenu .d { display: block; font-size: 11.5px; color: var(--faint); }
   .persona { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 54px; }
   .overlay { position: fixed; inset: 0; background: rgba(11, 16, 34, .4); z-index: 40; display: flex; justify-content: flex-end; }
   .drawer { width: 560px; max-width: 100%; height: 100%; background: var(--panel); display: flex; flex-direction: column; box-shadow: var(--shadow); }

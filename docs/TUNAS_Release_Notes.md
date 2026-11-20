@@ -5,6 +5,47 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.0 — 20 November 2026 (Knowledge and Documents)
+
+### Knowledge: assistants that answer from your own documents
+- **Your files stay where they are.** TUNAS reads documents in their own folders on this machine. It never copies them into the app, never changes or deletes them, and sends nothing anywhere.
+- **TUNAS asks first.** The first time it reads a folder, it explains what will happen and waits for **Allow**.
+  - **Settings → Folders** lists every place TUNAS may read. **Remove** stops the reading and deletes that place's search index; the files are untouched.
+- **Knowledge sets.** A knowledge set is a name plus one or more folders or files, for example "Pekeliling & SOP Jabatan". Several assistants can share one set, and it is read only once.
+- **Where you use it:**
+  - **My assistants:** each assistant has a **Knowledge** field ("New from folder", "Add existing").
+  - **In a chat:** the new **#** button next to the paper clip, or typing **#**, adds a set to that chat only. The line above the message box shows what the answer draws on.
+  - **Knowledge** in the sidebar: every set with its status, size, the assistants that use it and files it could not read. Rename, add or remove a folder, check for changes, pause, or delete. Deleting removes only TUNAS's index.
+- **Sources under each answer**, with the file name and page, slide or sheet. Click one to open the file.
+- **File types:** PDF with text, Word, Excel, PowerPoint, text, Markdown, CSV and web pages. Scanned PDFs are listed as "could not read" (reading scanned pages comes later).
+- **Search finds by meaning and by exact words,** so reference numbers such as JPA(S)PKPA/7/2026 and names are found. Malay and English questions find documents in either language.
+- **The search model** (Qwen 3 Embedding, about 640 MB) downloads by itself the first time you make a knowledge set. After that, everything works offline.
+- **Light on the machine:**
+  - reading runs in the background, one file at a time, at low priority;
+  - it waits while an answer is being written;
+  - the search model is unloaded after 5 idle minutes.
+- **Cloud models:** if an assistant uses a cloud model, the parts of your documents used in an answer go to that provider. The assistant panel says so; local models keep everything on the machine.
+- **Changes in folders:** press the refresh button on a set ("Check for new and changed files"), or restart TUNAS (it checks at start). Watching folders automatically comes after macOS.
+- Tested on the build machine with a folder of Word, PDF (3 pages), Excel, PowerPoint and Markdown files:
+  - all five files were read in about 5 seconds;
+  - "Berapa hari seminggu pegawai boleh bekerja dari rumah?", "How many hours do we have to fix a critical ICT complaint?" and "Berapa kos latihan AI TUNAS dalam bajet 2027?" were answered correctly from the files, with sources, by the Qwen 3.5 2B model.
+
+### Documents: Word, Excel and PDF
+- **Save as** (the download icon under every answer): Word (.docx), PDF, or Excel (.xlsx).
+  - Excel puts each table on its own sheet, with numbers as real numbers ("1,200.50" and "RM 300" can be added up).
+  - The file opens when it is saved.
+- **"Your document is ready".** When you ask for a letter, memo, minutes, report, proposal, notice, table and similar (in Malay or English), the answer ends with a card holding ready buttons: Word, PDF, and Excel when there are tables.
+- **Your letterhead** comes from Branding: the logo, the letterhead organisation name (or the brand name) and the address.
+- Source markers such as [1] are left out of the files.
+- Made inside TUNAS, offline. No office suite is needed to make them.
+
+### Also
+- The "Search" engine process has its own log: `logs\engine-search.log`.
+- Third-party notices updated (Liberation Sans fonts, document libraries).
+- Install over 0.2.5 directly. Everything is kept.
+
+---
+
 ## 0.2.5 — 20 November 2026 (thinking that ends with an answer; app icon choice)
 
 - **Fixed: with thinking on, the model thought until it ran out of room and never answered.** Small models (Qwen 3.5 4B and smaller) tend to think in circles ("Wait, is it…").

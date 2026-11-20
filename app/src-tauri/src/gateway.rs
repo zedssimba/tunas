@@ -18,6 +18,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use futures_util::StreamExt;
 use parking_lot::Mutex;
 use serde_json::{json, Value};
 use std::sync::Arc;
@@ -238,6 +239,7 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
         Err(e) => return err(StatusCode::BAD_REQUEST, &e),
     };
 
+    let mut hits: Vec<crate::knowledge::Hit> = vec![];
     // Messages: add the system prompt (persona, language rule, built-in reference) unless raw.
     let mut messages: Vec<Value> = body.get("messages").and_then(|m| m.as_array()).cloned().unwrap_or_default();
     if !raw {
@@ -251,13 +253,46 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
             .map(|c| if let Some(s) = c.as_str() { s.chars().take(2000).collect::<String>() } else { c.to_string() })
             .collect::<Vec<_>>()
             .join("\n");
-        let sys = system_prompt(&app, assistant.as_ref(), &last_user);
+        let mut sys = system_prompt(&app, assistant.as_ref(), &last_user);
+        // Knowledge: the assistant's sets plus any picked for this chat.
+        let mut sets: Vec<String> = assistant.as_ref().map(|a| state.knowledge.assistant_sets(&a.id)).unwrap_or_default();
+        if !ctx.external {
+            if let Some(extra) = body.get("tunas_knowledge").and_then(|v| v.as_array()) {
+                for s in extra.iter().filter_map(|v| v.as_str()) {
+                    if !sets.iter().any(|x| x == s) {
+                        sets.push(s.to_string());
+                    }
+                }
+            }
+        }
+        if !sets.is_empty() {
+            // Short follow-ups ("and the deadline?") are searched together with the question before.
+            let users: Vec<String> = messages
+                .iter()
+                .rev()
+                .filter(|m| m.get("role").and_then(|r| r.as_str()) == Some("user"))
+                .take(2)
+                .filter_map(|m| m.get("content").and_then(|c| c.as_str()).map(|s| s.chars().take(1500).collect::<String>()))
+                .collect();
+            let query = match users.as_slice() {
+                [last, prev, ..] if last.chars().count() < 60 => format!("{prev}\n{last}"),
+                [last, ..] => last.clone(),
+                _ => String::new(),
+            };
+            hits = state.knowledge.search(&sets, &query, 6).await;
+            if !hits.is_empty() {
+                sys.push_str(&crate::knowledge::prompt_block(&hits));
+            } else {
+                sys.push_str("\n\nThe user's knowledge sets were searched but nothing relevant was found for this message. If the user asks about their documents, say that you could not find it in them.");
+            }
+        }
         // Keep an app's own system message after ours.
         messages.insert(0, json!({"role": "system", "content": sys}));
     }
     if let Some(o) = body.as_object_mut() {
         o.remove("tunas_assistant");
         o.remove("tunas_raw");
+        o.remove("tunas_knowledge");
         o.insert("messages".into(), Value::Array(messages));
     }
 
@@ -330,11 +365,25 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
     };
     let status = StatusCode::from_u16(resp.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     let ctype = resp.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or(if stream { "text/event-stream" } else { "application/json" }).to_string();
+    // Indexing waits while this answer is being written (the guard lives as long as the stream).
+    let guard = crate::knowledge::ChatGuard::new();
+    let upstream = resp.bytes_stream().map(move |x| {
+        let _ = &guard;
+        x
+    });
+    // TUNAS's own chat gets the sources first, as one extra event before the answer.
+    let first: Vec<Result<bytes::Bytes, reqwest::Error>> = if stream && !ctx.external && !hits.is_empty() && status.is_success() {
+        let src: Vec<Value> = hits.iter().map(|h| json!({"n": h.n, "name": h.name, "path": h.path, "label": h.label, "page": h.page, "set": h.set})).collect();
+        vec![Ok(bytes::Bytes::from(format!("data: {}\n\n", json!({"tunas_sources": src}))))]
+    } else {
+        vec![]
+    };
+    let body_stream = futures_util::stream::iter(first).chain(upstream);
     Response::builder()
         .status(status)
         .header("content-type", ctype)
         .header("cache-control", "no-cache")
-        .body(Body::from_stream(resp.bytes_stream()))
+        .body(Body::from_stream(body_stream))
         .unwrap_or_else(|_| err(StatusCode::INTERNAL_SERVER_ERROR, "response error"))
 }
 

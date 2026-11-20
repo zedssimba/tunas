@@ -7,6 +7,8 @@
   import Sidebar from './views/Sidebar.svelte';
   import Chat from './views/Chat.svelte';
   import Assistants from './views/Assistants.svelte';
+  import Knowledge from './views/Knowledge.svelte';
+  import { kn, initKnowledgeEvents } from './lib/knowledge.svelte.js';
   import Setup from './views/Setup.svelte';
   import SettingsShell from './views/SettingsShell.svelte';
   import Icon from './lib/Icon.svelte';
@@ -32,6 +34,7 @@
 
   onMount(async () => {
     await initEvents();
+    initKnowledgeEvents();
     app.info = await api.app_info();
     for (let i = 0; i < 50 && !app.gateway.port; i++) { app.gateway = await api.gateway_info(); if (!app.gateway.port) await new Promise((r) => setTimeout(r, 100)); }
     await Promise.all([refreshBrand(), loadPrefs(), refreshAssistants(), refreshModels(), refreshChats(), refreshProviders()]);
@@ -53,11 +56,33 @@
       <main>
         {#if app.view === 'chat'}<Chat />
         {:else if app.view === 'assistants'}<Assistants />
+        {:else if app.view === 'knowledge'}<Knowledge />
         {:else if app.view === 'settings'}<SettingsShell />
         {/if}
       </main>
     </div>
   {/if}
+{/if}
+
+{#if kn.consent}
+  <div class="overlay">
+    <div class="dialog card" style="max-width:520px">
+      <div class="row"><Icon name="lock" size={20} /><h2>Allow TUNAS to read {kn.consent.paths.length === 1 ? 'this place' : 'these places'}?</h2></div>
+      <div class="small" style="margin:12px 0;display:flex;flex-direction:column;gap:4px">
+        {#each kn.consent.paths as p}<div class="ellipsis" title={p}><Icon name="folder" size={14} /> <b>{p}</b></div>{/each}
+      </div>
+      <ul class="small mute" style="margin:0 0 6px 18px;display:flex;flex-direction:column;gap:4px">
+        <li>TUNAS reads the documents here, on this machine, so your assistants can answer from them.</li>
+        <li>Nothing is copied out of this place and nothing is sent anywhere. The search index stays on this machine.</li>
+        <li>Answers from a <b>cloud</b> model would include the parts of your documents it uses. Local models keep everything here.</li>
+        <li>You can remove this permission any time in Settings → Folders. Your files are never changed or deleted.</li>
+      </ul>
+      <div class="row" style="justify-content:flex-end;margin-top:16px">
+        <button class="btn" onclick={() => kn.consent.resolve(false)}>Not now</button>
+        <button class="btn primary" onclick={() => kn.consent.resolve(true)}>Allow</button>
+      </div>
+    </div>
+  </div>
 {/if}
 
 {#if packPrompt}

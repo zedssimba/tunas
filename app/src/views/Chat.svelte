@@ -3,7 +3,8 @@
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
-  import { api, pickFiles } from '../lib/api.js';
+  import { api, pickFiles, saveFile } from '../lib/api.js';
+  import { kn, newSetFromFolder, setLabel, refreshKnowledge } from '../lib/knowledge.svelte.js';
   import { md } from '../lib/markdown.js';
   import { buildMessages, streamChat, makeTitle } from '../lib/chat.js';
   import { app, toast, refreshChats, assistantName, currentAssistant, modelName, openSettings } from '../lib/state.svelte.js';
@@ -45,6 +46,61 @@
 
   let abort = null;
   let titleCtl = null;
+  // Knowledge: the assistant's own sets, plus sets picked for this chat with the # button.
+  let chatSets = $state([]);
+  let assistantSets = $state([]);
+  let kOpen = $state(false);
+  let liveSources = $state([]);
+  let saveOpen = $state(null);
+  $effect(() => {
+    const id = assistant?.id;
+    if (id) api.knowledge_for_assistant({ assistantId: id }).then((v) => (assistantSets = v));
+    else assistantSets = [];
+  });
+  async function saveChatSets(ids) {
+    chatSets = ids;
+    if (app.chatId) await api.setting_set({ key: `chat_knowledge:${app.chatId}`, value: JSON.stringify(ids) });
+  }
+  function toggleSet(id) {
+    saveChatSets(chatSets.includes(id) ? chatSets.filter((x) => x !== id) : [...chatSets, id]);
+  }
+  async function newChatSet() {
+    kOpen = false;
+    const id = await newSetFromFolder();
+    if (id) saveChatSets([...chatSets, id]);
+  }
+  const setName = (id) => kn.sets.find((x) => x.id === id)?.name;
+  async function openSource(src) {
+    try { await api.open_file({ path: src.path }); } catch (e) { toast(String(e), 'error'); }
+  }
+
+  // Documents: requests that ask for a document get a ready file card under the answer.
+  const DOC_WORDS = /\b(surat|letter|memo|memorandum|minit|minutes|laporan|report|kertas|proposal|cadangan|notis|notice|pekeliling|circular|jadual|table|senarai|invois|invoice|sebut harga|quotation|agenda|sijil|certificate|resume|cv|kenyataan|borang)\b/i;
+  function wantsDoc(i) {
+    const prev = messages[i - 1];
+    return prev?.role === 'user' && DOC_WORDS.test(prev.content || '');
+  }
+  function docTitle(text) {
+    const h = (text || '').split('\n').find((l) => /^#{1,3}\s/.test(l));
+    if (h) return h.replace(/^#+\s*/, '').replace(/[*_`]/g, '').trim().slice(0, 60);
+    return (app.chats.find((c) => c.id === app.chatId)?.title || 'TUNAS document').slice(0, 60);
+  }
+  const hasTable = (text) => /^\s*\|.*\|\s*$/m.test(text || '') && /^\s*\|?\s*:?-{3,}/m.test(text || '');
+  async function saveAs(m, format) {
+    saveOpen = null;
+    const title = docTitle(m.content);
+    const safe = title.replace(/[\\/:*?"<>|]/g, '').trim() || 'TUNAS document';
+    const names = { docx: 'Word document', xlsx: 'Excel workbook', pdf: 'PDF' };
+    const path = await saveFile(`${safe}.${format}`, [{ name: names[format], extensions: [format] }], 'Save the document');
+    if (!path) return;
+    try {
+      await api.doc_export({ markdown: m.content, format, path, title, letterhead: true });
+      toast(`Saved ${safe}.${format}`, 'ok');
+      api.open_written({ path }).catch(() => {});
+    } catch (e) {
+      toast(String(e), 'error', 8000);
+    }
+  }
   // Leaving the chat screen stops the answer (what was written so far is kept), so the engine is free
   // for the next question instead of finishing an answer nobody is watching.
   onDestroy(() => { abort?.abort(); titleCtl?.abort(); stopPump(); });
@@ -69,8 +125,9 @@
   });
 
   async function load(id) {
-    if (!id) { messages = []; modelOverride = ''; return; }
+    if (!id) { messages = []; modelOverride = ''; chatSets = []; return; }
     modelOverride = (await api.setting_get({ key: `chat_model:${id}` })) || '';
+    try { chatSets = JSON.parse((await api.setting_get({ key: `chat_knowledge:${id}` })) || '[]'); } catch { chatSets = []; }
     messages = await api.messages_list({ chatId: id });
     await scrollDown(true);
   }
@@ -148,6 +205,7 @@
         chatId = c.id;
         loadedChat = chatId;
         if (modelOverride) api.setting_set({ key: `chat_model:${chatId}`, value: modelOverride });
+        if (chatSets.length) api.setting_set({ key: `chat_knowledge:${chatId}`, value: JSON.stringify(chatSets) });
         app.chatId = chatId;
         messages = [];
         refreshChats();
@@ -175,6 +233,7 @@
     if (r.error) throw new Error(r.error);
     const mode = r.kind === 'local' ? (app.thinkModes[r.model_id] || 'off') : 'off';
     streaming = '…';
+    liveSources = [];
     thinkText = '';
     thinkStart = 0;
     thinkOpen = mode === 'shown';
@@ -183,6 +242,7 @@
     const msgs = buildMessages(assistant, messages, r.ctx || 8192);
     let text = '';
     let reasoning = '';
+    let sources = [];
     let stats = null;
     try {
       const res = await streamChat({
@@ -191,6 +251,8 @@
         messages: msgs,
         signal: abort.signal,
         think: mode !== 'off',
+        knowledge: $state.snapshot(chatSets),
+        onSources: (src) => { liveSources = src; },
         onThinking: (t) => { if (!thinkStart) thinkStart = performance.now(); if (mode === 'shown') { thinkText = t; scrollDown(); } },
         onToken: (t) => {
           if (thinkStart && streaming === '…' && mode === 'shown') thinkOpen = false; // fold the thoughts when the answer starts
@@ -200,6 +262,7 @@
       });
       text = res.text;
       reasoning = res.reasoning;
+      sources = res.sources || [];
       stats = res.stats;
     } catch (e) {
       if (e.name === 'AbortError') {
@@ -221,6 +284,7 @@
     }
     const extra = { model: route.kind === 'local' ? app.engine?.model_id : effModel, engine: route.kind === 'local' ? app.engine?.engine : route.kind };
     if (mode === 'shown' && reasoning) extra.reasoning = reasoning;
+    if (sources.length) extra.sources = sources;
     const am = await api.message_add({
       message: { id: '', chat_id: chatId, role: 'assistant', content: text, files: [], stats: JSON.stringify({ ...(stats || {}), ...extra }), created: '' },
     });
@@ -512,8 +576,38 @@
                 {/if}
               {/if}
               <div class="md">{@html md(m.content)}</div>
+              {#if st?.sources?.length}
+                <div class="sources">
+                  <span class="small faint">Sources</span>
+                  {#each st.sources as src}
+                    <button class="srcchip" title={`${src.path}${src.set ? ' · ' + src.set : ''}`} onclick={() => openSource(src)}>
+                      <b>{src.n}</b> {src.name}{#if src.label}<span class="faint"> · {src.label}</span>{/if}
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+              {#if wantsDoc(i) && !st?.stopped}
+                <div class="doccard">
+                  <Icon name="file" size={18} />
+                  <div class="grow"><b>Your document is ready</b><div class="small mute">{docTitle(m.content)} · with your letterhead</div></div>
+                  <button class="btn sm primary" onclick={() => saveAs(m, 'docx')}>Word</button>
+                  <button class="btn sm" onclick={() => saveAs(m, 'pdf')}>PDF</button>
+                  {#if hasTable(m.content)}<button class="btn sm" onclick={() => saveAs(m, 'xlsx')}>Excel</button>{/if}
+                </div>
+              {/if}
               <div class="tools">
                 <button class="icon-btn" title="Copy" onclick={() => copy(m.content)}><Icon name="copy" size={14} /></button>
+                <span class="savewrap">
+                  <button class="icon-btn" title="Save as Word, PDF or Excel" onclick={() => (saveOpen = saveOpen === m.id ? null : m.id)}><Icon name="download" size={14} /></button>
+                  {#if saveOpen === m.id}
+                    <div class="menu card savemenu">
+                      <button class="mi" onclick={() => saveAs(m, 'docx')}><Icon name="file" size={14} /> Word (.docx)</button>
+                      <button class="mi" onclick={() => saveAs(m, 'pdf')}><Icon name="file" size={14} /> PDF</button>
+                      <button class="mi" onclick={() => saveAs(m, 'xlsx')}><Icon name="file" size={14} /> Excel (.xlsx){#if !hasTable(m.content)}<span class="faint small"> · text only</span>{/if}</button>
+                    </div>
+                    <button class="scrim" aria-label="Close" onclick={() => (saveOpen = null)}></button>
+                  {/if}
+                </span>
                 {#if i === messages.length - 1}
                   <button class="icon-btn" title="Answer again" disabled={busy} onclick={regenerate}><Icon name="refresh" size={14} /></button>
                 {/if}
@@ -547,6 +641,12 @@
             {:else}
               <div class="md">{@html streamHtml}</div>
             {/if}
+            {#if liveSources.length}
+              <div class="sources">
+                <span class="small faint">Sources</span>
+                {#each liveSources as src}<span class="srcchip"><b>{src.n}</b> {src.name}{#if src.label}<span class="faint"> · {src.label}</span>{/if}</span>{/each}
+              </div>
+            {/if}
           </div>
         </div>
       {/if}
@@ -566,10 +666,34 @@
           {/each}
         </div>
       {/if}
+      {#if chatSets.length || assistantSets.length}
+        <div class="kbar">
+          <Icon name="book" size={13} />
+          <span class="small faint">Answering from</span>
+          {#each assistantSets as id}{#if setName(id)}<span class="kchip fixed" title="Part of this assistant">{setName(id)}</span>{/if}{/each}
+          {#each chatSets as id}{#if setName(id)}<span class="kchip">{setName(id)}<button aria-label="Remove" onclick={() => toggleSet(id)}><Icon name="x" size={11} /></button></span>{/if}{/each}
+        </div>
+      {/if}
       <div class="row inner">
         <button class="icon-btn" title="Add files (PDF, Word, Excel, PowerPoint, text)" onclick={attach}><Icon name="clip" size={18} /></button>
+        <span class="kwrap">
+          <button class="icon-btn" class:on={chatSets.length} title="Use knowledge in this chat (#)" onclick={() => { kOpen = !kOpen; if (kOpen) refreshKnowledge(); }}><Icon name="hash" size={18} /></button>
+          {#if kOpen}
+            <div class="menu card kmenu">
+              <div class="small faint" style="padding:4px 8px 6px">Knowledge for this chat</div>
+              {#each kn.sets as ks}
+                <button class="mi" class:sel={chatSets.includes(ks.id) || assistantSets.includes(ks.id)} disabled={assistantSets.includes(ks.id)} onclick={() => toggleSet(ks.id)}>
+                  <Icon name={chatSets.includes(ks.id) || assistantSets.includes(ks.id) ? 'check' : 'book'} size={14} />
+                  <span class="grow">{ks.name}<span class="d">{assistantSets.includes(ks.id) ? 'Part of this assistant' : setLabel(ks)}</span></span>
+                </button>
+              {/each}
+              <button class="mi" onclick={newChatSet}><Icon name="folder" size={14} /><span class="grow">New from folder…<span class="d">Read a folder on this machine, with your permission</span></span></button>
+            </div>
+            <button class="scrim" aria-label="Close" onclick={() => (kOpen = false)}></button>
+          {/if}
+        </span>
         <textarea bind:this={ta} bind:value={input} rows="1" placeholder={`Message ${assistantName(assistant)}…`}
-          oninput={autosize} onkeydown={onKey}></textarea>
+          oninput={(e) => { autosize(); if (input === '#') { input = ''; kOpen = true; refreshKnowledge(); } }} onkeydown={onKey}></textarea>
         {#if busy && abort}
           <button class="send stop" title="Stop" onclick={stop}><Icon name="stop" size={16} /></button>
         {:else}
@@ -583,6 +707,20 @@
 </div>
 
 <style>
+  .sources { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 2px; }
+  .srcchip { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  button.srcchip:hover { border-color: var(--brand1); color: var(--brand1); }
+  .srcchip b { color: var(--brand1); }
+  .doccard { display: flex; gap: 10px; align-items: center; margin: 10px 0 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); max-width: 560px; }
+  .savewrap, .kwrap { position: relative; display: inline-flex; }
+  .savemenu { top: auto; bottom: 30px; width: 220px; }
+  .kmenu { top: auto; bottom: 42px; width: 320px; }
+  .kmenu .d { display: block; font-size: 11.5px; color: var(--faint); font-weight: 400; }
+  .icon-btn.on { color: var(--brand1); }
+  .kbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px 0; }
+  .kchip { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 6px 2px 9px; border-radius: 99px; background: color-mix(in srgb, var(--brand1) 10%, transparent); color: var(--brand1); }
+  .kchip.fixed { padding-right: 9px; }
+  .kchip button { display: inline-flex; opacity: .7; }
   .chat-view { display: flex; flex-direction: column; height: 100%; }
   header { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
   .picker { position: relative; }
