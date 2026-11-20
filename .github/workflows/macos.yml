@@ -19,7 +19,7 @@ jobs:
           - arch: x86_64
             target: x86_64-apple-darwin
             label: intel
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       LLAMA_COMMIT: 08c252e
     steps:
