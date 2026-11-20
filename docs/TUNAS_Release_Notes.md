@@ -5,6 +5,17 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.4 — 20 November 2026 (chatting with TERAS models)
+
+- **Fixed: chatting with a TERAS model failed with "`temperature` is deprecated for this model".**
+  - TUNAS's chat sends its own sampling settings (temperature and similar), tuned for the small models on this machine. Some newer models behind TERAS refuse them.
+  - TUNAS's chat now leaves those settings to TERAS and cloud models, and sends them only to local models.
+  - Apps using the TUNAS API still have their settings passed on. If TERAS or a cloud provider refuses one, TUNAS sends the request once more without them, so the answer still comes.
+  - Tested on the build machine with a stand-in TERAS that refuses `temperature`: the first request was refused, the second went through without it, and the answer came back.
+- Install over 0.3.3 directly. Everything is kept, including the TERAS connection.
+
+---
+
 ## 0.3.3 — 20 November 2026 (sources grouped by file)
 
 - **Each file is listed once under an answer, with all its citation numbers**, for example `1 2 3 4 5  SALT_CI_All_Release_Notes.md`, instead of the same file repeated for every citation.

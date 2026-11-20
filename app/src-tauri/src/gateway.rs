@@ -74,6 +74,9 @@ const FOOD: &[&str] = &[
     "salt water", "air garam", "teaspoon", "tsp", "sudu",
 ];
 
+/// Sampling settings that TERAS and cloud models may refuse.
+const SAMPLING: &[&str] = &["temperature", "top_p", "top_k", "min_p", "presence_penalty", "frequency_penalty", "repeat_penalty"];
+
 pub fn wants_reference(text: &str) -> bool {
     let t = text.to_lowercase();
     if TRIGGERS.iter().any(|k| t.contains(k)) || (t.contains("nexus") && (t.contains("salt") || t.contains("app"))) {
@@ -349,6 +352,13 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 o.remove("chat_template_kwargs");
                 o.remove("timings_per_token");
                 o.remove("cache_prompt");
+                // TUNAS's own sampling settings are tuned for the small local models. TERAS and cloud
+                // models choose their own, and some newer models refuse them outright ("`temperature`
+                // is deprecated for this model"), so TUNAS's chat leaves them to the provider.
+                // Settings sent by other apps through the API are passed on as they are.
+                if !ctx.external {
+                    for k in SAMPLING { o.remove(*k); }
+                }
             }
             let key = crate::secret::reveal(&p.key_enc).unwrap_or_default();
             (format!("{}/chat/completions", p.base_url.trim_end_matches('/')), key)
@@ -365,13 +375,40 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
             req = req.header("HTTP-Referer", "https://www.salt.ci").header("X-Title", "TUNAS");
         }
     }
-    let resp = match req.send().await {
+    let mut resp = match req.send().await {
         Ok(r) => r,
         Err(e) => {
             let who = match &target { Target::Provider(p, _) => p.name.clone(), _ => "the local engine".into() };
             return err(StatusCode::BAD_GATEWAY, &format!("Could not reach {who}: {e}"));
         }
     };
+    // A provider that refuses a sampling setting (temperature, top_p…) gets the request once more
+    // without them, so an app's settings never stop the answer altogether.
+    if let Target::Provider(p, _) = &target {
+        if resp.status().as_u16() == 400 && body.as_object().map(|o| SAMPLING.iter().any(|k| o.contains_key(*k))).unwrap_or(false) {
+            let text = resp.text().await.unwrap_or_default();
+            let low = text.to_lowercase();
+            let about_sampling = SAMPLING.iter().any(|k| low.contains(k)) || low.contains("deprecated") || low.contains("not supported") || low.contains("unsupported");
+            if about_sampling {
+                if let Some(o) = body.as_object_mut() {
+                    for k in SAMPLING { o.remove(*k); }
+                }
+                let mut again = client.post(&url).json(&body);
+                if !key.is_empty() { again = again.bearer_auth(&key); }
+                if p.kind == "openrouter" {
+                    again = again.header("HTTP-Referer", "https://www.salt.ci").header("X-Title", "TUNAS");
+                }
+                resp = match again.send().await {
+                    Ok(r) => r,
+                    Err(e) => return err(StatusCode::BAD_GATEWAY, &format!("Could not reach {}: {e}", p.name)),
+                };
+            } else {
+                let code = StatusCode::BAD_REQUEST;
+                return Response::builder().status(code).header("content-type", "application/json").body(Body::from(text))
+                    .unwrap_or_else(|_| err(code, "response error"));
+            }
+        }
+    }
     let status = StatusCode::from_u16(resp.status().as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
     let ctype = resp.headers().get("content-type").and_then(|v| v.to_str().ok()).unwrap_or(if stream { "text/event-stream" } else { "application/json" }).to_string();
     // Indexing waits while this answer is being written (the guard lives as long as the stream).
