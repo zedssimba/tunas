@@ -5,6 +5,15 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.3 — 20 November 2026 (sources grouped by file)
+
+- **Each file is listed once under an answer, with all its citation numbers**, for example `1 2 3 4 5  SALT_CI_All_Release_Notes.md`, instead of the same file repeated for every citation.
+  - Hover over it to see what each number points to (the section, page, slide or sheet).
+  - Click it to open the file.
+- Install over 0.3.2 directly.
+
+---
+
 ## 0.3.2 — 20 November 2026 (faster reading for Knowledge)
 
 - **Reading uses the graphics card when it can.** On .76, Knowledge read about one piece of text per second on the processor (low priority, half the cores) while the Quadro sat idle.

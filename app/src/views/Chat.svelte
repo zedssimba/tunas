@@ -79,6 +79,17 @@
     if (ks.state === 'empty') return ' · no readable files';
     return '';
   }
+  // One entry per file, with all its citation numbers: "Release_Notes.md [1][2][5]".
+  function groupSources(list) {
+    const by = new Map();
+    for (const src of list || []) {
+      const g = by.get(src.path) || { path: src.path, name: src.name, set: src.set, items: [] };
+      g.items.push(src);
+      by.set(src.path, g);
+    }
+    return [...by.values()];
+  }
+  const srcTitle = (g) => [g.path, ...g.items.map((x) => `[${x.n}] ${x.label || 'whole file'}`)].join('\n');
   async function openSource(src) {
     try { await api.open_file({ path: src.path }); } catch (e) { toast(String(e), 'error'); }
   }
@@ -588,9 +599,9 @@
               {#if st?.sources?.length}
                 <div class="sources">
                   <span class="small faint">Sources</span>
-                  {#each st.sources as src}
-                    <button class="srcchip" title={`${src.path}${src.set ? ' · ' + src.set : ''}`} onclick={() => openSource(src)}>
-                      <b>{src.n}</b> {src.name}{#if src.label}<span class="faint"> · {src.label}</span>{/if}
+                  {#each groupSources(st.sources) as g}
+                    <button class="srcchip" title={srcTitle(g)} onclick={() => openSource(g)}>
+                      <span class="nums">{#each g.items as x}<b>{x.n}</b>{/each}</span> {g.name}
                     </button>
                   {/each}
                 </div>
@@ -653,7 +664,7 @@
             {#if liveSources.length}
               <div class="sources">
                 <span class="small faint">Sources</span>
-                {#each liveSources as src}<span class="srcchip"><b>{src.n}</b> {src.name}{#if src.label}<span class="faint"> · {src.label}</span>{/if}</span>{/each}
+                {#each groupSources(liveSources) as g}<span class="srcchip" title={srcTitle(g)}><span class="nums">{#each g.items as x}<b>{x.n}</b>{/each}</span> {g.name}</span>{/each}
               </div>
             {/if}
           </div>
@@ -719,7 +730,8 @@
   .sources { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 2px; }
   .srcchip { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel); max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   button.srcchip:hover { border-color: var(--brand1); color: var(--brand1); }
-  .srcchip b { color: var(--brand1); }
+  .srcchip .nums { display: inline-flex; gap: 3px; }
+  .srcchip b { color: var(--brand1); font-size: 11px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; display: inline-grid; place-items: center; background: color-mix(in srgb, var(--brand1) 12%, transparent); }
   .doccard { display: flex; gap: 10px; align-items: center; margin: 10px 0 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); max-width: 560px; }
   .savewrap, .kwrap { position: relative; display: inline-flex; }
   .savemenu { top: auto; bottom: 30px; width: 220px; }
