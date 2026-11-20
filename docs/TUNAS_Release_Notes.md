@@ -16,7 +16,7 @@ Newest first. Any change after a release gets a new version number.
 
 ## 0.3.2 — 20 November 2026 (faster reading for Knowledge)
 
-- **Reading uses the graphics card when it can.** On .76, Knowledge read about one piece of text per second on the processor (low priority, half the cores) while the Quadro sat idle.
+- **Reading uses the graphics card when it can.** On the Windows test machine, Knowledge read about one piece of text per second on the processor (low priority, half the cores) while the Quadro sat idle.
   - Once the chat engine has run on graphics on a machine, the search engine uses graphics too: many times faster.
   - If graphics cannot start, it falls back to the processor.
 - **On the processor, all cores are used,** still at low priority, so the machine stays responsive. Measured on the build machine: twice as fast as using half the cores.
@@ -26,7 +26,7 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
-## 0.3.1 — 20 November 2026 (fixes from the first Knowledge test on .76)
+## 0.3.1 — 20 November 2026 (fixes from the first Knowledge test)
 
 - **Fixed: an assistant with Knowledge answered from the built-in S.A.L.T reference instead of your documents.**
   - The reference told the model to use only its own facts about S.A.L.T CI, and to say that releases and versions are "not in this reference". That beat the release notes you had given it.
@@ -108,7 +108,7 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
-## 0.2.4 — 20 November 2026 (fixes from testing 0.2.3 on .76)
+## 0.2.4 — 20 November 2026 (fixes from testing 0.2.3)
 
 - **Fixed: chats got stuck after the first answer.**
   - The cause: an answer kept running in the background after you moved to another chat or to Settings. TUNAS has one engine, so every new question waited behind it. With thinking on there was no length limit, so it could keep going for a very long time on a processor.
@@ -232,7 +232,7 @@ Install over 0.1.4 directly. Chats, assistants, branding and models are kept.
 
 ---
 
-## 0.1.4 — 19 November 2026 (cosmetic fixes from the .76 test)
+## 0.1.4 — 19 November 2026 (cosmetic fixes from the Windows test)
 
 - **Fixed: blue buttons turned white when the mouse was over them**, so they seemed to disappear. They now stay blue and brighten slightly.
 - **Logo background for co-brands.** On the Branding page, a logo can sit on a **light** or **dark** background, as a **rounded square** or a **circle**.
@@ -255,9 +255,9 @@ Install over 0.1.4 directly. Chats, assistants, branding and models are kept.
 
 ---
 
-## 0.1.2 — 19 November 2026 (fixes from the .76 test, and S.A.L.T branding)
+## 0.1.2 — 19 November 2026 (fixes from the Windows test, and S.A.L.T branding)
 
-- **Fixed: setup stuck on "Checking memory, processor and graphics…".** On some graphics drivers (seen on .76 with a Quadro K6000), the engine's device test prints the device list and then never closes, so TUNAS waited forever.
+- **Fixed: setup stuck on "Checking memory, processor and graphics…".** On some graphics drivers (seen with a Quadro K6000), the engine's device test prints the device list and then never closes, so TUNAS waited forever.
   - TUNAS now reads the list as soon as it appears and closes the test itself.
   - Every outside check has a time limit: 12 s for the Windows graphics query and 15 s for the engine test.
   - The checks run side by side, and the result is remembered for the rest of the session. The engine start uses the same remembered result.
@@ -270,7 +270,7 @@ Install over 0.1.4 directly. Chats, assistants, branding and models are kept.
 
 ---
 
-## 0.1.1 — 19 November 2026 (fixes after the first install on .76)
+## 0.1.1 — 19 November 2026 (fixes after the first Windows install)
 
 - **Fixed: the app window showed "localhost refused to connect".** 0.1.0 was built without its screens packed inside, so it looked for a development server. The screens are now embedded in TUNAS.exe.
 - **Fixed: the installer and the uninstaller could run twice.** Each now allows only one copy of itself at a time.
@@ -351,4 +351,5 @@ Install over 0.1.4 directly. Chats, assistants, branding and models are kept.
 - The TUNAS mark is option A as a placeholder until CAPT ZEDs chooses.
 
 ---
+S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi · www.salt.ci · info@salt.ci · www.pemangkin.tech · info@pemangkin.tech
 S.A.L.T CI and its components are proprietary technology of S.A.L.T. CI TECHNOLOGY, distributed and commercialised by Pemangkin Teknologi.

@@ -1,0 +1,600 @@
+file: SALT_TUNAS_Product_Brief_v1.0
+title: S.A.L.T TUNAS Product Brief
+product: S.A.L.T TUNAS
+mark_file: tunas-mark.svg
+cover_logo: salt-large.png
+doctype: Product brief
+version: Version 1.0 · TUNAS 0.3.3
+date: November 2026
+domain: salt.ci
+cover:
+  top_right: S.A.L.T TUNAS
+  eyebrow: PRODUCT BRIEF · S.A.L.T CI
+  title: S.A.L.T <em>TUNAS</em>
+  subtitle: Personal AI that lives on your own computer. Chat, ready-made assistants, answers from your own folders and finished Word, Excel and PDF documents, all running on the machine itself, offline and private.
+    Free to install, with your organisation's name and logo on it, and a straight path to TERAS when the whole organisation is ready.
+  chips:
+  - Runs on the computer, works offline
+  - Malay, English and mixed
+  - Seven ready-made assistants
+  - Reads your folders in place
+  - Answers with their sources
+  - Word, Excel and PDF with your letterhead
+  - Thinking you can see
+  - Check my machine picks the models
+  - Graphics card or processor
+  - Models from a USB stick
+  - Your name and logo on the app
+  - Branding packs for whole departments
+  - Connect to TERAS
+  - An AI engine for other apps
+  - Free, with no licence key
+  hero:
+  - type: image
+    src: /img/shots/chat1.jpg
+    size: full
+    caption: A question about a department circular, answered on the computer from the user's own folder, with one source chip per file. Illustrative documents.
+pages:
+- kicker: The problem
+  color: red
+  h1: Everyone wants AI, *few can send their files to it*
+  lead: Staff in agencies, universities and companies are told to use AI to write, summarise and find answers, but the documents they work with are internal, and the tools they are offered send everything to a server abroad. Many computers have no internet in the office, or a link too slow for a chat. And when a tool does run locally, it is a technical toy, not something a clerk, a lecturer or a manager opens on Monday morning.
+  blocks:
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: lock
+      color: red
+      title: Documents can't leave
+      text: Circulars, minutes, student records and tenders can't be pasted into a cloud chat.
+    - icon: cloud-off
+      color: orange
+      title: No reliable internet
+      text: Offices, labs, ships and field sites with slow or no connection.
+    - icon: terminal
+      color: gold
+      title: Local AI is for engineers
+      text: Command lines, model files and settings that ordinary staff won't touch.
+    - icon: file
+      color: violet
+      title: Answers, not documents
+      text: Even a good answer still has to be copied into Word and formatted by hand.
+    - icon: search
+      color: blue
+      title: The files are scattered
+      text: The answer sits in a PDF in some folder, and no one remembers which.
+    - icon: users
+      color: cyan
+      title: No path to grow
+      text: A personal tool doesn't become the organisation's AI when the time comes.
+  - type: sub
+    text: What S.A.L.T TUNAS changes
+  - type: table
+    head:
+    - Today
+    - With S.A.L.T TUNAS
+    widths:
+    - 30%
+    - 70%
+    rows:
+    - - Pasting documents into a cloud chat
+      - The AI runs on the computer itself; nothing is sent anywhere unless the user chooses
+    - - No internet, no AI
+      - Works fully offline once installed, with models copied from a USB stick if needed
+    - - A technical tool
+      - An ordinary desktop app with a chat, ready-made assistants and Check my machine
+    - - Uploading files one by one
+      - TUNAS reads whole folders where they already are, with the user's permission, and stays up to date
+    - - Copying answers into Word
+      - Save as Word, Excel or PDF with the organisation's letterhead, in one click
+    - - A dead end
+      - Connect to TERAS, and the same app becomes a window on the organisation's AI
+  - type: navybox
+    title: Free for everyone, owned by no one else
+    text: TUNAS is free to install, with no licence key, activation or expiry. Every copy carries the organisation's own brand and "Powered by S.A.L.T CI", and the path to TERAS when the organisation is ready for shared AI.
+- kicker: Chat
+  color: blue
+  h1: An AI chat that *stays on the machine*
+  lead: TUNAS opens straight into a chat. Ask in Bahasa Melayu, English or both, drop in a PDF, Word, Excel or PowerPoint file, and the answer is written on the computer itself, word by word, as fast as the machine allows.
+  blocks:
+  - type: image
+    src: /img/shots/welcome-brand.jpg
+    size: wide
+    caption: The welcome screen with an organisation's name and welcome line, the assistant, model and thinking chips, and "Offline & private".
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: globe
+      color: blue
+      title: Malay, English or mixed
+      text: Replies in the language of the question, and handles mixed Malay and English the way people really write.
+    - icon: file
+      color: violet
+      title: Drop in a file
+      text: PDF, Word, Excel, PowerPoint, text, CSV and web pages, read on the computer and used in the answer.
+    - icon: zap
+      color: gold
+      title: Smooth and quick
+      text: Answers stream as they are written; on a graphics card, about as quick as the machine's own hardware allows.
+    - icon: layers
+      color: cyan
+      title: Per-chat choices
+      text: Pick the assistant, the model and the thinking mode at the top of each chat.
+    - icon: search
+      color: orange
+      title: Every chat kept
+      text: Chats are saved on the computer, titled automatically and searchable from the side bar.
+    - icon: shield
+      color: red
+      title: Offline and private
+      text: The badge says where the answer is made; on the computer, nothing leaves it.
+- kicker: Knowledge
+  color: violet
+  h1: Your folders, *read where they are*
+  lead: Point TUNAS at the folders where the documents already live, on the computer or in a synced cloud drive. TUNAS asks once for permission, reads them in place, keeps up as files change, and answers from them with their sources. Nothing is uploaded or copied elsewhere.
+  blocks:
+  - type: flow
+    steps:
+    - title: Allow a folder
+      text: Choose a folder and confirm what TUNAS may read; remove the permission at any time.
+    - title: Make a set
+      text: Group one or more folders under a name, such as "Pekeliling & SOP Jabatan".
+    - title: Give it to an assistant
+      text: Each assistant answers from the sets it is given, or pick one per chat with #.
+    - title: Ask
+      text: Answers come from the documents first, with the file and page behind each point.
+  - type: image
+    src: /img/shots/knowledge.jpg
+    size: wide
+    caption: The Knowledge page, a knowledge set read from a local folder, and the folder permissions below it. Illustrative documents.
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: key
+      color: violet
+      title: Permission first
+      text: Reads only allowed folders, never changes a file, and forgets a folder when permission is removed.
+    - icon: search
+      color: blue
+      title: Finds the right passage
+      text: Searches by meaning and exact words together, so reference numbers and versions are found too.
+    - icon: link
+      color: gold
+      title: One chip per file
+      text: Sources show once per file with the numbered points behind them; a click opens the file.
+    - icon: file
+      color: cyan
+      title: Whole documents
+      text: PDFs by page, slides, sheets and sections, so every answer keeps its place.
+    - icon: cpu
+      color: orange
+      title: Quiet in the background
+      text: Uses the graphics card when there is one and pauses while you chat.
+    - icon: brain
+      color: red
+      title: Documents come first
+      text: The user's documents take priority over anything else the assistant knows.
+- kicker: Documents
+  color: gold
+  h1: From an answer *to a finished document*
+  lead: When an assistant writes a letter, minutes, a report or a table, TUNAS offers it as a finished Word, Excel or PDF file with the organisation's letterhead, ready to print, sign or send.
+  blocks:
+  - type: image
+    src: /img/shots/letter.jpg
+    size: wide
+    caption: Surat Rasmi drafts an official letter from the department's own circular; "Your document is ready" offers Word and PDF. Illustrative names.
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: file
+      color: blue
+      title: Word
+      text: Headings, paragraphs, lists and tables as a real Word document, with the letterhead at the top.
+    - icon: chart
+      color: cyan
+      title: Excel
+      text: Tables become proper sheets, with numbers kept as numbers so they can be totalled and charted.
+    - icon: download
+      color: red
+      title: PDF
+      text: A clean PDF with the same letterhead, ready to send or print, fonts included.
+    - icon: tag
+      color: gold
+      title: The organisation's letterhead
+      text: Logo and name from the app's own branding, so every document looks like it came from the office.
+    - icon: audit
+      color: violet
+      title: Clean copy
+      text: Citation markers are removed from the saved document; the sources stay in the chat.
+    - icon: zap
+      color: orange
+      title: One click
+      text: Save as from any answer, or from the document card; then open the file or its folder.
+- kicker: My assistants
+  color: orange
+  h1: The right helper *for each job*
+  lead: TUNAS comes with seven ready-made assistants, each with its own persona, language and starter prompts. Make more for any task, give each its own knowledge and model, and share them with a whole department in a branding pack.
+  blocks:
+  - type: cols
+    ratio: 1.15fr 1fr
+    columns:
+    - - type: image
+        src: /img/shots/assistants.jpg
+        size: full
+        caption: My assistants, with the seven that come with TUNAS.
+    - - type: image
+        src: /img/shots/editor2.jpg
+        size: full
+        caption: Editing Surat Rasmi, with its persona, starters, knowledge and base model.
+  - type: table
+    head:
+    - Assistant
+    - What it does
+    widths:
+    - 26%
+    - 74%
+    rows:
+    - - General Assistant
+      - Everyday questions, explanations and drafting, in Malay or English
+    - - Surat Rasmi · Official Letter
+      - Formal government and business letters, in Malay or English
+    - - Minit Ringkas · Meeting Minutes
+      - Minutes and action lists from notes or a transcript
+    - - Email Writer
+      - Clear emails in the right tone, from a few points
+    - - Summariser
+      - The key points of a long document or thread
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: users
+      color: orange
+      title: Persona and tone
+      text: How the assistant writes, what it knows to ask, and the language it answers in.
+    - icon: brain
+      color: violet
+      title: Knowledge and model
+      text: The knowledge sets it answers from, and a local, TERAS or cloud model of its own.
+    - icon: download
+      color: gold
+      title: Shared by packs
+      text: An organisation's assistants travel with its branding pack, so every computer has the same set.
+- kicker: Thinking
+  color: cyan
+  h1: See how it *reasons*
+  lead: For harder questions, the models that can reason think before they answer. Each model has its own thinking setting, off, on and hidden, or on and shown, and a thinking length, so a class can watch the reasoning and an office can just get the answer.
+  blocks:
+  - type: image
+    src: /img/shots/think-done.jpg
+    size: wide
+    caption: Thinking shown on a scheduling question, with the reasoning above the answer and the time it took.
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: spark
+      color: cyan
+      title: Off, hidden or shown
+      text: Choose per model; the choice is kept for that model in every chat.
+    - icon: undo
+      color: blue
+      title: Short, normal or long
+      text: A thinking length per model keeps the reasoning focused and makes sure an answer always follows.
+    - icon: users
+      color: gold
+      title: Made for teaching
+      text: Shown thinking lets lecturers and trainers walk a class through how an answer was reached.
+- kicker: Models
+  color: blue
+  h1: The right model *for the machine*
+  lead: Check my machine reads the computer's memory, processor and graphics, runs a short speed test, and recommends the models that will run well on it. Download them with one click, or copy them from a USB stick where there is no internet.
+  blocks:
+  - type: image
+    src: /img/shots/models.jpg
+    size: small
+    caption: Check my machine with its recommendation, and the catalogue with each model's thinking settings.
+  - type: table
+    head:
+    - Model
+    - Size
+    - Good for
+    - Needs
+    widths:
+    - 24%
+    - 10%
+    - 48%
+    - 18%
+    rows:
+    - - Qwen 3.5 0.8B
+      - 0.8B
+      - Older or smaller machines, quick everyday answers
+      - 4 GB memory
+    - - Qwen 3.5 2B
+      - 2B
+      - The everyday default for most notebooks
+      - 6 GB memory
+    - - Qwen 3.5 4B
+      - 4B
+      - Better writing and reasoning, with thinking
+      - 8 GB, best from 12 GB
+    - - Granite 4.2 3B
+      - 3B
+      - Steady, business-style answers, a second opinion
+      - 8 GB memory
+    - - SEA-LION v4 4B
+      - 4B
+      - Tuned for Southeast Asian languages including Malay; own licence terms
+      - 8 GB memory
+    - - Qwen 3 Embedding 0.6B
+      - 0.6B
+      - Reading documents for Knowledge, fetched with the first knowledge set
+      - 4 GB memory
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: cpu
+      color: blue
+      title: Graphics card or processor
+      text: Uses the graphics card where it is faster and the processor everywhere else, with one switch in Settings.
+    - icon: download
+      color: violet
+      title: Downloads checked
+      text: Every model is checked against its published checksum before it is used.
+    - icon: tablet
+      color: gold
+      title: USB in, USB out
+      text: Import models from a folder or USB stick, or copy installed models out to prepare the next machine.
+- kicker: Branding
+  color: violet
+  h1: Your name, *your logo, your app*
+  lead: TUNAS takes on the name, logo and colours of whoever gives it out, an agency, a faculty, a company or a reseller, in the title bar, the icon, the shortcuts, the welcome screen and every saved document. "Powered by S.A.L.T CI" stays underneath.
+  blocks:
+  - type: image
+    src: /img/shots/branding2.jpg
+    size: wide
+    caption: 'Branding a faculty''s copy: name, logo, colour and welcome line, with the live preview and the desktop icon. Illustrative name.'
+  - type: table
+    head:
+    - Layer
+    - Who sets it
+    - Typical use
+    widths:
+    - 22%
+    - 30%
+    - 48%
+    rows:
+    - - My own brand
+      - The user
+      - A trainer's or consultant's own name and logo
+    - - Organisation or department
+      - The organisation's IT, or a branding pack
+      - An agency, faculty or company copy on every staff computer
+    - - OEM or reseller
+      - The computer maker, leasing company or reseller
+      - Pre-installed on notebooks, locked so users can't remove it
+    - - Always shown
+      - S.A.L.T CI
+      - Powered by S.A.L.T CI, and credit on the About page
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: download
+      color: violet
+      title: Branding packs
+      text: One .tunasbrand file carries the name, logo, colours, assistants and rules; import it once and the computer is done.
+    - icon: shield
+      color: red
+      title: Organisation rules
+      text: A pack or the machine's policy can lock the brand, stop new assistants, and turn off cloud or the local API.
+    - icon: screen
+      color: gold
+      title: Everywhere it shows
+      text: Title bar, taskbar and desktop icon, Start menu, welcome screen, About page and the documents' letterhead.
+- kicker: Connections
+  color: navy
+  h1: Local first, *connected when you choose*
+  lead: Everything in TUNAS works on the computer alone. When the organisation has TERAS, or the user has a cloud AI account, Connections adds those models alongside the local ones, and lets other apps on the same computer use TUNAS as their AI engine.
+  blocks:
+  - type: image
+    src: /img/shots/connections.jpg
+    size: wide
+    caption: Connections, with Connect to TERAS, cloud providers off until switched on, and apps that use TUNAS.
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: server
+      color: navy
+      title: Connect to TERAS
+      text: The organisation's TERAS models appear by name, for any assistant, with the same sign-in key kept protected by Windows.
+    - icon: globe
+      color: blue
+      title: Cloud, only if allowed
+      text: The main cloud AI providers with the user's own key, off until the user turns it on, and blockable by the organisation.
+    - icon: code
+      color: violet
+      title: An engine for other apps
+      text: A standard AI API on this computer only, with keys TUNAS issues, so S.A.L.T desktop apps can run on the user's own AI.
+  - type: tiers
+    tiers:
+    - cls: t3
+      label: On the computer
+      note: one user · offline
+      chips:
+      - Chat and My assistants
+      - Knowledge from local folders
+      - Word, Excel and PDF
+      - Local models on graphics or processor
+      - Branding layers
+    - cls: t2
+      label: On the same computer
+      note: 127.0.0.1 · app keys
+      chips:
+      - Local AI API
+      - S.A.L.T desktop apps
+      - Other apps the user allows
+    - cls: t1
+      label: When connected
+      note: user's choice · organisation's rules
+      chips:
+      - The organisation's TERAS
+      - Cloud AI with the user's key
+- kicker: Privacy and deployment
+  color: orange
+  h1: Private by design, *simple to roll out*
+  lead: TUNAS keeps chats, assistants and knowledge on the computer, works without the internet, and asks before it reads a folder. It installs per user with no administrator rights, and an organisation sets it up once with a branding pack.
+  blocks:
+  - type: cards
+    cols: 3
+    compact: true
+    items:
+    - icon: lock
+      color: red
+      title: On the device
+      text: Chats, assistants, knowledge indexes and saved documents stay on the computer.
+    - icon: cloud-off
+      color: orange
+      title: Offline once installed
+      text: No account and no internet needed to chat, read folders or save documents.
+    - icon: key
+      color: blue
+      title: Keys protected
+      text: TERAS and cloud keys are kept with Windows' own protection, tied to the user's account.
+    - icon: shield
+      color: violet
+      title: Off until switched on
+      text: Cloud providers and the local AI API are both off by default.
+    - icon: audit
+      color: gold
+      title: Read-only folders
+      text: TUNAS never changes or deletes the user's files, and only reads folders it is allowed.
+    - icon: wave
+      color: cyan
+      title: No usage data sent
+      text: TUNAS sends no content and no usage reports anywhere.
+  - type: table
+    head:
+    - Deploying TUNAS
+    - Details
+    widths:
+    - 26%
+    - 74%
+    rows:
+    - - Computer
+      - Windows 10 or 11, 64-bit; 8 GB memory recommended, 4 GB for the smallest model
+    - - Graphics
+      - Optional; used where it is faster, with the processor as the fallback
+    - - Install
+      - Per user, no administrator rights; setup checks the machine and picks the models
+    - - Models
+      - Downloaded and checked in the app, or copied from a USB stick or a folder on the image
+    - - Organisation set-up
+      - A branding pack with the name, logo, assistants and rules; or a machine-wide policy file
+    - - TERAS
+      - Optional; the address and a key in Connections
+  - type: goldbox
+    title: For OEM, leasing and resellers
+    text: Pre-installed, co-branded TUNAS images for notebook makers, leasing companies and resellers are arranged through Pemangkin Teknologi, the authorised distributor of S.A.L.T CI.
+- kicker: Why S.A.L.T TUNAS
+  color: blue
+  h1: Personal AI *the organisation can trust*
+  lead: How S.A.L.T TUNAS compares with the usual ways people get AI on their desk. Typical capabilities by category; individual products vary.
+  blocks:
+  - type: table
+    head:
+    - Capability
+    - Cloud chat service
+    - Local model runner
+    - S.A.L.T TUNAS
+    widths:
+    - 43%
+    - 19%
+    - 19%
+    - 19%
+    rows:
+    - - Documents never leave the computer
+      - 'No'
+      - 'Yes'
+      - 'Yes'
+    - - Works with no internet
+      - 'No'
+      - 'Yes'
+      - 'Yes'
+    - - Ready for non-technical staff
+      - 'Yes'
+      - Partly
+      - 'Yes'
+    - - Reads whole folders in place, with sources
+      - Partly
+      - Varies
+      - 'Yes'
+    - - Ready-made Malay and English assistants
+      - Partly
+      - 'No'
+      - 'Yes'
+    - - Word, Excel and PDF with your letterhead
+      - Partly
+      - 'No'
+      - 'Yes'
+    - - Your organisation's name and logo on the app
+      - 'No'
+      - 'No'
+      - 'Yes'
+    - - Models from a USB stick
+      - 'No'
+      - Partly
+      - 'Yes'
+    - - Grows into the organisation's own AI server
+      - 'No'
+      - 'No'
+      - Yes, TERAS
+  - type: cards
+    cols: 4
+    compact: true
+    items:
+    - icon: users
+      color: blue
+      title: Agencies
+      text: Staff who handle internal documents every day.
+    - icon: brain
+      color: violet
+      title: Universities
+      text: Lecturers, students and AI classes, offline in the lab.
+    - icon: tablet
+      color: gold
+      title: OEM and leasing
+      text: A co-branded AI app on every notebook shipped.
+    - icon: calendar
+      color: coral
+      title: Trainings
+      text: Workshops where every seat runs its own AI.
+  - type: sub
+    text: On the roadmap
+  - type: table
+    head:
+    - Coming
+    - What it adds
+    widths:
+    - 26%
+    - 74%
+    rows:
+    - - macOS
+      - TUNAS on Apple silicon and Intel Macs, signed and notarised
+    - - Trainer kit
+      - One folder with installers, models on USB, branding packs and a handout for workshops
+    - - Android
+      - TUNAS on phones and tablets with enough memory, with chat, assistants and TERAS
+    - - Linux and rollout tools
+      - Linux desktop, silent install with a settings file, signed branding packs and update checks
+    - - TERAS knowledge
+      - The organisation's TERAS knowledge collections alongside the user's own folders
+  - type: tintbox
+    title: Start personal, grow into TERAS
+    text: People start with TUNAS on their own computers, with their own folders and assistants. When the organisation is ready to share AI across teams, Connect to TERAS turns the same app into a window on the organisation's own S.A.L.T CI.
