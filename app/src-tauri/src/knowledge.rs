@@ -137,8 +137,19 @@ fn open_db() -> Result<Connection> {
         CREATE INDEX IF NOT EXISTS idx_kchunks_set ON kchunks(set_id);
         CREATE INDEX IF NOT EXISTS idx_kchunks_file ON kchunks(file_id);
         CREATE VIRTUAL TABLE IF NOT EXISTS kfts USING fts5(text, tokenize='unicode61 remove_diacritics 2');
+        CREATE TABLE IF NOT EXISTS kmeta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
         "#,
     )?;
+    // Index format 2 (0.3.1): Markdown is read section by section with its headings. Read old Markdown again.
+    let v: Option<String> = c.query_row("SELECT value FROM kmeta WHERE key = 'format'", [], |r| r.get(0)).optional()?;
+    if v.as_deref() != Some("2") {
+        c.execute_batch(
+            "DELETE FROM kfts WHERE rowid IN (SELECT c.id FROM kchunks c JOIN kfiles f ON f.id = c.file_id WHERE lower(f.path) LIKE '%.md');
+             DELETE FROM kchunks WHERE file_id IN (SELECT id FROM kfiles WHERE lower(path) LIKE '%.md');
+             UPDATE kfiles SET status = 'pending', chunks = 0, error = '' WHERE lower(path) LIKE '%.md';
+             INSERT OR REPLACE INTO kmeta(key, value) VALUES ('format', '2');",
+        )?;
+    }
     Ok(c)
 }
 
@@ -408,6 +419,31 @@ impl Knowledge {
         Ok(out)
     }
 
+    /// Sets in `ids` that are not fully read yet, with how far they are: (name, done, total, waiting_for_model).
+    pub fn not_ready(&self, ids: &[String]) -> Vec<(String, i64, i64, bool)> {
+        let model = embed_model_path().is_some();
+        let c = self.db.lock();
+        let mut out = vec![];
+        for id in ids {
+            let r: Option<(String, i64, i64)> = c
+                .query_row(
+                    "SELECT k.name, (SELECT COUNT(*) FROM kfiles WHERE set_id = k.id AND status != 'pending'),
+                            (SELECT COUNT(*) FROM kfiles WHERE set_id = k.id) FROM ksets k WHERE k.id = ?1",
+                    [id],
+                    |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+                )
+                .optional()
+                .ok()
+                .flatten();
+            if let Some((name, done, total)) = r {
+                if done < total {
+                    out.push((name, done, total, !model));
+                }
+            }
+        }
+        out
+    }
+
     pub fn failed_files(&self, set_id: &str) -> Result<Vec<FailedFile>> {
         let c = self.db.lock();
         let mut st = c.prepare("SELECT path, error FROM kfiles WHERE set_id = ?1 AND status = 'error' ORDER BY path LIMIT 500")?;
@@ -473,10 +509,11 @@ impl Knowledge {
         }
 
         // By exact words (reference numbers, names).
+        // Keep numbers like 0.2.5, 7/2026 and JPA(S)PKPA/7 together; keep any word with a digit even if short.
         let words: Vec<String> = query
-            .split(|c: char| !c.is_alphanumeric() && c != '/' && c != '-')
-            .map(|w| w.trim_matches(|c: char| c == '/' || c == '-'))
-            .filter(|w| w.chars().count() >= 3)
+            .split(|c: char| !c.is_alphanumeric() && c != '/' && c != '-' && c != '.')
+            .map(|w| w.trim_matches(|c: char| c == '/' || c == '-' || c == '.'))
+            .filter(|w| w.chars().count() >= 3 || (w.chars().any(|c| c.is_ascii_digit()) && !w.is_empty()))
             .map(|w| format!("\"{}\"", w.replace('"', "")))
             .take(24)
             .collect();
@@ -500,11 +537,70 @@ impl Knowledge {
             for (rank, id) in ids.into_iter().enumerate() {
                 *ranks.entry(id).or_default() += 1.0 / (60.0 + rank as f32);
             }
+            // Identifiers (version and reference numbers: anything with a digit) are a strong signal:
+            // a piece that contains them counts double.
+            let ident: Vec<String> = words.iter().filter(|w| w.chars().any(|c| c.is_ascii_digit())).cloned().collect();
+            if !ident.is_empty() {
+                let mut args: Vec<String> = vec![ident.join(" OR ")];
+                args.extend(set_ids.iter().cloned());
+                let ids: Vec<i64> = {
+                    let c = self.db.lock();
+                    let mut v: Vec<i64> = vec![];
+                    if let Ok(mut st) = c.prepare(&sql) {
+                        if let Ok(rows) = st.query_map(rusqlite::params_from_iter(args.iter()), |r| r.get::<_, i64>(0)) {
+                            v = rows.flatten().collect();
+                        }
+                    }
+                    v
+                };
+                for (rank, id) in ids.into_iter().take(10).enumerate() {
+                    *ranks.entry(id).or_default() += 2.0 / (60.0 + rank as f32);
+                }
+            }
         }
 
         let mut best: Vec<(i64, f32)> = ranks.into_iter().collect();
         best.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        // "Latest / newest / terkini" questions: what is newest is usually at the start of a document
+        // (release notes, change logs, minutes). Add the opening pieces of the best-matching file.
+        let q = query.to_lowercase();
+        let recency = ["latest", "newest", "most recent", "current version", "recent", "terkini", "terbaru", "paling baru", "baru-baru", "semasa"]
+            .iter()
+            .any(|w| q.contains(w));
+        if recency {
+            if let Some((top, score)) = best.first().cloned() {
+                let opening: Vec<i64> = {
+                    let c = self.db.lock();
+                    let mut v = vec![];
+                    if let Ok(mut st) = c.prepare("SELECT id FROM kchunks WHERE file_id = (SELECT file_id FROM kchunks WHERE id = ?1) ORDER BY id LIMIT 2") {
+                        if let Ok(rows) = st.query_map([top], |r| r.get::<_, i64>(0)) {
+                            v = rows.flatten().collect();
+                        }
+                    }
+                    v
+                };
+                for (i, id) in opening.into_iter().enumerate() {
+                    best.retain(|(x, _)| *x != id);
+                    best.insert(i, (id, score + 0.001));
+                }
+            }
+        }
         best.truncate(k);
+        // Give the pieces to the model file by file (best file first), and within a file in the order they
+        // appear in it, so order in the document ("newest first", numbered steps) is kept.
+        let file_of: HashMap<i64, i64> = {
+            let c = self.db.lock();
+            best.iter()
+                .filter_map(|(id, _)| c.query_row("SELECT file_id FROM kchunks WHERE id = ?1", [id], |r| r.get::<_, i64>(0)).ok().map(|f| (*id, f)))
+                .collect()
+        };
+        let mut file_rank: HashMap<i64, usize> = HashMap::new();
+        for (i, (id, _)) in best.iter().enumerate() {
+            if let Some(f) = file_of.get(id) {
+                file_rank.entry(*f).or_insert(i);
+            }
+        }
+        best.sort_by_key(|(id, _)| (file_of.get(id).and_then(|f| file_rank.get(f)).copied().unwrap_or(usize::MAX), *id));
         let names = self.set_names();
         let c = self.db.lock();
         let mut out = vec![];
@@ -532,6 +628,28 @@ impl Knowledge {
             }
         }
         out
+    }
+
+    /// The section headings of a file in order (for Markdown and slide decks), so the model sees the whole
+    /// structure, e.g. every version in release notes. Empty when the file has fewer than two sections.
+    pub fn outline(&self, path: &str) -> Vec<String> {
+        let c = self.db.lock();
+        let mut st = match c.prepare(
+            "SELECT c.label FROM kchunks c JOIN kfiles f ON f.id = c.file_id WHERE f.path = ?1 AND c.label != '' ORDER BY c.id",
+        ) {
+            Ok(s) => s,
+            Err(_) => return vec![],
+        };
+        let labels: Vec<String> = st.query_map([path], |r| r.get::<_, String>(0)).map(|it| it.flatten().collect()).unwrap_or_default();
+        let mut out: Vec<String> = vec![];
+        for l in labels {
+            // Only the top level of a "Section › Subsection" path.
+            let top = l.split(" › ").next().unwrap_or(&l).to_string();
+            if out.last() != Some(&top) && !out.contains(&top) {
+                out.push(top);
+            }
+        }
+        if out.len() < 2 || out.iter().all(|l| l.starts_with("p. ")) { vec![] } else { out.into_iter().take(40).collect() }
     }
 
     fn vectors(&self, set_id: &str) -> Arc<Vec<(i64, Vec<f32>)>> {
@@ -880,13 +998,25 @@ fn from_bytes(b: &[u8]) -> Vec<f32> {
 }
 
 /// The text added to the system prompt when knowledge is used.
-pub fn prompt_block(hits: &[Hit]) -> String {
+pub fn prompt_block(hits: &[Hit], outline: &[String]) -> String {
     let mut s = String::from(
         "\n\nThe user has given you excerpts from their own documents (Knowledge) below. Use them to answer when they are relevant, \
          and cite them with their number in square brackets, like [1] or [2][3], right after the sentence that uses them. \
          If the excerpts do not contain the answer, say clearly that the user's documents do not cover it; you may then add general \
-         knowledge, saying that it is general knowledge. Never invent document content.\n",
+         knowledge, saying that it is general knowledge. Never invent document content. \
+         These documents are the user's own and more specific than any built-in reference: for releases, versions, dates, \
+         figures and other details, answer from the documents. Each excerpt shows its file and the section, page, slide or \
+         sheet it comes from; keep details from different sections (for example different versions) apart. \
+         Excerpts from the same file are listed in the order they appear in that file.\n",
     );
+    if !outline.is_empty() {
+        if let Some(h) = hits.first() {
+            s.push_str(&format!("\nThe sections of {} in the order they appear (the start of a document often holds the newest entries):\n", h.name));
+            for l in outline {
+                s.push_str(&format!("- {l}\n"));
+            }
+        }
+    }
     for h in hits {
         let where_ = if h.label.is_empty() { String::new() } else { format!(", {}", h.label) };
         s.push_str(&format!("\n[{}] {}{}\n{}\n", h.n, h.name, where_, h.text));
@@ -939,6 +1069,19 @@ mod tests {
         }
         k.delete_set(&id).unwrap();
         k.revoke("/tmp/kdocs").unwrap();
+        k.stop_embedder().await;
+    }
+
+    /// `KSET=id KQ="question" cargo test --lib knowledge::tests::probe -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore]
+    async fn probe() {
+        let k = Knowledge::open().unwrap();
+        let set = std::env::var("KSET").unwrap();
+        let q = std::env::var("KQ").unwrap();
+        for h in k.search(&[set], &q, 6).await {
+            eprintln!("{:.4} {} | {} :: {}", h.score, h.name, h.label, h.text.replace('\n', " ").chars().take(60).collect::<String>());
+        }
         k.stop_embedder().await;
     }
 

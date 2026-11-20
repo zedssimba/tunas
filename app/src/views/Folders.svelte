@@ -3,8 +3,9 @@
   import Icon from '../lib/Icon.svelte';
   import { api, pickFolder } from '../lib/api.js';
   import { toast } from '../lib/state.svelte.js';
-  import { askConsent, refreshKnowledge } from '../lib/knowledge.svelte.js';
+  import { kn, askConsent, refreshKnowledge } from '../lib/knowledge.svelte.js';
 
+  let { embedded = false } = $props();
   let list = $state([]);
   let confirm = $state(null);
   async function load() { list = await api.folders_list(); }
@@ -14,6 +15,7 @@
     const p = await pickFolder('Choose a folder TUNAS may read');
     if (p && (await askConsent([p]))) load();
   }
+  $effect(() => { kn.sets; load(); });
   async function revoke(g) {
     await api.folder_revoke({ path: g.path });
     confirm = null;
@@ -23,17 +25,16 @@
   }
 </script>
 
-<div class="page">
-  <div class="page-head">
+<div class:page={!embedded}>
+  <div class="page-head" class:sub={embedded}>
     <div class="grow">
-      <h1>Folders</h1>
-      <p>The places on this machine TUNAS is allowed to read for Knowledge. TUNAS reads files where they are; it never copies, changes or deletes them.</p>
+      {#if embedded}<h2>Folder permissions</h2>{:else}<h1>Folders</h1>{/if}
+      <p>The places on this machine you allowed TUNAS to read. TUNAS reads files where they are; it never copies, changes or deletes them. Remove a place to stop the reading and delete its search index.</p>
     </div>
-    <button class="btn" onclick={add}><Icon name="plus" size={16} /> Allow a folder</button>
   </div>
 
   {#if !list.length}
-    <div class="card" style="padding:22px"><p class="mute">No folders yet. When you make a knowledge set, TUNAS asks before reading the folder, and it appears here.</p></div>
+    <div class="card" style="padding:18px"><p class="mute small">None yet. When you make a knowledge set, TUNAS asks before reading the folder, and it appears here.</p></div>
   {/if}
 
   <div class="card listc">
@@ -60,6 +61,8 @@
 </div>
 
 <style>
+  .sub { margin-top: 34px; }
+  .sub h2 { font-size: 17px; margin: 0 0 4px; }
   .listc { padding: 4px 0; }
   .listc:empty { display: none; }
   .item { padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--line); }

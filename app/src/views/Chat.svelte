@@ -70,6 +70,15 @@
     if (id) saveChatSets([...chatSets, id]);
   }
   const setName = (id) => kn.sets.find((x) => x.id === id)?.name;
+  function setNote(id) {
+    const ks = kn.sets.find((x) => x.id === id);
+    if (!ks || ks.state === 'ready') return '';
+    if (ks.state === 'waiting_model') return ' · waiting for the search model';
+    if (ks.state === 'indexing') return ` · reading ${ks.done}/${ks.files - ks.failed}`;
+    if (ks.state === 'paused') return ' · paused';
+    if (ks.state === 'empty') return ' · no readable files';
+    return '';
+  }
   async function openSource(src) {
     try { await api.open_file({ path: src.path }); } catch (e) { toast(String(e), 'error'); }
   }
@@ -670,8 +679,8 @@
         <div class="kbar">
           <Icon name="book" size={13} />
           <span class="small faint">Answering from</span>
-          {#each assistantSets as id}{#if setName(id)}<span class="kchip fixed" title="Part of this assistant">{setName(id)}</span>{/if}{/each}
-          {#each chatSets as id}{#if setName(id)}<span class="kchip">{setName(id)}<button aria-label="Remove" onclick={() => toggleSet(id)}><Icon name="x" size={11} /></button></span>{/if}{/each}
+          {#each assistantSets as id}{#if setName(id)}<span class="kchip fixed" class:wait={setNote(id)} title="Part of this assistant">{setName(id)}{setNote(id)}</span>{/if}{/each}
+          {#each chatSets as id}{#if setName(id)}<span class="kchip" class:wait={setNote(id)}>{setName(id)}{setNote(id)}<button aria-label="Remove" onclick={() => toggleSet(id)}><Icon name="x" size={11} /></button></span>{/if}{/each}
         </div>
       {/if}
       <div class="row inner">
@@ -720,6 +729,7 @@
   .kbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px 0; }
   .kchip { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 6px 2px 9px; border-radius: 99px; background: color-mix(in srgb, var(--brand1) 10%, transparent); color: var(--brand1); }
   .kchip.fixed { padding-right: 9px; }
+  .kchip.wait { color: var(--warn, #b7791f); background: color-mix(in srgb, var(--warn, #b7791f) 12%, transparent); }
   .kchip button { display: inline-flex; opacity: .7; }
   .chat-view { display: flex; flex-direction: column; height: 100%; }
   header { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }

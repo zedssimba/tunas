@@ -6,13 +6,11 @@
   import Settings from './Settings.svelte';
   import About from './About.svelte';
   import Connections from './Connections.svelte';
-  import Folders from './Folders.svelte';
   import { app, closeSettings } from '../lib/state.svelte.js';
 
   const tabs = [
     ['general', 'settings', 'General', 'Default model, engine, appearance'],
     ['models', 'models', 'Models', 'Check my machine, download, USB'],
-    ['folders', 'folder', 'Folders', 'Places TUNAS may read for Knowledge'],
     ['branding', 'brush', 'Branding', 'Name, logo, branding packs'],
     ['connections', 'globe', 'Connections', 'TERAS, cloud, apps that use TUNAS'],
     ['about', 'info', 'About', 'TUNAS, S.A.L.T CI, licences'],
@@ -40,7 +38,6 @@
   </nav>
   <section>
     {#if app.settingsTab === 'general'}<Settings />
-    {:else if app.settingsTab === 'folders'}<Folders />
     {:else if app.settingsTab === 'models'}<Models />
     {:else if app.settingsTab === 'branding'}<Branding />
     {:else if app.settingsTab === 'connections'}<Connections />

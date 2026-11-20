@@ -75,7 +75,7 @@
         <li>TUNAS reads the documents here, on this machine, so your assistants can answer from them.</li>
         <li>Nothing is copied out of this place and nothing is sent anywhere. The search index stays on this machine.</li>
         <li>Answers from a <b>cloud</b> model would include the parts of your documents it uses. Local models keep everything here.</li>
-        <li>You can remove this permission any time in Settings → Folders. Your files are never changed or deleted.</li>
+        <li>You can remove this permission any time under Knowledge → Folder permissions. Your files are never changed or deleted.</li>
       </ul>
       <div class="row" style="justify-content:flex-end;margin-top:16px">
         <button class="btn" onclick={() => kn.consent.resolve(false)}>Not now</button>

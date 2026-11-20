@@ -280,8 +280,17 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 _ => String::new(),
             };
             hits = state.knowledge.search(&sets, &query, 6).await;
+            let pending = state.knowledge.not_ready(&sets);
+            for (name, done, total, no_model) in &pending {
+                if *no_model {
+                    sys.push_str(&format!("\n\nNote: the knowledge set \"{name}\" has not been read yet because TUNAS's search model is still downloading. If the user asks about those documents, tell them the documents are not ready yet and to try again when the Knowledge page shows them as ready."));
+                } else {
+                    sys.push_str(&format!("\n\nNote: the knowledge set \"{name}\" is still being read ({done} of {total} files). If the answer is not in the excerpts, tell the user that the documents are still being read and to try again shortly."));
+                }
+            }
             if !hits.is_empty() {
-                sys.push_str(&crate::knowledge::prompt_block(&hits));
+                let outline = state.knowledge.outline(&hits[0].path);
+                sys.push_str(&crate::knowledge::prompt_block(&hits, &outline));
             } else {
                 sys.push_str("\n\nThe user's knowledge sets were searched but nothing relevant was found for this message. If the user asks about their documents, say that you could not find it in them.");
             }

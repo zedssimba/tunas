@@ -5,6 +5,28 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.3.1 — 20 November 2026 (fixes from the first Knowledge test on .76)
+
+- **Fixed: an assistant with Knowledge answered from the built-in S.A.L.T reference instead of your documents.**
+  - The reference told the model to use only its own facts about S.A.L.T CI, and to say that releases and versions are "not in this reference". That beat the release notes you had given it.
+  - Now your own documents come first for anything the reference does not cover: releases, versions, dates, figures. The reference still keeps the basic facts right.
+- **The chat says when knowledge is not ready yet.**
+  - The "Answering from" line above the message box shows "waiting for the search model" or "reading 3/12" until a set is fully read.
+  - If you ask before then, the assistant says the documents are not ready, instead of answering as if they did not exist.
+- **Better answers from documents with sections** (release notes, SOPs, minutes):
+  - Markdown files are read section by section, and every piece carries its heading (for example "0.2.4 — 20 November 2026"), so details from different versions are not mixed.
+  - Pieces from the same file reach the model in the order they appear in the file, together with the file's list of sections.
+  - Questions with "latest", "newest", "terkini" or "terbaru" also get the opening of the best-matching document, where newest entries usually are.
+  - Version and reference numbers (0.2.5, 7/2026) count extra in the search.
+  - Markdown files you already added are read again once after the update.
+  - Tested with the TUNAS release notes plus a S.A.L.T CI release-note PDF: "what is our latest release", "what is the latest TUNAS release?" and "apa yang baru dalam TUNAS 0.2.5?" are answered correctly by the 2B model, with sources.
+- **One place for knowledge.** The separate Settings → Folders page is gone. Folder permissions are now at the bottom of the **Knowledge** page, under the knowledge sets.
+- **Clearer download message.** The download on first use is TUNAS's search model (about 640 MB, once), not your files. The Knowledge page now says so.
+- **Cloud-drive folders** (Google Drive, OneDrive, Dropbox): the set shows a note that the drive app may fetch each file the first time TUNAS reads it. Mark the folder "Available offline" for faster reading.
+- Install over 0.3.0 directly. Everything is kept.
+
+---
+
 ## 0.3.0 — 20 November 2026 (Knowledge and Documents)
 
 ### Knowledge: assistants that answer from your own documents

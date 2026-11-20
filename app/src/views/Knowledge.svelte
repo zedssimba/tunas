@@ -1,7 +1,8 @@
 <script>
   import Icon from '../lib/Icon.svelte';
   import { api, fmtBytes } from '../lib/api.js';
-  import { app, toast, openSettings } from '../lib/state.svelte.js';
+  import { app, toast } from '../lib/state.svelte.js';
+  import Folders from './Folders.svelte';
   import { kn, refreshKnowledge, newSetFromFolder, addToSet, setLabel, baseName, ensureSearchModel, EMBED_MODEL } from '../lib/knowledge.svelte.js';
 
   let renaming = $state(null);
@@ -30,6 +31,8 @@
     toast('Checking for new and changed files…');
     refreshKnowledge();
   }
+  const CLOUD = /(my drive|google ?drive|googledrive|onedrive|dropbox|icloud)/i;
+  const onCloud = (s) => s.sources.some((p) => CLOUD.test(p));
   async function removeSource(s, p) {
     await api.knowledge_remove_source({ id: s.id, path: p });
     refreshKnowledge();
@@ -49,8 +52,8 @@
     <div class="card note">
       <Icon name="download" size={18} />
       <div class="grow">
-        <b>The search model is needed to read your files</b>
-        <div class="small mute">A one-time download of about 640 MB. After that, everything works offline.</div>
+        <b>{dl ? 'Downloading the search model' : 'The search model is needed to read your files'}</b>
+        <div class="small mute">This is TUNAS's reading model (about 640 MB, once), not your files: your files are read where they are. After this download everything works offline, and your knowledge sets start reading by themselves.</div>
         {#if dl}<div class="bar"><i style="width:{Math.round((dl.done / (dl.total || 1)) * 100)}%"></i></div>{/if}
       </div>
       {#if !dl}<button class="btn sm primary" onclick={ensureSearchModel}>Download</button>{/if}
@@ -115,6 +118,9 @@
           </div>
         </div>
 
+        {#if onCloud(s)}
+          <div class="cloudnote small mute"><Icon name="info" size={13} /> This folder is in a cloud drive. The first time TUNAS reads a file, the drive app may download it to this machine. To make reading faster, mark the folder "Available offline".</div>
+        {/if}
         <div class="foot small">
           <span class="mute">Used by: {s.assistants.length ? s.assistants.join(', ') : 'no assistant yet (pick it in a chat with #, or add it in My assistants)'}</span>
           {#if s.failed}
@@ -133,10 +139,10 @@
   {#if kn.sets.length}
     <p class="small faint" style="margin-top:18px">
       Reading runs in the background at low priority and waits while an answer is being written.
-      To see or remove the places TUNAS may read, open <button class="link" onclick={() => openSettings('folders')}>Settings → Folders</button>.
       Share knowledge with your whole team with TERAS.
     </p>
   {/if}
+  <Folders embedded={true} />
 </div>
 
 <style>
@@ -156,6 +162,7 @@
   .failed { margin: 8px 0 0 46px; padding: 10px 12px; background: var(--soft); border-radius: 10px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
   .link { color: var(--brand1); display: inline-flex; gap: 4px; align-items: center; font-weight: 600; }
   .link.warn { color: var(--warn, #b7791f); }
+  .cloudnote { margin: 8px 0 0 46px; display: flex; gap: 6px; align-items: flex-start; }
   .note { display: flex; gap: 12px; align-items: center; padding: 14px 16px; margin-bottom: 14px; border-color: var(--brand1); }
   .empty { text-align: center; padding: 40px 30px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
   .empty p { max-width: 520px; }

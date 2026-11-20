@@ -270,7 +270,8 @@ pub fn extract_parts(path: &Path) -> Result<Vec<Part>> {
         "pptx" => split(pptx(path)?, "--- Slide ", true),
         "xlsx" | "xlsm" | "xls" => split(excel(path)?, "--- Sheet: ", false),
         "docx" => vec![Part { page: 0, label: String::new(), text: normalise(&office_xml(path, &["word/document.xml"], "w:p")?) }],
-        "txt" | "md" | "csv" | "log" => vec![Part { page: 0, label: String::new(), text: normalise(&read_text(path)?) }],
+        "md" => md_sections(&read_text(path)?),
+        "txt" | "csv" | "log" => vec![Part { page: 0, label: String::new(), text: normalise(&read_text(path)?) }],
         "html" | "htm" => vec![Part { page: 0, label: String::new(), text: normalise(&strip_tags(&read_text(path)?)) }],
         _ => return Err(anyhow!("this file type is not supported")),
     };
@@ -283,3 +284,40 @@ pub fn extract_parts(path: &Path) -> Result<Vec<Part>> {
 
 /// File types Knowledge reads.
 pub const KNOWLEDGE_TYPES: &[&str] = &["pdf", "docx", "xlsx", "xlsm", "xls", "pptx", "txt", "md", "csv", "html", "htm"];
+
+/// Split Markdown at its headings (#, ##, ###), so each piece knows which section it belongs to,
+/// for example "0.2.4 — 20 November 2026" in release notes.
+fn md_sections(text: &str) -> Vec<Part> {
+    let mut parts: Vec<Part> = vec![];
+    let mut label = String::new();
+    let mut trail: Vec<(usize, String)> = vec![];
+    let mut cur = String::new();
+    let flush = |label: &str, cur: &mut String, parts: &mut Vec<Part>| {
+        let t = normalise(cur);
+        if !t.trim().is_empty() {
+            parts.push(Part { page: 0, label: label.to_string(), text: t });
+        }
+        cur.clear();
+    };
+    let mut in_code = false;
+    for line in text.lines() {
+        if line.trim_start().starts_with("```") {
+            in_code = !in_code;
+        }
+        let hashes = line.chars().take_while(|c| *c == '#').count();
+        if !in_code && (1..=3).contains(&hashes) && line[hashes..].starts_with(' ') {
+            flush(&label, &mut cur, &mut parts);
+            let h = line[hashes..].trim().to_string();
+            trail.retain(|(lv, _)| *lv < hashes);
+            trail.push((hashes, h));
+            // Section path without the document title (level 1), at most two levels.
+            let path: Vec<&str> = trail.iter().filter(|(lv, _)| *lv > 1 || trail.len() == 1).map(|(_, t)| t.as_str()).collect();
+            label = path.iter().rev().take(2).rev().cloned().collect::<Vec<_>>().join(" › ");
+            label = label.chars().take(120).collect();
+        }
+        cur.push_str(line);
+        cur.push('\n');
+    }
+    flush(&label, &mut cur, &mut parts);
+    parts
+}
