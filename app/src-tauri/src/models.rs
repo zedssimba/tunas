@@ -54,7 +54,7 @@ pub fn find(id: &str) -> Option<CatalogModel> {
 #[derive(Serialize, Clone, Debug, Default)]
 pub struct Progress {
     pub id: String,
-    pub phase: String, // downloading | verifying | copying | done | error | cancelled
+    pub phase: String, // queued | downloading | verifying | copying | done | error | cancelled
     pub received: u64,
     pub total: u64,
     pub bytes_per_sec: f64,
@@ -98,14 +98,37 @@ fn register(conn: &rusqlite::Connection, m: &CatalogModel) -> Result<()> {
     )
 }
 
+/// One download at a time: several large files at once share the connection and, on a phone,
+/// all of them stall. Others wait their turn and show as "queued".
+fn download_slot() -> &'static tokio::sync::Semaphore {
+    static SLOT: std::sync::OnceLock<tokio::sync::Semaphore> = std::sync::OnceLock::new();
+    SLOT.get_or_init(|| tokio::sync::Semaphore::new(1))
+}
+
 /// Download a catalogue model, trying each mirror in turn. Resumes a partial download.
 pub async fn download(app: AppHandle, db: Arc<Mutex<rusqlite::Connection>>, tr: Transfers, id: String) -> Result<()> {
     let m = find(&id).ok_or_else(|| anyhow!("unknown model {id}"))?;
     if !tr.active.lock().insert(id.clone()) {
-        return Ok(()); // already running
+        return Ok(()); // already running or waiting
     }
     tr.cancelled.lock().remove(&id);
-    let result = download_inner(&app, &db, &tr, &m).await;
+    let have = std::fs::metadata(crate::paths::models_dir().join(&m.file).with_extension("gguf.part")).map(|x| x.len()).unwrap_or(0);
+    emit(&app, Progress { id: id.clone(), phase: "queued".into(), received: have, total: m.size, ..Default::default() });
+    // Wait for the slot, but let a cancel take the model out of the queue.
+    let permit = loop {
+        if tr.is_cancelled(&id) {
+            break None;
+        }
+        match tokio::time::timeout(std::time::Duration::from_millis(400), download_slot().acquire()).await {
+            Ok(Ok(p)) => break Some(p),
+            Ok(Err(_)) => break None,
+            Err(_) => continue,
+        }
+    };
+    let result = match permit {
+        Some(_p) => download_inner(&app, &db, &tr, &m).await,
+        None => Err(anyhow!("cancelled")),
+    };
     tr.active.lock().remove(&id);
     match &result {
         Ok(()) => emit(&app, Progress { id: id.clone(), phase: "done".into(), received: m.size, total: m.size, ..Default::default() }),
@@ -127,7 +150,26 @@ async fn download_inner(app: &AppHandle, db: &Arc<Mutex<rusqlite::Connection>>, 
         .build()?;
 
     let mut last_err = anyhow!("no download source answered");
-    'mirrors: for url in &m.urls {
+    // Each mirror gets a few tries; an interrupted download resumes where it stopped
+    // instead of moving on, so a brief drop on Wi-Fi or mobile data doesn't fail it.
+    let tries = m.urls.iter().flat_map(|u| std::iter::repeat(u).take(4));
+    let mut prev: Option<&String> = None;
+    let mut skip: Option<&String> = None;
+    let mut attempt = 0u32;
+    'mirrors: for url in tries {
+        if skip == Some(url) {
+            continue;
+        }
+        if prev == Some(url) {
+            attempt += 1;
+            tokio::time::sleep(std::time::Duration::from_secs(2 * attempt as u64)).await;
+            if tr.is_cancelled(&m.id) {
+                return Err(anyhow!("cancelled"));
+            }
+        } else {
+            attempt = 0;
+        }
+        prev = Some(url);
         let have = std::fs::metadata(&part).map(|x| x.len()).unwrap_or(0);
         let mut req = client.get(url);
         if have > 0 && have < m.size {
@@ -143,6 +185,10 @@ async fn download_inner(app: &AppHandle, db: &Arc<Mutex<rusqlite::Connection>>, 
         let status = resp.status();
         if !(status.is_success()) {
             last_err = anyhow!("{url}: HTTP {status}");
+            if status.is_client_error() && status.as_u16() != 408 && status.as_u16() != 429 {
+                // Not something a retry fixes: skip this mirror's remaining tries.
+                skip = Some(url);
+            }
             continue;
         }
         let resuming = status.as_u16() == 206;
@@ -157,7 +203,16 @@ async fn download_inner(app: &AppHandle, db: &Arc<Mutex<rusqlite::Connection>>, 
         let t0 = Instant::now();
         let start_bytes = received;
         let mut last_emit = Instant::now();
-        while let Some(chunk) = stream.next().await {
+        loop {
+            // No data for a minute means the connection has quietly died: retry and resume.
+            let next = match tokio::time::timeout(std::time::Duration::from_secs(60), stream.next()).await {
+                Ok(n) => n,
+                Err(_) => {
+                    last_err = anyhow!("the download stalled");
+                    continue 'mirrors;
+                }
+            };
+            let Some(chunk) = next else { break };
             if tr.is_cancelled(&m.id) {
                 return Err(anyhow!("cancelled"));
             }

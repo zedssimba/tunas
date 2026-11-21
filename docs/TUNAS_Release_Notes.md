@@ -5,6 +5,22 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.6.1 — 21 November 2026
+
+### Fixed
+- **Android app icon:** the phone showed a sample icon from the app framework on the home screen and the install screen. TUNAS now has its own icon on Android: the TUNAS sprout on the TUNAS colours. It fits whatever icon shape the phone uses (round, rounded square), and Android 13 or later can show it in the phone's theme colours.
+- **Downloading several models at once failed:** started together, the downloads shared the connection and, on a phone, all of them could fail. Now TUNAS downloads one model at a time; the others show *Waiting* and start by themselves, in the order they were started. A waiting model can be cancelled.
+- **A dropped connection no longer fails a download:** when a download is cut off or stalls for a minute, TUNAS waits a moment and carries on from where it stopped (up to four tries from each source) before trying the next source.
+
+### New
+- **A TERAS or cloud model can be the default model.** Settings › General › Default model now lists your organisation's TERAS models and, when cloud providers are switched on, the cloud models, beside the models on this machine. Assistants that don't choose their own model, and new chats, then answer from there. If that connection is switched off or removed, TUNAS answers on this machine instead, and the setting shows the model as *not available now*. Useful on phones and small notebooks: answers come from TERAS while a small model stays on the device for offline use.
+
+### Tested
+- Built and checked: the app screens build, the code compiles and its tests pass. The Android icon was checked in a round and a rounded-square mask.
+- To be confirmed on devices: the Android icon on the S9, two downloads queued on a phone, and TERAS as the default model on Windows, Mac and Android. This is also the first update delivered through get.saltci.app, so the update card, download and install are tested for real with this version.
+
+---
+
 ## 0.6.0 — 21 November 2026 (TUNAS for Android, first build)
 
 ### Android

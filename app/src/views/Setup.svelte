@@ -183,7 +183,7 @@
           {#if active.length}
             <div class="dl">
               {#each active as p (p.id)}
-                <div class="small row"><b class="grow" style="text-align:left">{app.catalog.find((m) => m.id === p.id)?.name}</b><span class="mute">{fmtBytes(p.received)} / {fmtBytes(p.total)} · {fmtEta(p.total - p.received, p.bytes_per_sec)}</span></div>
+                <div class="small row"><b class="grow" style="text-align:left">{app.catalog.find((m) => m.id === p.id)?.name}</b><span class="mute">{#if p.phase === 'queued'}Waiting its turn{:else}{fmtBytes(p.received)} / {fmtBytes(p.total)} · {fmtEta(p.total - p.received, p.bytes_per_sec)}{/if}</span></div>
                 <div class="bar"><i style="width:{p.total ? (100 * p.received) / p.total : 0}%"></i></div>
               {/each}
               <p class="small faint">Downloads continue in the background. You can start chatting as soon as one model is ready.</p>

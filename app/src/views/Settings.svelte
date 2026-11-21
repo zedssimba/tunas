@@ -5,6 +5,13 @@
   import { app, toast, setPref, setTheme, modelName } from '../lib/state.svelte.js';
 
   const chatModels = $derived(app.installed.filter((m) => !m.id.includes('embed')));
+  const remoteGroups = $derived.by(() => {
+    const cloudOk = app.prefs.cloud_enabled === '1' && app.brand?.policy?.allow_cloud !== false;
+    return app.providers
+      .filter((p) => p.enabled && p.models.length && (p.kind === 'teras' || cloudOk))
+      .sort((a, b) => (b.kind === 'teras') - (a.kind === 'teras'))
+      .map((p) => ({ label: p.kind === 'teras' ? `${p.name} (your organisation)` : `${p.name} (cloud, online)`, items: p.models.map((m) => ({ id: `prov:${p.id}:${m}`, name: m })) }));
+  });
 
   async function setEngine(v) {
     await setPref('engine_pref', v);
@@ -23,10 +30,12 @@
 
   <div class="stack">
     <div class="card set">
-      <div class="grow"><b>Default model</b><div class="small mute">Used by assistants that don't choose their own model.</div></div>
+      <div class="grow"><b>Default model</b><div class="small mute">Used by assistants that don't choose their own model. Pick a TERAS or cloud model to answer from there by default; when it can't be used, TUNAS answers on this machine.</div></div>
       <select value={app.prefs.default_model} onchange={(e) => setDefault(e.target.value)} style="width:260px">
         <option value="">Automatic (smallest installed)</option>
-        {#each chatModels as m}<option value={m.id}>{m.name}</option>{/each}
+        {#if chatModels.length}<optgroup label="On this machine">{#each chatModels as m}<option value={m.id}>{m.name}</option>{/each}</optgroup>{/if}
+        {#each remoteGroups as g}<optgroup label={g.label}>{#each g.items as m}<option value={m.id}>{m.name}</option>{/each}</optgroup>{/each}
+        {#if app.prefs.default_model?.startsWith('prov:') && !remoteGroups.some((g) => g.items.some((m) => m.id === app.prefs.default_model))}<option value={app.prefs.default_model}>{modelName(app.prefs.default_model)} (not available now)</option>{/if}
       </select>
     </div>
 

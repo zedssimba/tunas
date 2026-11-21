@@ -200,7 +200,7 @@
           <div class="prog">
             <div class="bar"><i style="width:{p.total ? (100 * p.received) / p.total : 0}%"></i></div>
             <div class="small mute row">
-              <span>{p.phase === 'verifying' ? 'Checking the file…' : p.phase === 'copying' ? 'Copying…' : 'Downloading…'}</span>
+              <span>{p.phase === 'queued' ? 'Waiting for the download before it…' : p.phase === 'verifying' ? 'Checking the file…' : p.phase === 'copying' ? 'Copying…' : 'Downloading…'}</span>
               <span>{fmtBytes(p.received)} of {fmtBytes(p.total)}</span>
               {#if p.bytes_per_sec && p.phase !== 'verifying'}<span>{fmtBytes(p.bytes_per_sec)}/s · {fmtEta(p.total - p.received, p.bytes_per_sec)}</span>{/if}
               {#if p.message && p.phase === 'downloading'}<span class="faint">from {p.message}</span>{/if}

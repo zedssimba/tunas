@@ -247,6 +247,19 @@ pub enum Target {
 /// Resolve a model string (assistant base model or API `model`) to where it runs.
 pub fn resolve_target(app: &AppHandle, model: &str) -> Result<Target, String> {
     let state = app.state::<crate::AppState>();
+    if model.is_empty() {
+        // The default model may be a TERAS or cloud model. If that connection is switched
+        // off or gone, answer on this machine instead; only fail when there is nothing local.
+        let def = crate::db::get_setting(&state.db.lock(), "default_model").unwrap_or_default();
+        if def.starts_with("prov:") {
+            match resolve_target(app, &def) {
+                Ok(t) => return Ok(t),
+                Err(why) => {
+                    return crate::resolve_model(&state, "").map(Target::Local).ok_or(why);
+                }
+            }
+        }
+    }
     if let Some(rest) = model.strip_prefix("prov:") {
         let (pid, m) = rest.split_once(':').ok_or("bad provider model")?;
         let p = crate::db::get_provider(&state.db.lock(), pid).ok_or("That provider is no longer connected. Choose another base model.")?;

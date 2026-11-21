@@ -207,7 +207,7 @@
   let supported = [];
 
   const assistant = $derived(currentAssistant());
-  const noModels = $derived(app.installed.filter((m) => !m.id.includes('embed')).length === 0 && !effModel.startsWith('prov:'));
+  const noModels = $derived(app.installed.filter((m) => !m.id.includes('embed')).length === 0 && !effModel.startsWith('prov:') && !(!effModel && route.kind !== 'none' && route.kind !== 'local'));
 
   $effect(() => {
     const id = app.chatId;
