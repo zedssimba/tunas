@@ -33,7 +33,7 @@ export function buildMessages(assistant, history, ctx) {
 /**
  * Stream a chat completion. Calls onToken(textSoFar). Returns { text, stats }.
  */
-export async function streamChat({ messages, signal, onToken, onThinking, onSources, onActivity, maxTokens = 2048, assistant = null, model = '', raw = false, think = false, knowledge = [] }) {
+export async function streamChat({ messages, signal, onToken, onThinking, onSources, onActivity, maxTokens = 2048, assistant = null, model = '', raw = false, think = false, knowledge = [], rich = false }) {
   const gw = app.gateway;
   const res = await fetch(`http://127.0.0.1:${gw.port}/v1/chat/completions`, {
     method: 'POST',
@@ -43,6 +43,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
       tunas_assistant: assistant?.id,
       tunas_raw: raw,
       tunas_knowledge: knowledge,
+      tunas_rich: rich || undefined,
       messages,
       stream: true,
       // With thinking, TUNAS sets the length and sampling for the model (see the gateway).
@@ -65,6 +66,13 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
   let reasoning = '';
   let sources = [];
   let terasSources = [];
+  const terasFileList = [];
+  const addFiles = (list) => {
+    for (const f of list || []) {
+      const one = terasFileItem(f);
+      if (one && !terasFileList.some((x) => x.path === one.path)) terasFileList.push(one);
+    }
+  };
   const activity = [];
   let tThinkStart = 0;
   let tThinkEnd = 0;
@@ -96,9 +104,19 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
           const a = activity.find((x) => x.id === ev.call_id) || activity.findLast?.((x) => x.state === 'running');
           if (a) { a.state = ev.ok === false ? 'failed' : 'done'; a.ms = ev.ms; }
           onActivity?.(activity.map((a) => ({ ...a })));
-        } else if (ev.event === 'sources' || (ev.event === 'answer.done' && Array.isArray(ev.sources) && !terasSources.length)) {
+        } else if (ev.event === 'sources') {
           terasSources = terasSourceList(ev.sources);
           onSources?.([...sources, ...terasSources]);
+        } else if (ev.event === 'file') {
+          addFiles([ev]);
+        } else if (ev.event === 'answer.done') {
+          // Web results found during the answer are numbered after the first list.
+          if (Array.isArray(ev.sources) && ev.sources.length) {
+            const more = terasSourceList(ev.sources, terasSources.length);
+            terasSources = terasSources.length ? [...terasSources, ...more.filter((x) => !terasSources.some((y) => y.n === x.n))] : terasSourceList(ev.sources);
+            onSources?.([...sources, ...terasSources]);
+          }
+          addFiles(ev.files);
         }
         if (!j.choices?.length) continue;
       }
@@ -137,6 +155,7 @@ export async function streamChat({ messages, signal, onToken, onThinking, onSour
     if (think_ms) stats.think_ms = think_ms;
   }
   if (activity.length) stats = { ...(stats || {}), tools: activity.map(({ tool, state, ms }) => ({ tool, state, ms })) };
+  if (terasFileList.length) stats = { ...(stats || {}), files: terasFileList };
   return { text, reasoning, stats, sources: [...sources, ...terasSources] };
 }
 
@@ -180,14 +199,35 @@ export async function speedTest(model) {
 }
 
 /** TERAS's own sources, in the shape the chat shows (no local path: they live on TERAS). */
-function terasSourceList(list) {
+// TERAS sends sources as one list in order: the first is [1], the second [2]… (from `offset` for later lists).
+function terasSourceList(list, offset = 0) {
   if (!Array.isArray(list)) return [];
   return list.map((x, i) => {
     const o = typeof x === 'object' && x ? x : { title: String(x) };
-    const name = o.document || o.title || o.name || o.filename || o.file || o.source || o.url || `TERAS source ${i + 1}`;
-    const n = Number(o.n ?? o.index ?? o.number ?? o.id ?? i + 1);
-    return { n: Number.isFinite(n) ? n : i + 1, name: String(name), path: '', label: o.page ? `page ${o.page}` : (o.section || o.collection || ''), url: o.url || '', teras: true };
+    const name = o.file_name || o.document || o.title || o.name || o.filename || o.file || o.source || o.url || `TERAS source ${i + 1}`;
+    const n = Number(o.n ?? o.index ?? o.number ?? offset + i + 1);
+    const where = o.location || (o.page ? `page ${o.page}` : '') || o.section || '';
+    const label = [where, o.collection].filter(Boolean).join(' · ');
+    return { n: Number.isFinite(n) ? n : offset + i + 1, name: String(name), path: '', label, url: o.url || '', web: o.kind === 'web', teras: true };
   });
+}
+
+/** One file from TERAS's `file` event: kept by its /api/files/… path (downloaded from the connected TERAS). */
+function terasFileItem(f) {
+  if (!f || typeof f !== 'object') return null;
+  let path = '';
+  try { path = f.url ? new URL(f.url, 'http://teras.local').pathname : ''; } catch {}
+  if (!path.startsWith('/api/files/') && f.id && f.name) path = `/api/files/${f.id}/${encodeURIComponent(f.name)}`;
+  if (!path.startsWith('/api/files/')) return null;
+  return { name: String(f.name || decodeURIComponent(path.split('/').pop())), path, size: fmtSize(f.size), mime: f.mime || '' };
+}
+
+function fmtSize(b) {
+  const n = Number(b);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 /** Files TERAS made, linked from its answer as [name](/api/files/...). */

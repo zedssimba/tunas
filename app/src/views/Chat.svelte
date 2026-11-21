@@ -3,7 +3,7 @@
   import { getCurrentWebview } from '@tauri-apps/api/webview';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
-  import { api, pickFiles, saveFile } from '../lib/api.js';
+  import { api, pickFiles, saveFile, openUrl } from '../lib/api.js';
   import { kn, newSetFromFolder, setLabel, refreshKnowledge } from '../lib/knowledge.svelte.js';
   import { md } from '../lib/markdown.js';
   import { buildMessages, streamChat, makeTitle, terasFiles, withoutTerasFileLinks } from '../lib/chat.js';
@@ -55,8 +55,14 @@
   let liveSources = $state([]);
   let liveActivity = $state([]);
   // Friendly names for what TERAS is doing.
-  const TOOL_NAMES = { create_document: 'Making the document', render_document: 'Checking the document', web_search: 'Searching the web', fetch_url: 'Reading a web page', knowledge_search: 'Searching knowledge', search_knowledge: 'Searching knowledge', run_code: 'Running code', python: 'Running code' };
+  const TOOL_NAMES = { create_document: 'Making the document', doc_guide: 'Planning the document', doc_run: 'Drawing the pages', doc_render: 'Checking the pages', render_document: 'Checking the document', web_search: 'Searching the web', fetch_url: 'Reading a web page', knowledge_search: 'Searching knowledge', search_knowledge: 'Searching knowledge', run_code: 'Running code', python: 'Running code' };
   const toolName = (t) => TOOL_NAMES[t] || (t || 'Tool').replace(/[_-]+/g, ' ').replace(/^./, (c) => c.toUpperCase());
+  // Files TERAS made: from its file events (kept in the answer's stats), or from the links in older answers.
+  const terasFilesOf = (m, st) => (st?.files?.length ? st.files : terasFiles(m.content));
+  // Rich document (TERAS models only): TERAS's document sandbox, switched on per chat.
+  let richChats = $state({});
+  const richOn = $derived(route.kind === 'teras' && !!richChats[app.chatId || '']);
+  function toggleRich() { richChats = { ...richChats, [app.chatId || '']: !richChats[app.chatId || ''] }; }
   const provOf = (model) => (typeof model === 'string' && model.startsWith('prov:') ? model.split(':')[1] : '');
   async function terasDownload(st, f) {
     const pid = provOf(st?.model);
@@ -120,15 +126,21 @@
     const cited = citedNumbers(text);
     const by = new Map();
     for (const src of (list || []).filter((x) => cited.has(x.n))) {
-      const g = by.get(src.path) || { path: src.path, name: src.name, set: src.set, items: [] };
+      // Local sources group by file path; TERAS's own sources (no path here) by their name.
+      const key = src.path || `teras:${src.name}`;
+      const g = by.get(key) || { path: src.path, name: src.name, set: src.set, url: src.url || '', web: src.web, items: [] };
       g.items.push(src);
-      by.set(src.path, g);
+      by.set(key, g);
     }
     return [...by.values()];
   }
-  const srcTitle = (g) => [g.path || 'From TERAS', ...g.items.map((x) => `[${x.n}] ${x.label || 'whole file'}`)].join('\n');
+  const srcTitle = (g) => [g.path || (g.url ? `From TERAS · ${g.url}` : 'From TERAS'), ...g.items.map((x) => `[${x.n}] ${x.label || 'whole file'}`)].join('\n');
   async function openSource(src) {
-    if (!src.path) return; // TERAS's own sources live on TERAS
+    if (!src.path) {
+      // TERAS's own sources live on TERAS; a web page can be opened in the browser.
+      if (/^https?:\/\//i.test(src.url || '')) openUrl(src.url);
+      return;
+    }
     try { await api.open_file({ path: src.path }); } catch (e) { toast(String(e), 'error'); }
   }
 
@@ -336,6 +348,7 @@
         signal: abort.signal,
         think: mode !== 'off',
         knowledge: $state.snapshot(chatSets),
+        rich: richOn,
         onSources: (src) => { liveSources = src; },
         onActivity: (a) => { liveActivity = a; scrollDown(); },
         onThinking: (t) => { if (!thinkStart) thinkStart = performance.now(); if (mode === 'shown') { thinkText = t; scrollDown(); } },
@@ -672,8 +685,8 @@
                   {/each}
                 </div>
               {/if}
-              {#if terasFiles(m.content).length && provOf(st?.model)}
-                {#each terasFiles(m.content) as f (f.path)}
+              {#if terasFilesOf(m, st).length && provOf(st?.model)}
+                {#each terasFilesOf(m, st) as f (f.path)}
                   <div class="doccard">
                     <Icon name="file" size={18} />
                     <div class="grow"><b>{f.name}</b><div class="small mute">Made by TERAS{f.size ? ` · ${f.size}` : ''}</div></div>
@@ -742,7 +755,7 @@
             {/if}
             {#if streaming === '…'}
               {#if !thinkStart}
-                <div class="typing"><i></i><i></i><i></i>{#if app.engine?.state === 'starting'}<span class="faint small">{app.engine.message}</span>{:else}<span class="faint small">Reading your message…</span>{/if}</div>
+                <div class="typing"><i></i><i></i><i></i>{#if app.engine?.state === 'starting'}<span class="faint small">{app.engine.message}</span>{:else if liveActivity.length}<span class="faint small">TERAS is working on it…</span>{:else}<span class="faint small">Reading your message…</span>{/if}</div>
               {/if}
             {:else}
               <div class="md">{@html streamHtml}</div>
@@ -798,6 +811,11 @@
             <button class="scrim" aria-label="Close" onclick={() => (kOpen = false)}></button>
           {/if}
         </span>
+        {#if route.kind === 'teras'}
+          <button class="richbtn" class:on={richOn} onclick={toggleRich} title="Rich document: TERAS makes the document with a cover, charts from the figures, and checks every page. Takes a few minutes.">
+            <Icon name="file" size={15} /><span>Rich document</span>
+          </button>
+        {/if}
         <textarea bind:this={ta} bind:value={input} rows="1" placeholder={`Message ${assistantName(assistant)}…`}
           oninput={(e) => { autosize(); if (input === '#') { input = ''; kOpen = true; refreshKnowledge(); } }} onkeydown={onKey}></textarea>
         {#if busy && abort}
@@ -806,9 +824,10 @@
           <button class="send" title="Send" disabled={busy || (!input.trim() && !files.length)} onclick={() => send()}><Icon name="send" size={18} stroke={2.2} /></button>
         {/if}
       </div>
+      {#if richOn}<div class="richnote small"><Icon name="file" size={12} /> Rich document is on: TERAS makes a richer document (cover, charts, every page checked). It takes a few minutes.</div>{/if}
       {#if dragging}<div class="dropzone"><Icon name="upload" size={22} /> Drop files to add them to this chat</div>{/if}
     </div>
-    <div class="foot faint small">Answers are made on this machine and can be wrong. Check important facts.</div>
+    <div class="foot faint small">{route.kind === 'teras' ? "Answers are made on your organisation's TERAS server" : route.kind === 'cloud' ? 'Answers are made by the cloud provider' : 'Answers are made on this machine'} and can be wrong. Check important facts.</div>
   </div>
 </div>
 
@@ -832,6 +851,10 @@
   .kmenu { top: auto; bottom: 42px; width: 320px; }
   .kmenu .d { display: block; font-size: 11.5px; color: var(--faint); font-weight: 400; }
   .icon-btn.on { color: var(--brand1); }
+  .richbtn { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--line); color: var(--mute); white-space: nowrap; align-self: center; }
+  .richbtn:hover { border-color: var(--brand1); color: var(--brand1); }
+  .richbtn.on { background: color-mix(in srgb, var(--brand1) 12%, transparent); border-color: color-mix(in srgb, var(--brand1) 40%, transparent); color: var(--brand1); }
+  .richnote { display: flex; gap: 6px; align-items: center; color: var(--brand1); padding: 4px 10px 0; }
   .kbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 10px 0; }
   .kchip { display: inline-flex; gap: 4px; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 6px 2px 9px; border-radius: 99px; background: color-mix(in srgb, var(--brand1) 10%, transparent); color: var(--brand1); }
   .kchip.fixed { padding-right: 9px; }

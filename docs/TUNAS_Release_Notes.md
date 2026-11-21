@@ -5,6 +5,36 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.5.2 — 21 November 2026 (Rich document, and TERAS 0.25.6)
+
+For TERAS 0.25.6, which fixes the document tool failures on TERAS's side (TERAS now asks Claude models for long enough answers, repairs slightly broken tool calls, and logs why a call failed).
+
+### Rich document
+- **A Rich document button** beside the message box, shown only for TERAS models. Switch it on and TERAS makes the document in its document sandbox: a cover, clear sections, tables and charts from the figures, and every page drawn and checked before it is handed over.
+- While it works, the answer shows the steps: **Planning the document**, **Drawing the pages**, **Checking the pages**, with a tick and the time for each.
+- It takes a few minutes; a note under the message box says so while it is on.
+- It stays on for that chat until you switch it off (until TUNAS is closed). If your TERAS account may not use the document sandbox, TERAS answers without it.
+- Without Rich document, a TERAS model makes the quick document as in 0.5.1.
+
+### Working with TERAS
+- **No answer-length limit is sent to TERAS or cloud models.** TUNAS sent its own limit (2,048 tokens), set for the small models on this machine; a long document could be cut off by it. TERAS and cloud models now use their own length. Local models are unchanged.
+- **Long documents in parts:** the instruction to TERAS models now says how to send a long document in parts, so it is never cut off.
+- **Files from TERAS's file event:** TERAS now announces each file it makes (name, size, type). TUNAS uses that for the download card instead of reading links in the answer, so the card appears however the model words its answer. Downloads still go only to your connected TERAS, with your TERAS key. Older answers still show their cards.
+- **TERAS sources show properly:** each TERAS source is now its own chip with its file name and where it was found (page, collection). Before, all TERAS sources could be shown as one chip. Web pages TERAS found are listed too, and open in the browser when clicked.
+- **While TERAS works,** the answer says "TERAS is working on it…" instead of "Reading your message…".
+- **The line under the message box** says where answers are made: this machine, your organisation's TERAS server, or the cloud provider.
+
+### Tested before release
+- On the build machine, with a stand-in TERAS that sends 0.25.6's events (sources in its new form, tool steps, the file event with a full address, `answer.done` with files and a web source):
+  - a quick document: three source chips (two documents and a web page), the file card with its size, and **Download** fetched the file from the connected TERAS with the key;
+  - Rich document on: `rich_document: true` reached TERAS, the four steps showed as they ran, and the rich file's card appeared;
+  - requests to TERAS carried no answer-length limit (title requests keep their short limit);
+  - a saved chat reopened with its file cards and sources.
+- Not tested here: a real TERAS 0.25.6. Please run the 10-request test from the memo.
+- Install over 0.5.1 directly. Everything is kept.
+
+---
+
 ## 0.5.1 — 21 November 2026 (documents from TERAS models)
 
 - **TERAS models now make documents with TERAS's own document tool.** Until now TUNAS gave every model the same instruction for documents: "write the document in your answer, TUNAS makes the file". TERAS models also have their own document tool, and the two instructions worked against each other. TERAS's tool log showed about 13 failed attempts from TUNAS (for example, the tool received empty or broken content three times before a PDF was made).

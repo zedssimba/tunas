@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Administrator Guide
 
-TUNAS 0.5.1 · November 2026 · https://www.salt.ci
+TUNAS 0.5.2 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.5.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
+This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.5.2). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
 
 This guide is for IT departments, trainers, resellers and OEM partners who install TUNAS on many computers, brand it, set the organisation's rules, and look after it.
 
@@ -149,8 +149,8 @@ Settings left out of the file count as allowed. The policy's source (machine, pa
 - **TERAS:** give users the organisation's TERAS address and a TERAS key for TUNAS. In **Settings › Connections › Connect to TERAS**, TUNAS lists the TERAS models by name; users pick them as an assistant's base model or per chat. Questions sent to TERAS are answered on the organisation's own server.
 - **Cloud providers:** off until the user switches on **Allow cloud providers**. The main providers are listed by name, and any OpenAI-compatible address can be added. Users bring their own keys and choose which models their assistants may use. Block with `allow_cloud: false`.
 - **Keys:** TERAS and cloud keys are kept encrypted with Windows' DPAPI, tied to the Windows user (on a Mac, in the user's Keychain). They don't travel in branding packs and can't be read on another account or computer.
-- **TERAS tools and files:** TUNAS asks TERAS for its tool and source events, shows the person what TERAS is doing, and turns files TERAS makes (linked as `/api/files/…`) into download cards. The download uses the TERAS key; if TERAS refuses the key, the file opens in the browser, where the person signs in.
-- **Documents with TERAS models (from 0.5.1):** when the person asks a TERAS model for a document, TUNAS tells the model to make it with TERAS's `create_document` tool, so it gets TERAS's formats (Word, PDF, PowerPoint, Excel, CSV, Markdown), document templates and branding. With local and cloud models TUNAS makes the file itself. TERAS's audit log shows these calls under the key the person made for TUNAS.
+- **TERAS tools and files:** TUNAS asks TERAS for its tool and source events, shows the person what TERAS is doing, and turns files TERAS makes into download cards (from TERAS's `file` event, or the `/api/files/…` links in older answers). The download always goes to the connected TERAS address. The download uses the TERAS key; if TERAS refuses the key, the file opens in the browser, where the person signs in.
+- **Documents with TERAS models (from 0.5.1):** when the person asks a TERAS model for a document, TUNAS tells the model to make it with TERAS's `create_document` tool, so it gets TERAS's formats (Word, PDF, PowerPoint, Excel, CSV, Markdown), document templates and branding. With local and cloud models TUNAS makes the file itself. **Rich document** (from 0.5.2, needs TERAS 0.25.6): the person's button beside the message box sends `"teras": {"rich_document": true}`, and TERAS uses its document sandbox for that request if the person may use it. TUNAS sends no answer-length limit to TERAS or cloud models, so long documents aren't cut short. TERAS's audit log shows these calls under the key the person made for TUNAS.
 - **About me and TERAS:** the person's About me (Settings) is not sent to TERAS models, which use the person's own TERAS personalisation.
 - **Knowledge with remote models:** when an assistant on TERAS or a cloud model has knowledge sets, the question and the matching passages from the user's documents are sent with the question. Use local models for documents that must stay on the computer.
 

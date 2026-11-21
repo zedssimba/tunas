@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: User Guide
 
-TUNAS 0.5.1 · November 2026 · https://www.salt.ci
+TUNAS 0.5.2 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.5.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
+This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.5.2). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
 
 This guide is for the person using TUNAS on their own Windows computer or Mac.
 
@@ -64,8 +64,9 @@ The Mac version is new: the 0.5.x packages are the first Mac builds.
 ### Chatting with a TERAS model
 - **TERAS at work:** when the TERAS model uses a tool, the answer shows it as it happens, such as "Making the document…" or "Searching the web…", with a tick when a step is done.
 - **Documents from TERAS** (from 0.5.1): ask a TERAS model for a document and TERAS makes the file with its own document tool, in the format you asked for: Word, PDF, PowerPoint, Excel, CSV or Markdown. It uses your organisation's TERAS templates and branding.
+- **Rich document** (from 0.5.2): the **Rich document** button beside the message box (TERAS models only). Switch it on for a richer document: a cover, clear sections, tables and charts from the figures, and every page checked. The answer shows the steps (Planning the document, Drawing the pages, Checking the pages). It takes a few minutes, and stays on for that chat until you switch it off.
 - **Files from TERAS:** a document TERAS makes appears as a card under the answer with a **Download** button. TUNAS saves it where you choose. If TERAS asks for your sign-in for that file, it opens in your browser.
-- **Sources:** TERAS's own sources are listed with yours. With a TERAS model, passages from your own folders are numbered from [51].
+- **Sources:** TERAS's own sources are listed with yours, each with where it was found. Web pages TERAS found open in your browser. With a TERAS model, passages from your own folders are numbered from [51].
 - **Time:** under the answer you see how long it took and how many tool steps TERAS used.
 
 ## 4. My assistants
@@ -156,7 +157,7 @@ On the Knowledge page, each set shows its folders and files and how far reading 
 - **File name:** taken from the document's heading or a letter's subject line (PERKARA, Subject).
 - Choose where to save it; TUNAS then opens the saved file.
 
-**With a TERAS model,** TERAS makes the file itself (section 3, Chatting with a TERAS model), with more formats and your organisation's templates. TUNAS's own card appears only if TERAS gives no file.
+**With a TERAS model,** TERAS makes the file itself (section 3, Chatting with a TERAS model), with more formats and your organisation's templates; switch on **Rich document** for a cover, charts and checked pages. TUNAS's own card appears only if TERAS gives no file.
 
 Small models can make mistakes in names, addresses and dates. Check every document before sending it.
 

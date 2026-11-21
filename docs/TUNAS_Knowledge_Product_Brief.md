@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Product Brief
 
-TUNAS 0.5.1 · Product brief 1.0 · November 2026 · https://www.salt.ci
+TUNAS 0.5.2 · Product brief 1.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.5.1). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
+This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.5.2). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
 
 ## 1. What TUNAS is
 

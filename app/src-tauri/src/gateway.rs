@@ -146,8 +146,16 @@ const TERAS_DOCUMENT_RULE: &str = "\n\nThe user is asking for a document. Make i
 (Word, PDF, PowerPoint, Excel, CSV or Markdown; Word if they did not say). Put the complete document in the tool's content as Markdown: \
 a title, then all headings, paragraphs, lists and tables in full. Send the tool valid arguments with every quote and line break escaped. \
 If the user refers to something earlier in this chat (\"this\", \"the above\", \"tadi\", \"ini\", \"jadikan PDF\"), put that content in the document in full, with any changes they asked for. \
+For a long document, send it in parts: each part in content with the same title and format and \"more\": true, and the last part without \"more\". \
 If a tool call fails, correct the arguments and call it again without describing the failure in your answer. \
 When the file is made, answer with one or two short lines and the file link; do not repeat the document in the answer.";
+
+/// For TERAS models with Rich document switched on in the chat: TERAS's document sandbox makes the file.
+const TERAS_RICH_RULE: &str = "\n\nThe user has switched on Rich document for this chat. When they ask for a document, make it with your document sandbox tools \
+(doc_guide, then doc_run, then doc_render to check the pages): a cover, clear sections, tables and charts from any figures, in the format they asked for (Word if they did not say). \
+If the user refers to something earlier in this chat, put that content in the document in full, with any changes they asked for. \
+If a tool call fails, correct it and try again without describing the failure in your answer. \
+When the file is made, answer with one or two short lines and the file link; do not repeat the document in the answer. Other messages are answered normally.";
 
 /// Sampling settings that TERAS and cloud models may refuse.
 const SAMPLING: &[&str] = &["temperature", "top_p", "top_k", "min_p", "presence_penalty", "frequency_penalty", "repeat_penalty"];
@@ -334,6 +342,8 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
     let state = app.state::<crate::AppState>();
     let requested = body.get("model").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let internal_assistant = if ctx.external { None } else { body.get("tunas_assistant").and_then(|v| v.as_str()).map(String::from) };
+    // Rich document (TUNAS's chat only, TERAS models only): TERAS's document sandbox for this request.
+    let rich = !ctx.external && body.get("tunas_rich").and_then(|v| v.as_bool()).unwrap_or(false);
     let raw = body.get("tunas_raw").and_then(|v| v.as_bool()).unwrap_or(false) && !ctx.external;
 
     // Which assistant (if any) and which base model.
@@ -379,7 +389,9 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 .and_then(|m| m.get("content"))
                 .map(|c| if let Some(s) = c.as_str() { s.to_string() } else { c.to_string() })
                 .unwrap_or_default();
-            if wants_document(&latest) {
+            if to_teras && rich {
+                sys.push_str(TERAS_RICH_RULE);
+            } else if wants_document(&latest) {
                 sys.push_str(if to_teras { TERAS_DOCUMENT_RULE } else { DOCUMENT_RULE });
             }
         }
@@ -456,6 +468,7 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
         o.remove("tunas_assistant");
         o.remove("tunas_raw");
         o.remove("tunas_knowledge");
+        o.remove("tunas_rich");
         o.insert("messages".into(), Value::Array(messages));
     }
 
@@ -509,9 +522,14 @@ async fn chat(State(ctx): State<Ctx>, headers: HeaderMap, Json(mut body): Json<V
                 // Settings sent by other apps through the API are passed on as they are.
                 if !ctx.external {
                     for k in SAMPLING { o.remove(*k); }
+                    // TUNAS's answer length is set for the small local models. TERAS and cloud models set
+                    // their own; a TUNAS limit would cut long documents short. (Short title requests keep theirs.)
+                    if !raw { o.remove("max_tokens"); }
                     // TUNAS's chat asks TERAS for its tool and source events, to show what TERAS is doing.
                     if p.kind == "teras" {
-                        o.insert("teras".into(), json!({"events": true}));
+                        let mut t = json!({"events": true});
+                        if rich { t["rich_document"] = json!(true); }
+                        o.insert("teras".into(), t);
                     }
                 }
             }
