@@ -49,10 +49,12 @@ Newest first. Any change after a release gets a new version number.
   On Windows, macOS and Linux nothing changes.
 
 ### Tested before release
-- **On an Android emulator** (Android 14, run on GitHub's build machines):
+- **On an Android emulator** (Android 14 with 4 GB of memory, on GitHub's build machines), a first run done by a script the way a person would:
   - TUNAS installed and opened into setup;
-  - both engines started on the emulator (`version: 1.0.0-dev (build 12532, commit 08c252e22)`);
-  - Check my machine showed the phone advice and recommended the smallest model.
+  - both engines started (`version: 1.0.0-dev (build 12532, commit 08c252e22)`);
+  - Check my machine gave the phone advice and ticked Qwen 3.5 0.8B ("Best for this machine"), listed first;
+  - the model downloaded, and "Hello in one sentence, what is Malaysia famous for?" was answered in the chat, with the message box above the on-screen keyboard.
+  - The emulator runs the arm64 engine through Android's translation on an Intel processor, so it answered at 0.5 words per second; a real phone runs it natively and much faster.
 - **The phone layout** was checked on the build machine at 400 × 860 pixels:
   - the welcome and machine steps of setup;
   - the chat with the side-bar menu;
