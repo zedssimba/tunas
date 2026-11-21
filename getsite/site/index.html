@@ -36,6 +36,12 @@
   .dl.mine { border-color: var(--brand1); box-shadow: 0 0 0 2px rgba(61, 107, 224, .15); }
   .dl.mine h3::after { content: "Your device"; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--brand1); background: #E8EEFC; border-radius: 999px; padding: 2px 8px; vertical-align: 2px; }
   .hint { font-size: 13px; color: var(--mute); }
+  .readme { font-size: 13.5px; font-weight: 600; color: var(--brand1); text-decoration: none; }
+  .readme:hover { text-decoration: underline; }
+  .cmd { margin-top: 4px; font-size: 12.5px; color: var(--mute); }
+  .cmdbox { display: flex; gap: 6px; align-items: stretch; margin-top: 4px; }
+  .cmdbox code { flex: 1; display: block; padding: 6px 8px; background: #0E1530; color: #CFE8FF; border-radius: 8px; font-size: 12px; }
+  .cmdbox button { border: 1px solid var(--line); background: #fff; border-radius: 8px; font: 600 12px system-ui, sans-serif; padding: 0 10px; cursor: pointer; color: var(--ink); }
   details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
   summary { cursor: pointer; font-weight: 600; color: var(--ink); }
   details ul { margin: 10px 0 0; padding-left: 18px; }
@@ -97,12 +103,22 @@
       if (l.date) date.textContent = '· ' + l.date;
       if (l.notes) { const a = el('a', null, "What's new"); a.href = base(p) + l.notes; ver.appendChild(a); }
       const order = [...p.platforms].sort((a, b) => isMine(b[0]) - isMine(a[0]));
-      for (const [k, name, sub] of order) {
+      for (const [k, name, sub, extra] of order) {
         const f = l.files[k]; if (!f) continue;
         const d = el('div', 'dl' + (isMine(k) ? ' mine' : ''));
         d.appendChild(el('h3', null, name));
         d.appendChild(el('div', 'sub', sub + ' · ' + mb(f.size)));
         const a = el('a', 'btn', 'Download'); a.href = base(p) + f.url; d.appendChild(a);
+        const x = extra || {};
+        const dir = base(p) + f.url.replace(/[^/]*$/, '');
+        if (x.readme) { const r = el('a', 'readme', x.readme_label || 'Read me first'); r.href = dir + x.readme; r.target = '_blank'; d.appendChild(r); }
+        if (x.command) {
+          d.appendChild(el('div', 'cmd', x.command_hint || 'Run once in Terminal:'));
+          const box = el('div', 'cmdbox'); box.appendChild(el('code', null, x.command));
+          const b = el('button', null, 'Copy');
+          b.onclick = () => navigator.clipboard.writeText(x.command).then(() => { b.textContent = 'Copied'; setTimeout(() => (b.textContent = 'Copy'), 1500); });
+          box.appendChild(b); d.appendChild(box);
+        }
         const hs = el('div', 'hint', 'SHA-256 ' + f.sha256.slice(0, 16) + '…'); hs.title = f.sha256; d.appendChild(hs);
         grid.appendChild(d);
       }

@@ -8,10 +8,42 @@
       "badge": "",
       "latest": "tunas/latest.json",
       "platforms": [
-        ["windows", "Windows", "Windows 10 and 11, 64-bit"],
-        ["mac_apple_silicon", "Mac with Apple silicon", "M1 and later"],
-        ["mac_intel", "Mac with Intel", "2013 and later"],
-        ["android", "Android", "Phones and tablets, Android 9 or later"]
+        [
+          "windows",
+          "Windows",
+          "Windows 10 and 11, 64-bit"
+        ],
+        [
+          "mac_apple_silicon",
+          "Mac with Apple silicon",
+          "M1 and later",
+          {
+            "readme": "README_Mac.txt",
+            "readme_label": "Read me first (Mac)",
+            "command": "xattr -dr com.apple.quarantine /Applications/TUNAS.app",
+            "command_hint": "After dragging TUNAS into Applications, run this once in Terminal:"
+          }
+        ],
+        [
+          "mac_intel",
+          "Mac with Intel",
+          "2013 and later",
+          {
+            "readme": "README_Mac.txt",
+            "readme_label": "Read me first (Mac)",
+            "command": "xattr -dr com.apple.quarantine /Applications/TUNAS.app",
+            "command_hint": "After dragging TUNAS into Applications, run this once in Terminal:"
+          }
+        ],
+        [
+          "android",
+          "Android",
+          "Phones and tablets, Android 9 or later",
+          {
+            "readme": "README_Android.txt",
+            "readme_label": "Read me first (Android)"
+          }
+        ]
       ],
       "note": "Already have TUNAS? It checks for a new version once a day and offers <b>Update</b> by itself.",
       "install": [
