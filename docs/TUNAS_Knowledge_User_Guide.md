@@ -1,11 +1,11 @@
 # S.A.L.T TUNAS: User Guide
 
-TUNAS 0.5.2 · November 2026 · https://www.salt.ci
+TUNAS 0.6.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.5.2). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
+This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.6.0). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
 
-This guide is for the person using TUNAS on their own Windows computer or Mac.
+This guide is for the person using TUNAS on their own Windows computer, Mac or Android phone or tablet.
 
 ## 1. Installing TUNAS
 
@@ -36,6 +36,23 @@ TUNAS runs on macOS 11 (Big Sur) or later. The Mac package `TUNAS_<version>_mac.
 **Uninstalling:** drag TUNAS from Applications to the Bin. To delete your chats and models too, delete the `TUNAS` folder in your home folder's `Library/Application Support`.
 
 The Mac version is new: the 0.5.x packages are the first Mac builds.
+
+### On an Android phone or tablet (from TUNAS 0.6.0)
+
+TUNAS runs on Android 9 or later with a 64-bit processor (almost every phone and tablet from 2018 on); 6 GB of memory or more is recommended. The package `TUNAS_<version>_android.zip` holds `TUNAS_<version>_android.apk`, a README and the release notes.
+
+1. Copy the `.apk` to the phone, or download it there, and open it.
+2. Android asks to allow installing apps from that source (your Files app or browser): allow it, then tap **Install**.
+3. If Play Protect says the app is unknown, choose **More details**, then **Install anyway**. TUNAS is not on Google Play yet.
+4. Open TUNAS. Setup checks the phone, recommends a small model and downloads it (0.5 to 1.3 GB; use Wi-Fi).
+
+**Updating:** open the new `.apk` and tap **Update**. Everything is kept.
+
+**Uninstalling:** long-press TUNAS › App info › Uninstall. This also deletes TUNAS's chats, models and settings on the phone.
+
+**Different on a phone:** the AI runs on the phone's processor (small models answer fastest; keep the phone charging for long chats). Knowledge is made from documents you pick (**New from documents**), and TUNAS keeps a copy of them inside the app. **Save as** asks where to save, for example Downloads. Models are downloaded in the app; there is no USB import. The ☰ button at the top left opens the menu with your chats, My assistants, Knowledge and Settings.
+
+The Android version is new: 0.6.0 is the first Android build.
 
 ## 2. First-time setup
 

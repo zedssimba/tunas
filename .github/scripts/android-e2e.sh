@@ -36,8 +36,16 @@ for m in re.finditer(r'<node [^>]*>',x):
             if x2>x1 and y2>y1: print((x1+x2)//2,(y1+y2)//2); break
 " "$1"
 }
+# If Android stopped TUNAS (it restarts apps to apply settings), start it again.
+alive() {
+  if ! adb shell pidof ci.salt.tunas >/dev/null 2>&1; then
+    echo "TUNAS was stopped by Android; starting it again"; adb shell am start -n ci.salt.tunas/.MainActivity; sleep 20; return 1
+  fi
+  return 0
+}
 # Tap it, scrolling down to find it if needed.
 tap() {
+  alive || true
   local xy
   for i in 1 2 3 4; do
     xy=$(find_xy "$1")
@@ -48,6 +56,9 @@ tap() {
   echo "not found: '$1'"; return 1
 }
 
+# A freshly booted test emulator updates its Google settings in the first minutes and restarts apps to
+# apply them; let it settle first.
+sleep 90
 adb install -r "$APK"
 SIZE=$(adb shell wm size | tail -1 | sed 's/.*: //' | tr -d '\r'); SW=${SIZE%x*}; SH=${SIZE#*x}; echo "screen ${SW}x${SH}"
 adb shell am start -n ci.salt.tunas/.MainActivity
@@ -60,7 +71,9 @@ adb shell "$APKDIR/lib/arm64/libllama_server.so --version" > "$OUT/engine-versio
 adb shell "$APKDIR/lib/arm64/libllama_server_dp.so --version" >> "$OUT/engine-version.txt" 2>&1
 cat "$OUT/libdir.txt" "$OUT/engine-version.txt"
 
-tap "Get started"; sleep 25; shot machine
+tap "Get started"; sleep 25
+if ! alive || [ -n "$(find_xy 'Get started')" ]; then tap "Get started"; sleep 25; fi
+shot machine
 tap "Next"; sleep 5; shot models
 tap "Download and continue"; sleep 8; shot branding
 tap "Skip"; sleep 5; shot ready

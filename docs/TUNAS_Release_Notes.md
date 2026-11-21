@@ -5,6 +5,63 @@ Newest first. Any change after a release gets a new version number.
 
 ---
 
+## 0.6.0 — 21 November 2026 (TUNAS for Android, first build)
+
+### Android
+- **TUNAS runs on Android phones and tablets:** Android 9 or later with a 64-bit (arm64) processor. One file, `TUNAS_0.6.0_android.apk`, installed directly (not through Google Play yet). The package also holds `README_Android.txt` and these notes.
+- **The AI runs on the phone itself,** on its processor, with the same llama.cpp engine as on computers, in two versions:
+  - the faster one for phones with the dot-product instructions (about 2019 on);
+  - a safe one for older phones.
+  TUNAS picks the right one by itself.
+- **Model advice for phones:** Check my machine recommends the smallest model (Qwen 3.5 0.8B) under 7 GB of memory, Qwen 3.5 2B from 7 GB, and 2B or 4B from 11 GB. Setup offers the recommended model even when it is not one of the usual three.
+- **What works as on a computer:**
+  - chat, assistants, About me and thinking;
+  - documents (Word, PDF, Excel);
+  - TERAS (including Rich document) and cloud providers;
+  - branding and branding packs.
+- **Different on Android:**
+  - **Knowledge** is made from documents you pick ("New from documents"); TUNAS keeps a copy of them inside the app, because Android lets an app open only the files the person picks, not whole folders.
+  - **Save as** asks where to save (for example Downloads) through Android's own save screen.
+  - **Models** are downloaded in the app; importing from a folder or USB stick and preparing a USB stick are not offered.
+  - **Not on Android:** "Run AI on" (phones use the processor), "Apps that use TUNAS" (the local AI service for other apps), and a machine-wide brand or policy.
+  - TERAS and cloud keys are kept in TUNAS's private storage on the phone, which other apps cannot read. Android's own key store will be used in a later version.
+- **The screen is kept clear** of the status bar, the navigation bar, a camera cut-out and the on-screen keyboard.
+
+### Phones and narrow windows (all platforms)
+- **The side bar becomes a menu** (the ☰ button) on narrow screens, and closes when you pick a chat or a page.
+- **The chat header fits a phone:**
+  - the assistant and model chips shorten;
+  - thinking and the privacy badge show as icons;
+  - menus open across the screen;
+  - each answer's copy and save buttons are always visible.
+- **Settings:** the menu becomes a row of tabs, and settings cards stack.
+- **Setup, Models, Connections, Branding and About** fit a narrow screen.
+- **On Windows, macOS and Linux,** the window can now be made as narrow as 380 pixels (was 960) and uses the same layout.
+
+### Files from the system's file screens (all platforms)
+- Files picked or saved through Android's file screens arrive as `content://` addresses rather than file paths. TUNAS now reads and writes them through the system, for:
+  - attachments in chat;
+  - documents;
+  - TERAS downloads;
+  - logos and branding packs;
+  - your own models.
+
+  On Windows, macOS and Linux nothing changes.
+
+### Tested before release
+- **On an Android emulator** (Android 14, run on GitHub's build machines):
+  - TUNAS installed and opened into setup;
+  - both engines started on the emulator (`version: 1.0.0-dev (build 12532, commit 08c252e22)`);
+  - Check my machine showed the phone advice and recommended the smallest model.
+- **The phone layout** was checked on the build machine at 400 × 860 pixels:
+  - the welcome and machine steps of setup;
+  - the chat with the side-bar menu;
+  - the Settings tabs, General and Models.
+- **Not tested yet:** a real Android phone. Please install it on yours and check: setup, the model download, a chat, a TERAS chat, saving a PDF, and a knowledge set from a few documents.
+- Windows and macOS: install over 0.5.2 directly. Everything is kept.
+
+---
+
 ## 0.5.2 — 21 November 2026 (Rich document, and TERAS 0.25.6)
 
 For TERAS 0.25.6, which fixes the document tool failures on TERAS's side (TERAS now asks Claude models for long enough answers, repairs slightly broken tool calls, and logs why a call failed).

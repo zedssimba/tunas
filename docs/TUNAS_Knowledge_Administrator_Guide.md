@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Administrator Guide
 
-TUNAS 0.5.2 · November 2026 · https://www.salt.ci
+TUNAS 0.6.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.5.2). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
+This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.6.0). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
 
 This guide is for IT departments, trainers, resellers and OEM partners who install TUNAS on many computers, brand it, set the organisation's rules, and look after it.
 
@@ -46,12 +46,23 @@ TUNAS for Mac comes as one zip, `TUNAS_<version>_mac.zip`, with `README_Mac.txt`
 - When TUNAS starts it stops any engine left running from an earlier session.
 - The 0.5.x packages are the first Mac builds; tell S.A.L.T CI about anything that behaves differently from Windows.
 
+### On Android (from 0.6.0)
+
+TUNAS for Android is one `.apk` for 64-bit (arm64) phones and tablets with Android 9 or later, installed directly (not through Google Play yet). It is signed with TUNAS's own key, so every later version installs over the earlier one.
+
+- **Everything is inside the app's private storage:** chats, assistants, settings, models, knowledge indexes, knowledge documents (copies of the documents the person picked), logs and the personal or organisation brand. Uninstalling deletes it all.
+- **Keys:** TERAS and cloud keys are kept in the app's private storage, which other apps can't read. (Android's own key store is planned.)
+- **The engine:** llama.cpp on the processor, shipped inside the app in two builds (with and without the dot-product instructions); TUNAS picks one by itself. No graphics engine on Android.
+- **Not on Android:** machine-wide brand and policy files (use a branding pack instead), the local AI API for other apps, importing models from a folder or USB stick, and Run AI on.
+- **Rolling out to many phones:** install the `.apk` with your device-management tool, then give people a branding pack (`.tunasbrand`) to import in Settings › Branding.
+
 ## 2. Requirements
 
 | Item | Details |
 |---|---|
 | Windows | Windows 10 or 11, 64-bit |
 | macOS | macOS 11 (Big Sur) or later; Apple silicon (M1 or later) or Intel (2013 or later, with AVX2) |
+| Android | Android 9 or later, 64-bit (arm64) processor; 6 GB memory recommended (4 GB for Qwen 3.5 0.8B) |
 | Memory | 8 GB recommended; 4 GB for Qwen 3.5 0.8B only |
 | Graphics | Optional. On Windows, any card with a working Vulkan driver can be used; TUNAS tests it before use and falls back to the processor |
 | Disk | About 1 to 3 GB per model, plus about 0.6 GB for the Knowledge reading model |
