@@ -77,7 +77,8 @@
     document.getElementById('ver').textContent = 'TUNAS ' + l.version;
     document.getElementById('date').textContent = l.date ? '· ' + l.date : '';
     const g = document.getElementById('grid');
-    for (const [k, name, sub] of PLAT) {
+    const order = [...PLAT].sort((a, b) => (mine && b[0].startsWith(mine)) - (mine && a[0].startsWith(mine)));
+    for (const [k, name, sub] of order) {
       const f = l.files[k];
       if (!f) continue;
       const d = document.createElement('div');
