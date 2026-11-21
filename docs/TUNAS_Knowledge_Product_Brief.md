@@ -1,6 +1,6 @@
 # S.A.L.T TUNAS: Product Brief
 
-TUNAS 0.5.2 · Product brief 1.0 · November 2026 · https://www.salt.ci
+TUNAS 0.5.2 · Product brief 1.1 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
 This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.5.2). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
@@ -27,7 +27,8 @@ The name: *tunas* is Malay for a young shoot, the first growth of a plant. TUNAS
 - **Streaming answers:** answers appear word by word as the model writes them.
 - **Per-chat choices:** at the top of each chat, the assistant, the model and the thinking mode can be changed.
 - **History:** chats are saved on the computer, titled automatically, and searchable from the side bar.
-- **TERAS at work:** with a TERAS model, the chat shows each tool step as it happens (making a document, searching the web), lists TERAS's own sources, and gives files TERAS makes a download card.
+- **TERAS at work:** with a TERAS model, the chat shows each tool step as it happens (making a document, searching the web, drawing and checking pages), lists TERAS's own sources with where each was found, and gives files TERAS makes a download card.
+- **Rich document:** with a TERAS model, one switch beside the message box asks TERAS for a richer document: a cover, charts from the figures, clear sections and every page checked.
 - **Where the answer is made:** the chat shows "Offline & private" for local models, "Your organisation's server" for TERAS, and "Online · leaves this machine" for cloud models.
 
 ## 3. TUNAS About me
@@ -84,7 +85,7 @@ TUNAS reads the user's folders where they already are, with permission, and answ
 
 When an assistant writes a letter, minutes, a report or a table, TUNAS offers it as a finished file.
 
-- **Formats:** Word (.docx), Excel (.xlsx) and PDF.
+- **Formats:** Word (.docx), Excel (.xlsx) and PDF; with TERAS, also PowerPoint (.pptx), CSV and Markdown.
 - **Letterhead:** the logo, organisation name and address from the app's branding, at the top of Word and PDF documents.
 - **Excel:** tables become sheets, with numbers kept as numbers.
 - **Clean copy:** citation markers such as [1] are removed from the saved document; the sources stay in the chat.
@@ -135,7 +136,7 @@ TUNAS takes the name, logo and colours of whoever gives it out.
 
 Everything in TUNAS works on the computer alone. Connections adds more, when the user or the organisation chooses.
 
-- **Connect to TERAS:** the organisation's TERAS address and a key. The organisation's TERAS models and knowledge collections then appear by name, and any assistant can use them.
+- **Connect to TERAS:** the organisation's TERAS address and a key. The organisation's TERAS models and knowledge collections then appear by name, and any assistant can use them. TERAS's tool steps, sources and files show in the chat, and Rich documents are made on request.
 - **Cloud AI providers:** the main cloud AI providers, or any OpenAI-compatible service, with the user's own key. Off until the user switches on "Allow cloud providers", and the organisation can block it.
 - **Let other apps use TUNAS (local AI API):** the private AI engine for S.A.L.T CI desktop apps such as NEXUS, WARKAH, NASKAH, Kembara and MOM Studio, and for other programs the user allows. An OpenAI-compatible API (`/v1/models`, `/v1/chat/completions` with streaming) on this computer only (127.0.0.1, port 11435 by default). Each app gets its own key from TUNAS; keys can be removed at any time and the list shows when each was last used. Apps can ask for an assistant by name (its persona and knowledge apply) or for a model. Off by default.
 - **Built-in S.A.L.T reference:** TUNAS knows the basic facts about S.A.L.T CI and its products, so it can answer questions about TERAS and the platform. The user's own documents always come first.
