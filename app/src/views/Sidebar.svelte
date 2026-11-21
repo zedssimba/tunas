@@ -1,4 +1,5 @@
 <script>
+  import { updateAvailable } from '../lib/update.svelte.js';
   import PoweredBy from '../lib/PoweredBy.svelte';
   import Icon from '../lib/Icon.svelte';
   import BrandLogo from '../lib/BrandLogo.svelte';
@@ -118,7 +119,7 @@
 
   <div class="foot">
     <button class="credit" onclick={() => openSettings('about')} title="About TUNAS and S.A.L.T CI"><PoweredBy /></button>
-    <button class="gear" class:active={app.view === 'settings'} title="Settings" aria-label="Settings" onclick={() => openSettings('general')}><Icon name="settings" size={19} /></button>
+    <button class="gear" class:active={app.view === 'settings'} title={updateAvailable() ? 'Settings · a new TUNAS is ready' : 'Settings'} aria-label="Settings" onclick={() => openSettings(updateAvailable() ? 'about' : 'general')}><Icon name="settings" size={19} />{#if updateAvailable()}<span class="dot"></span>{/if}</button>
   </div>
 </aside>
 
@@ -150,6 +151,8 @@
   nav button.active { color: var(--ink); background: var(--hover); }
   .foot { display: flex; align-items: center; gap: 6px; padding: 4px 2px 0 6px; }
   .credit { flex: 1; text-align: left; min-width: 0; }
+  .gear { position: relative; }
+  .gear .dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--brand1); box-shadow: 0 0 0 2px var(--panel); }
   .gear { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--mute); }
   .gear:hover, .gear.active { background: var(--hover); color: var(--ink); }
 </style>

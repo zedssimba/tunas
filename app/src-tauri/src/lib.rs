@@ -13,6 +13,7 @@ mod knowledge;
 mod models;
 mod paths;
 mod secret;
+mod update;
 mod userfiles;
 
 use parking_lot::Mutex;
@@ -351,6 +352,29 @@ async fn knowledge_copy_in(app: AppHandle, paths: Vec<String>, into: Option<Stri
     .await
     .map_err(e)?
     .map_err(e)
+}
+
+// ---------------- updates ----------------
+
+/// Is there a newer TUNAS? (The organisation's policy can switch this off or point it elsewhere.)
+#[tauri::command]
+async fn update_check() -> update::UpdateInfo {
+    let pol = brand::policy();
+    if !pol.allow_update_check {
+        return update::UpdateInfo { current: env!("CARGO_PKG_VERSION").into(), error: "off".into(), ..Default::default() };
+    }
+    let src = if pol.update_source.trim().is_empty() { update::DEFAULT_SOURCE.to_string() } else { pol.update_source.trim().to_string() };
+    update::check(&src).await
+}
+
+#[tauri::command]
+async fn update_download(app: AppHandle, file: update::UpdFile) -> R<String> {
+    update::download(&app, &file).await.map(|p| p.display().to_string()).map_err(e)
+}
+
+#[tauri::command]
+fn update_install(app: AppHandle, path: String) -> R<()> {
+    update::install(&app, std::path::Path::new(&path)).map_err(e)
 }
 
 #[tauri::command]
@@ -953,7 +977,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            doc_export, open_written, knowledge_copy_in, teras_download, teras_open, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
+            doc_export, open_written, knowledge_copy_in, update_check, update_download, update_install, teras_download, teras_open, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
             app_info,
             setting_get,
             setting_set,

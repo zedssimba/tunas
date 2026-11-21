@@ -39,6 +39,10 @@ pub struct Policy {
     pub allow_cloud: bool,
     pub allow_knowledge_with_cloud: bool,
     pub allow_local_api: bool,
+    /// Check for new TUNAS versions (only a request for latest.json; nothing about the person is sent).
+    pub allow_update_check: bool,
+    /// Where to check instead of get.saltci.app, for example an address on the organisation's own network.
+    pub update_source: String,
     pub source: String,
 }
 
@@ -51,6 +55,8 @@ impl Default for Policy {
             allow_cloud: true,
             allow_knowledge_with_cloud: true,
             allow_local_api: true,
+            allow_update_check: true,
+            update_source: String::new(),
             source: "default".into(),
         }
     }

@@ -6,6 +6,7 @@
   import SaltBrandStrip from '../lib/SaltBrandStrip.svelte';
   import { openUrl, SALT_LINKS } from '../lib/api.js';
   import { app } from '../lib/state.svelte.js';
+  import { upd, checkUpdate, updateNow, whatsNew } from '../lib/update.svelte.js';
 
   const LABEL = { personal: 'Personal brand', org: 'Organisation', oem: 'Provided by' };
   const credited = $derived((app.brand?.layers || []).filter((l) => l.brand));
@@ -31,6 +32,25 @@
     </div>
     <p style="margin-top:14px">TUNAS runs open AI models on this machine, fully offline and private. <i>Tunas</i> means a young shoot, the first growth: it is the personal start of S.A.L.T CI.</p>
     <div style="margin-top:14px"><PoweredBy size={14} logo={30} /></div>
+  </div>
+
+  <div class="section-title">Updates</div>
+  <div class="card tight row updrow">
+    <Icon name={upd.info?.available ? 'download' : 'check'} size={18} />
+    <div class="grow">
+      {#if upd.checking}<b>Checking for a new TUNAS…</b>
+      {:else if upd.info?.error === 'off'}<b>TUNAS {app.info?.version}</b><div class="small mute">Update checks are off on this machine (organisation policy).</div>
+      {:else if upd.info?.available}<b>TUNAS {upd.info.latest} is ready</b><div class="small mute">You have {upd.info.current}.{#if upd.phase === 'downloading'} Downloading…{/if}</div>
+      {:else if upd.info?.error}<b>TUNAS {app.info?.version}</b><div class="small mute">Could not check: {upd.info.error}</div>
+      {:else if upd.info}<b>TUNAS {app.info?.version} · Up to date</b><div class="small mute">TUNAS checks once a day. Only the version is asked for; nothing about you is sent.</div>
+      {:else}<b>TUNAS {app.info?.version}</b><div class="small mute">TUNAS checks for a new version once a day.</div>{/if}
+    </div>
+    {#if upd.info?.available}
+      {#if upd.info.notes_url}<button class="btn sm ghost" onclick={whatsNew}>What's new</button>{/if}
+      <button class="btn sm primary" disabled={!!upd.phase} onclick={updateNow}>Update</button>
+    {:else if upd.info?.error !== 'off'}
+      <button class="btn sm" disabled={upd.checking} onclick={() => checkUpdate(true)}>Check now</button>
+    {/if}
   </div>
 
   {#if credited.length}
@@ -90,5 +110,6 @@
   .legal { margin-top: 14px; display: flex; flex-direction: column; gap: 3px; }
   .lnk { color: var(--brand1); padding: 0; font-size: 12px; }
   .lnk:hover { text-decoration: underline; }
-  @media (max-width: 760px) { .credits, .tgrid { grid-template-columns: 1fr; } }
+  .updrow { align-items: center; gap: 12px; }
+  @media (max-width: 760px) { .credits, .tgrid { grid-template-columns: 1fr; } .updrow { flex-wrap: wrap; } }
 </style>

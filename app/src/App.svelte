@@ -12,6 +12,8 @@
   import Setup from './views/Setup.svelte';
   import SettingsShell from './views/SettingsShell.svelte';
   import Icon from './lib/Icon.svelte';
+  import UpdateCard from './views/UpdateCard.svelte';
+  import { startUpdateChecks } from './lib/update.svelte.js';
 
   let ready = $state(false);
   let packPrompt = $state(null);
@@ -41,6 +43,7 @@
     app.engine = await api.engine_status();
     if (!app.info.setup_done) app.view = 'setup';
     ready = true;
+    startUpdateChecks();
     const pending = await api.take_pending_pack();
     if (pending) offerPack(pending);
     await listen('open-pack', (e) => offerPack(e.payload));
@@ -55,6 +58,7 @@
       <Sidebar />
       {#if app.navOpen}<button class="navscrim" aria-label="Close the menu" onclick={() => (app.navOpen = false)}></button>{/if}
       <main>
+        <UpdateCard />
         {#if app.view === 'assistants' || app.view === 'knowledge'}
           <div class="mbar"><button class="icon-btn" aria-label="Menu" onclick={() => (app.navOpen = true)}><Icon name="menu" size={20} /></button><b class="ellipsis">{app.brand?.effective_name || 'TUNAS'}</b></div>
         {/if}
@@ -115,7 +119,7 @@
 <style>
   .shell { display: flex; height: 100%; }
   main { flex: 1; min-width: 0; height: 100%; background: var(--bg); display: flex; flex-direction: column; }
-  main > :global(*:not(.mbar)) { flex: 1; min-height: 0; }
+  main > :global(*:not(.mbar):not(.upd)) { flex: 1; min-height: 0; }
   .mbar { display: none; }
   .navscrim { display: none; }
   /* Phones and narrow windows: the side bar becomes a drawer. */
