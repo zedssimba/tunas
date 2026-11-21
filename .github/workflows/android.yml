@@ -62,6 +62,9 @@ jobs:
       - name: Build TUNAS for Android
         working-directory: app
         run: |
+          # Android loads TUNAS as a shared library; desktop builds keep the plain Rust library.
+          sed -i 's/^crate-type = \["rlib"\].*/crate-type = ["cdylib", "rlib"]/' src-tauri/Cargo.toml
+          grep -n crate-type src-tauri/Cargo.toml
           npm ci
           npx tauri android build --target aarch64 --apk
           find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -exec ls -la {} \;
