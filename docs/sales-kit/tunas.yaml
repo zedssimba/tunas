@@ -1,10 +1,10 @@
-file: SALT_TUNAS_Product_Brief_v1.0
+file: SALT_TUNAS_Product_Brief_v1.1
 title: S.A.L.T TUNAS Product Brief
 product: S.A.L.T TUNAS
 mark_file: tunas-mark.svg
 cover_logo: salt-large.png
 doctype: Product brief
-version: Version 1.0 · TUNAS 0.3.3
+version: Version 1.1 · TUNAS 0.5.2
 date: November 2026
 domain: salt.ci
 cover:
@@ -22,6 +22,7 @@ cover:
   - Reads your folders in place
   - Answers with their sources
   - Word, Excel and PDF with your letterhead
+  - Richer documents with TERAS
   - Thinking you can see
   - About me, so answers fit you
   - Check my machine picks the models
@@ -186,12 +187,12 @@ pages:
 - kicker: Documents
   color: gold
   h1: From an answer *to a finished document*
-  lead: When an assistant writes a letter, minutes, a report or a table, TUNAS offers it as a finished Word, Excel or PDF file with the organisation's letterhead, ready to print, sign or send.
+  lead: When an assistant writes a letter, minutes, a report or a table, TUNAS offers it as a finished Word, Excel or PDF file with the organisation's letterhead. Connected to TERAS, the same request grows into a richer document; the notebook sets the limit, TERAS lifts it.
   blocks:
   - type: image
     src: /img/shots/letter.jpg
     size: wide
-    caption: Surat Rasmi drafts an official letter from the department's own circular; "Your document is ready" offers Word and PDF. Illustrative names.
+    caption: Surat Rasmi drafts a letter from the department's circular, ready as Word or PDF. Illustrative names.
   - type: cards
     cols: 3
     compact: true
@@ -211,7 +212,7 @@ pages:
     - icon: tag
       color: gold
       title: The organisation's letterhead
-      text: Logo and name from the app's own branding, so every document looks like it came from the office.
+      text: Logo and name from the app's branding, so every document looks like it came from the office.
     - icon: audit
       color: violet
       title: Clean copy
@@ -219,7 +220,19 @@ pages:
     - icon: zap
       color: orange
       title: One click
-      text: Save as from any answer, or from the document card; then open the file or its folder.
+      text: Save as from any answer or the document card, then open the file.
+    - icon: users
+      color: navy
+      title: From you, not the AI
+      text: Written from the user and their organisation, with the letterhead as the sender, never signed by the AI.
+    - icon: server
+      color: blue
+      title: Richer with TERAS
+      text: TERAS makes the file, also as PowerPoint or CSV, in the organisation's own templates.
+    - icon: spark
+      color: violet
+      title: Rich document
+      text: One switch adds a cover, charts and clear sections, with every page checked.
 - kicker: My assistants
   color: orange
   h1: The right helper *for each job*
@@ -419,7 +432,7 @@ pages:
     - icon: server
       color: navy
       title: Connect to TERAS
-      text: The organisation's TERAS models and knowledge by name, with TERAS's tool steps and files shown in the chat.
+      text: The organisation's TERAS models and knowledge by name, with TERAS's tool steps, sources and files shown in the chat, and Rich documents on request.
     - icon: globe
       color: blue
       title: Cloud, only if allowed
@@ -451,6 +464,7 @@ pages:
       note: user's choice · organisation's rules
       chips:
       - The organisation's TERAS
+      - Rich documents from TERAS
       - Cloud AI with the user's key
 - kicker: Privacy and deployment
   color: orange
