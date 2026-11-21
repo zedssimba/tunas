@@ -42,13 +42,14 @@ tap() {
   for i in 1 2 3 4; do
     xy=$(find_xy "$1")
     if [ -n "$xy" ]; then echo "tap '$1' at $xy"; adb shell input tap $xy; return 0; fi
-    adb shell input swipe 540 1700 540 600 300
+    adb shell input swipe $((SW/2)) $((SH*3/4)) $((SW/2)) $((SH/4)) 300
     sleep 1
   done
   echo "not found: '$1'"; return 1
 }
 
 adb install -r "$APK"
+SIZE=$(adb shell wm size | tail -1 | sed 's/.*: //' | tr -d '\r'); SW=${SIZE%x*}; SH=${SIZE#*x}; echo "screen ${SW}x${SH}"
 adb shell am start -n ci.salt.tunas/.MainActivity
 sleep 25
 shot start
