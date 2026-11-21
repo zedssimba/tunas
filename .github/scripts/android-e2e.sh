@@ -77,7 +77,12 @@ shot machine
 tap "Next"; sleep 5; shot models
 tap "Download and continue"; sleep 8; shot branding
 tap "Skip"; sleep 5; shot ready
-tap "Start chatting" || tap "Open TUNAS"; sleep 10; shot chat
+for i in 1 2 3; do
+  xy=$(find_xy "Start chatting"); [ -z "$xy" ] && xy=$(find_xy "Open TUNAS")
+  if [ -n "$xy" ]; then echo "tap finish at $xy"; adb shell input tap $xy; break; fi
+  sleep 5
+done
+sleep 10; shot chat
 
 # Wait for the model to download and the engine to load (up to 10 minutes), then ask.
 for i in $(seq 1 20); do

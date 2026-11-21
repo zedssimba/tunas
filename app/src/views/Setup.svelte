@@ -23,7 +23,8 @@
 
   const steps = ['Welcome', 'Your machine', 'Models', 'Branding', 'Ready'];
   // The default set, plus whatever Check my machine recommends (on a phone, the smallest model).
-  const bundled = $derived(app.catalog.filter((m) => m.role === 'chat' && (m.bundle || hw?.recommended_models?.includes(m.id))));
+  const rank = (m) => { const i = hw?.recommended_models?.indexOf(m.id) ?? -1; return i < 0 ? 99 : i; };
+  const bundled = $derived(app.catalog.filter((m) => m.role === 'chat' && (m.bundle || hw?.recommended_models?.includes(m.id))).sort((a, b) => rank(a) - rank(b)));
   const totalSize = $derived(bundled.filter((m) => picked.includes(m.id)).reduce((a, m) => a + m.size, 0));
   const hasModel = $derived(app.installed.some((m) => !m.id.includes('embed')));
   const oem = $derived(app.brand?.layers?.find((l) => l.layer === 'oem')?.brand);
