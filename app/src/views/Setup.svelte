@@ -22,7 +22,8 @@
   let savingBrand = $state(false);
 
   const steps = ['Welcome', 'Your machine', 'Models', 'Branding', 'Ready'];
-  const bundled = $derived(app.catalog.filter((m) => m.role === 'chat' && m.bundle));
+  // The default set, plus whatever Check my machine recommends (on a phone, the smallest model).
+  const bundled = $derived(app.catalog.filter((m) => m.role === 'chat' && (m.bundle || hw?.recommended_models?.includes(m.id))));
   const totalSize = $derived(bundled.filter((m) => picked.includes(m.id)).reduce((a, m) => a + m.size, 0));
   const hasModel = $derived(app.installed.some((m) => !m.id.includes('embed')));
   const oem = $derived(app.brand?.layers?.find((l) => l.layer === 'oem')?.brand);
@@ -32,7 +33,7 @@
     await refreshModels();
     hw = await api.hardware_check();
     // Pre-tick: the recommended bundled models, at most two.
-    picked = hw.recommended_models.filter((id) => app.catalog.some((m) => m.id === id && m.bundle && !m.installed)).slice(0, 2);
+    picked = hw.recommended_models.filter((id) => app.catalog.some((m) => m.id === id && m.role === 'chat' && !m.installed)).slice(0, 2);
   });
 
   function next() { step = Math.min(step + 1, steps.length - 1); }

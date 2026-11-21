@@ -18,23 +18,33 @@ for t in re.findall(r'(?:text|content-desc)="([^"]+)"',x):
     print(t)
 PY
 }
-# Tap the first element whose text starts with $1.
-tap() {
+# Where the first element whose text starts with $1 is (or "EDIT" for the first text box); empty if not on screen.
+find_xy() {
   adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
-  local xy
-  xy=$(adb shell cat /sdcard/ui.xml | python3 -c "
+  adb shell cat /sdcard/ui.xml | python3 -c "
 import re,sys
 x=sys.stdin.read(); want=sys.argv[1]
 for m in re.finditer(r'<node [^>]*>',x):
     n=m.group(0)
-    t=re.search(r' text=\"([^\"]*)\"',n); d=re.search(r'content-desc=\"([^\"]*)\"',n)
+    t=re.search(r' text=\"([^\"]*)\"',n); d=re.search(r'content-desc=\"([^\"]*)\"',n); c=re.search(r'class=\"([^\"]*)\"',n)
     label=(t.group(1) if t else '') or (d.group(1) if d else '')
-    if label.strip().startswith(want):
+    hit = (c and c.group(1)=='android.widget.EditText') if want=='EDIT' else label.strip().startswith(want)
+    if hit:
         b=re.search(r'bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"',n)
         if b:
-            x1,y1,x2,y2=map(int,b.groups()); print((x1+x2)//2,(y1+y2)//2); break
-" "$1")
-  if [ -n "$xy" ]; then echo "tap '$1' at $xy"; adb shell input tap $xy; return 0; fi
+            x1,y1,x2,y2=map(int,b.groups())
+            if x2>x1 and y2>y1: print((x1+x2)//2,(y1+y2)//2); break
+" "$1"
+}
+# Tap it, scrolling down to find it if needed.
+tap() {
+  local xy
+  for i in 1 2 3 4; do
+    xy=$(find_xy "$1")
+    if [ -n "$xy" ]; then echo "tap '$1' at $xy"; adb shell input tap $xy; return 0; fi
+    adb shell input swipe 540 1700 540 600 300
+    sleep 1
+  done
   echo "not found: '$1'"; return 1
 }
 
@@ -62,7 +72,7 @@ for i in $(seq 1 20); do
   if ! grep -qiE "downloading|[0-9]+ ?%|MB of" "$OUT/text-wait.txt"; then break; fi
 done
 shot before-ask
-tap "Message" ; sleep 2
+tap "EDIT" ; sleep 2
 adb shell input text "Hello%sin%sone%ssentence,%swhat%sis%sMalaysia%sfamous%sfor?"
 sleep 2
 adb shell input keyevent KEYCODE_ENTER

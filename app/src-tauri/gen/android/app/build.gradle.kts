@@ -26,7 +26,7 @@ android {
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "true" // TUNAS talks to its own engine on http://127.0.0.1, and TERAS may be plain http on an office network
         applicationId = "ci.salt.tunas"
-        minSdk = 24
+        minSdk = 28 // Android 9: the engine is built for it
         targetSdk = 37
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")

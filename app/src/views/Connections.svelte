@@ -226,6 +226,7 @@
   </div>
 
   <!-- Local API -->
+  {#if app.info?.os !== 'android'}
   <div class="section-title">Apps that use TUNAS</div>
   <div class="card">
     <div class="row" style="align-items:flex-start;gap:14px">
@@ -282,6 +283,7 @@
       </div>
     </div>
   </div>
+  {/if}
 </div>
 
 {#if edit}

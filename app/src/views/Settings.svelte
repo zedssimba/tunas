@@ -30,6 +30,7 @@
       </select>
     </div>
 
+    {#if app.info?.os !== 'android'}
     <div class="card set">
       <div class="grow">
         <b>Run AI on</b>
@@ -41,6 +42,7 @@
         {/each}
       </div>
     </div>
+    {/if}
 
     <div class="card set">
       <div class="grow"><b>Appearance</b><div class="small mute">Light or dark.</div></div>
