@@ -152,6 +152,9 @@ The policy decides what users may change and use. TUNAS reads, in order:
 | `allow_cloud` | Cloud AI providers can't be added or used; the Connections page says the organisation does not allow them. TERAS stays available |
 | `allow_knowledge_with_cloud` | Reserved for keeping knowledge passages away from cloud models |
 | `allow_local_api` | Other apps can't use TUNAS; the local AI API stays off |
+| `allow_update_check` | TUNAS doesn't check for new versions (from 0.6.0) |
+
+`"update_source"` (from 0.6.0) sets where TUNAS checks for new versions instead of `https://get.saltci.app/tunas/latest.json`, for example a copy of that folder on the organisation's own web server. The check asks only for `latest.json`; nothing about the user is sent. Each installer listed there carries its SHA-256, and TUNAS refuses a download that doesn't match.
 
 Settings left out of the file count as allowed. The policy's source (machine, pack or default) is known to the app, and the Branding and Connections pages show what is locked.
 

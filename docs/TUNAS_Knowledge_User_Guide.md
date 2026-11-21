@@ -54,6 +54,10 @@ TUNAS runs on Android 9 or later with a 64-bit processor (almost every phone and
 
 The Android version is new: 0.6.0 is the first Android build.
 
+### Updates (from TUNAS 0.6.0)
+
+TUNAS checks once a day whether a new version is ready (it sends nothing about you). When one is, a card at the top says so, with **What's new**, **Later** and **Update**, and a dot appears on Settings. **Update** downloads it, checks it, and starts the installer: on Windows it installs over TUNAS; on a Mac drag the new TUNAS into Applications; on Android tap **Install**. **Settings › About › Updates** has **Check now**. All TUNAS downloads are also at `https://get.saltci.app`.
+
 ## 2. First-time setup
 
 1. **Welcome:** press **Get started**.

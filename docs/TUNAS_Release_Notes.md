@@ -27,6 +27,17 @@ Newest first. Any change after a release gets a new version number.
   - TERAS and cloud keys are kept in TUNAS's private storage on the phone, which other apps cannot read. Android's own key store will be used in a later version.
 - **The screen is kept clear** of the status bar, the navigation bar, a camera cut-out and the on-screen keyboard.
 
+### Updates from get.saltci.app (all platforms)
+- **TUNAS tells you when a new version is ready.** It checks quietly a little after it starts and then once a day, by asking S.A.L.T CI's download address (`get.saltci.app`) for `latest.json`. Nothing about you, your chats or your machine is sent.
+- **A card at the top** says "TUNAS 0.6.1 is ready · you have 0.6.0", with **What's new**, **Later** and **Update**, and a dot appears on the Settings button. **Later** hides the card until the next version.
+- **Update** downloads the new installer and checks its SHA-256 fingerprint against `latest.json`; a file that does not match is not kept. Then:
+  - **Windows:** the installer starts, closes TUNAS and installs over it;
+  - **Mac:** the new disk image opens; drag TUNAS into Applications and choose Replace (no Terminal step is needed for an update made this way);
+  - **Android:** Android's own "Install this update?" screen opens (the first time, Android asks to allow TUNAS to install apps).
+- **Settings › About › Updates** shows "Up to date" or the new version, with **Check now**.
+- **For IT:** `"allow_update_check": false` in the policy switches the check off; `"update_source"` points it at an address on the organisation's own network instead.
+- **The download page** `https://get.saltci.app` lists the newest TUNAS for Windows, both kinds of Mac and Android.
+
 ### Phones and narrow windows (all platforms)
 - **The side bar becomes a menu** (the ☰ button) on narrow screens, and closes when you pick a chat or a page.
 - **The chat header fits a phone:**
@@ -59,6 +70,7 @@ Newest first. Any change after a release gets a new version number.
   - the welcome and machine steps of setup;
   - the chat with the side-bar menu;
   - the Settings tabs, General and Models.
+- **Updates,** on the build machine with a stand-in download address announcing 0.6.1: the card and the Settings dot appeared; **Update** downloaded the file and its SHA-256 matched; a file whose fingerprint did not match was refused and not kept; **Later** hid the card. The install step itself (Windows installer, Mac disk image, Android install screen) is tested with the first real update, 0.6.1.
 - **Not tested yet:** a real Android phone. Please install it on yours and check: setup, the model download, a chat, a TERAS chat, saving a PDF, and a knowledge set from a few documents.
 - Windows and macOS: install over 0.5.2 directly. Everything is kept.
 
