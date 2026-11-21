@@ -346,4 +346,5 @@
   .foot { padding: 14px 22px; border-top: 1px solid var(--line); }
   .mlist { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 9px; padding: 6px 10px; display: flex; flex-direction: column; gap: 4px; font-weight: 400; }
   .chk { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
 </style>

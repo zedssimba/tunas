@@ -81,7 +81,10 @@ jobs:
   emulator-test:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: apk-unsigned
@@ -100,33 +103,17 @@ jobs:
           $BT/apksigner sign --ks /tmp/test.jks --ks-pass pass:testtest --out /tmp/tunas-test.apk apk/*.apk
           $BT/apksigner verify /tmp/tunas-test.apk && echo signed
 
-      - name: Run on an Android emulator (arm64 app through Android's ARM translation)
+      - name: First run on an Android emulator (setup, model download, a question)
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
           target: google_apis
           ram-size: 4096M
-          disk-size: 6G
+          disk-size: 8G
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: |
-            mkdir -p /tmp/shots
-            adb install -r /tmp/tunas-test.apk
-            adb shell am start -n ci.salt.tunas/.MainActivity
-            sleep 25
-            adb exec-out screencap -p > /tmp/shots/01-start.png
-            sleep 20
-            adb exec-out screencap -p > /tmp/shots/02-after-45s.png
-            LIBDIR=$(adb shell dumpsys package ci.salt.tunas | grep -m1 legacyNativeLibraryDir | sed 's/.*=//' | tr -d '\r')
-            echo "native lib dir: $LIBDIR"
-            adb shell ls -la "$LIBDIR/arm64" > /tmp/shots/libdir.txt 2>&1 || true
-            adb shell "$LIBDIR/arm64/libllama_server.so --version" > /tmp/shots/engine-version.txt 2>&1 || true
-            adb shell "$LIBDIR/arm64/libllama_server_dp.so --version" >> /tmp/shots/engine-version.txt 2>&1 || true
-            adb shell cat /proc/cpuinfo | grep -m1 -i features > /tmp/shots/cpu.txt || true
-            adb logcat -d > /tmp/shots/logcat.txt
-            cat /tmp/shots/libdir.txt /tmp/shots/engine-version.txt
-            grep -iE "tunas|rust|panic|FATAL" /tmp/shots/logcat.txt | tail -60 || true
+          script: bash .github/scripts/android-e2e.sh /tmp/tunas-test.apk
 
       - uses: actions/upload-artifact@v4
         if: always()

@@ -155,3 +155,12 @@ textarea { resize: vertical; line-height: 1.5; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--faint) 40%, transparent); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* Phones and narrow windows */
+@media (max-width: 760px) {
+  .page { padding: 16px 14px 32px; }
+  .page-head { flex-wrap: wrap; align-items: flex-start; gap: 10px; }
+  .page-head h1 { font-size: 22px; }
+  .dialog { padding: 18px; }
+  .seg { flex-wrap: wrap; }
+}

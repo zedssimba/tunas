@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# TUNAS on an Android emulator, the way a person would use it the first time:
+# setup -> download the recommended model -> ask a question -> wait for the answer.
+# Screenshots, the screen's text and the log go to $OUT.
+set -u
+OUT=${OUT:-/tmp/shots}
+APK=${1:?apk}
+mkdir -p "$OUT"
+n=0
+shot() { n=$((n+1)); adb exec-out screencap -p > "$OUT/$(printf %02d $n)-$1.png"; dump "$1"; }
+dump() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb shell cat /sdcard/ui.xml > "$OUT/ui-$1.xml" 2>/dev/null
+  python3 - "$OUT/ui-$1.xml" > "$OUT/text-$1.txt" <<'PY'
+import re,sys
+x=open(sys.argv[1],errors='ignore').read()
+for t in re.findall(r'(?:text|content-desc)="([^"]+)"',x):
+    print(t)
+PY
+}
+# Tap the first element whose text starts with $1.
+tap() {
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  local xy
+  xy=$(adb shell cat /sdcard/ui.xml | python3 -c "
+import re,sys
+x=sys.stdin.read(); want=sys.argv[1]
+for m in re.finditer(r'<node [^>]*>',x):
+    n=m.group(0)
+    t=re.search(r' text=\"([^\"]*)\"',n); d=re.search(r'content-desc=\"([^\"]*)\"',n)
+    label=(t.group(1) if t else '') or (d.group(1) if d else '')
+    if label.strip().startswith(want):
+        b=re.search(r'bounds=\"\[(\d+),(\d+)\]\[(\d+),(\d+)\]\"',n)
+        if b:
+            x1,y1,x2,y2=map(int,b.groups()); print((x1+x2)//2,(y1+y2)//2); break
+" "$1")
+  if [ -n "$xy" ]; then echo "tap '$1' at $xy"; adb shell input tap $xy; return 0; fi
+  echo "not found: '$1'"; return 1
+}
+
+adb install -r "$APK"
+adb shell am start -n ci.salt.tunas/.MainActivity
+sleep 25
+shot start
+
+APKDIR=$(adb shell pm path ci.salt.tunas | head -1 | sed 's/^package://; s#/base.apk##' | tr -d '\r')
+adb shell ls -laR "$APKDIR/lib" > "$OUT/libdir.txt" 2>&1
+adb shell "$APKDIR/lib/arm64/libllama_server.so --version" > "$OUT/engine-version.txt" 2>&1
+adb shell "$APKDIR/lib/arm64/libllama_server_dp.so --version" >> "$OUT/engine-version.txt" 2>&1
+cat "$OUT/libdir.txt" "$OUT/engine-version.txt"
+
+tap "Get started"; sleep 25; shot machine
+tap "Next"; sleep 5; shot models
+tap "Download and continue"; sleep 8; shot branding
+tap "Skip"; sleep 5; shot ready
+tap "Start chatting" || tap "Open TUNAS"; sleep 10; shot chat
+
+# Wait for the model to download and the engine to load (up to 10 minutes), then ask.
+for i in $(seq 1 20); do
+  sleep 30
+  dump wait
+  if ! grep -qiE "downloading|[0-9]+ ?%|MB of" "$OUT/text-wait.txt"; then break; fi
+done
+shot before-ask
+tap "Message" ; sleep 2
+adb shell input text "Hello%sin%sone%ssentence,%swhat%sis%sMalaysia%sfamous%sfor?"
+sleep 2
+adb shell input keyevent KEYCODE_ENTER
+sleep 3
+tap "Send" || true
+for i in $(seq 1 16); do
+  sleep 30
+  dump answer
+  if grep -qiE "malaysia" "$OUT/text-answer.txt" && ! grep -qiE "Reading your message|Loading the model" "$OUT/text-answer.txt"; then
+    sleep 20; break
+  fi
+done
+shot answer
+adb logcat -d > "$OUT/logcat.txt"
+grep -iE "RustStdoutStderr|tunas|panic|FATAL" "$OUT/logcat.txt" | grep -v glBind | tail -80
+echo "--- screen text at the end ---"; cat "$OUT/text-answer.txt"

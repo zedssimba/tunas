@@ -17,7 +17,7 @@
         "visible": false,
         "width": 1240,
         "height": 820,
-        "minWidth": 960,
+        "minWidth": 380,
         "minHeight": 620,
         "center": true,
         "dragDropEnabled": true

@@ -235,4 +235,15 @@
   .mt { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 11px; background: var(--soft); border-bottom: 1px solid var(--line); }
   .mb { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 14px; text-align: center; background: var(--bg); }
   .dl { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 6px; }
+  .setup { grid-template-columns: minmax(0, 1fr); }
+  @media (max-width: 760px) {
+    .setup { padding: 0; place-items: stretch; }
+    .panel { width: 100%; min-height: 100%; border-radius: 0; box-shadow: none; overflow: visible; }
+    .steps { padding: 10px 12px; }
+    .st { flex: 0 0 auto; font-size: 0; }
+    .st.on { flex: 1; font-size: 12.5px; }
+    .content { padding: 18px 16px; }
+    .specs { grid-template-columns: 1fr 1fr; }
+    .src, .brandgrid { grid-template-columns: 1fr; }
+  }
 </style>

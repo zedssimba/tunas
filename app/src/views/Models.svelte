@@ -279,4 +279,5 @@
   .link { color: var(--brand1); padding: 0; }
   .link:hover { text-decoration: underline; }
   @media (max-width: 1100px) { .specs { grid-template-columns: 1fr 1fr; } .tri { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { .specs { grid-template-columns: 1fr 1fr; } }
 </style>

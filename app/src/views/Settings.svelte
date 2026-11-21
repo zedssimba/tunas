@@ -84,6 +84,7 @@
 <style>
   .stack { display: flex; flex-direction: column; gap: 10px; max-width: 900px; }
   .set { display: flex; align-items: center; gap: 18px; padding: 16px 18px; }
+  @media (max-width: 760px) { .set { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; } .set select { width: 100%; } }
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; background: var(--bg); flex: none; }
   .seg button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 7px; font-weight: 600; font-size: 13px; color: var(--mute); }
   .seg button.sel { background: var(--panel); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }

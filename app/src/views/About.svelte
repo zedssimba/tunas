@@ -90,4 +90,5 @@
   .legal { margin-top: 14px; display: flex; flex-direction: column; gap: 3px; }
   .lnk { color: var(--brand1); padding: 0; font-size: 12px; }
   .lnk:hover { text-decoration: underline; }
+  @media (max-width: 760px) { .credits, .tgrid { grid-template-columns: 1fr; } }
 </style>

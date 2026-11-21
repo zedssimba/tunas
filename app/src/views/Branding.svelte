@@ -373,4 +373,5 @@
   .checks.rules { grid-template-columns: 1fr; margin: 8px 0 6px 24px; }
   .chk { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
   @media (max-width: 1150px) { .split { grid-template-columns: 1fr; } .preview-col { position: static; } .layers { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 760px) { .split { grid-template-columns: 1fr; } .grid2 { grid-template-columns: 1fr; } .checks { grid-template-columns: 1fr 1fr; } .layers { grid-template-columns: 1fr; } }
 </style>

@@ -579,7 +579,7 @@
     </div>
     {#if route.kind === 'local'}
       <div class="picker">
-        <button class="mchip" class:over={thinkMode !== 'off'} onclick={() => (thinkModeOpen = !thinkModeOpen)} title="Let this model think before answering">
+        <button class="mchip thinkchip" class:over={thinkMode !== 'off'} onclick={() => (thinkModeOpen = !thinkModeOpen)} title="Let this model think before answering">
           <Icon name="bulb" size={14} /><span>{THINK_LABEL[thinkMode]}</span><Icon name="chevron" size={12} class="rot" />
         </button>
         {#if thinkModeOpen}
@@ -941,8 +941,12 @@
     .navbtn { display: inline-grid; flex: none; }
     header { padding: 8px 8px; gap: 4px; flex-wrap: nowrap; }
     header .pill { font-size: 0; padding: 6px; gap: 0; }
-    .who { padding: 4px 6px 4px 4px; gap: 6px; max-width: 42vw; }
+    .who { padding: 4px 6px 4px 4px; gap: 6px; max-width: 38vw; min-width: 0; }
     .mchip { max-width: 34vw; padding: 0 8px; }
+    .thinkchip span, .thinkchip :global(.rot) { display: none; }
+    header { overflow: hidden; }
+    header .picker { flex: 0 1 auto; min-width: 0; }
+    header .menu { position: fixed; left: 8px; right: 8px; top: 52px; width: auto; max-height: 70vh; overflow-y: auto; }
     .thread { padding: 16px 12px 14px; gap: 16px; }
     .welcome { padding: 3vh 0 6px; }
     .welcome h1 { font-size: 21px; }

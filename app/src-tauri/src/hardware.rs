@@ -234,7 +234,9 @@ pub fn check() -> Hardware {
 
     let dedicated = gpus.iter().any(|g| !g.integrated && g.vram_mb >= 3500);
     let recommended_engine = if !vk.is_empty() { "vulkan" } else { "cpu" }.to_string();
-    if vk.is_empty() {
+    if cfg!(target_os = "android") {
+        notes.push("On a phone or tablet TUNAS runs on the processor. Keep the device charging for long chats; small models answer fastest.".into());
+    } else if vk.is_empty() {
         notes.push("No usable graphics for AI was found, so TUNAS will use the processor. Small models are recommended.".into());
     } else if dedicated {
         notes.push("A graphics card was found. TUNAS will use it to speed up answers.".into());
@@ -242,7 +244,16 @@ pub fn check() -> Hardware {
         notes.push("Built-in graphics were found. TUNAS will try them and fall back to the processor if they are slower.".into());
     }
 
-    let (models, verdict): (Vec<&str>, &str) = if ram_gb < 5.5 {
+    let (models, verdict): (Vec<&str>, &str) = if cfg!(target_os = "android") {
+        // Phones share their memory with everything else on them: stay small.
+        if ram_gb < 7.0 {
+            (vec!["qwen3.5-0.8b"], "Good for quick answers with the smallest model.")
+        } else if ram_gb < 11.0 {
+            (vec!["qwen3.5-2b", "qwen3.5-0.8b"], "Good for everyday use with small models. The 2B model writes better; the 0.8B model is quickest.")
+        } else {
+            (vec!["qwen3.5-2b", "qwen3.5-4b"], "A strong device: the 2B model for everyday use, the 4B model for better writing.")
+        }
+    } else if ram_gb < 5.5 {
         (vec!["qwen3.5-0.8b"], "This machine has little memory. TUNAS will run, but only very small models.")
     } else if ram_gb < 11.0 {
         (
