@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Product Brief
 
-TUNAS 0.4.1 · Product brief 1.0 · November 2026 · https://www.salt.ci
+TUNAS 0.5.1 · Product brief 1.0 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.4.1). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
+This is the knowledge copy of the TUNAS Product Brief for AI knowledge bases (TUNAS 0.5.1). How to use TUNAS is in the TUNAS User Guide; how to roll it out across an organisation is in the TUNAS Administrator Guide; what changed in each release is in the TUNAS Release Notes.
 
 ## 1. What TUNAS is
 
@@ -90,6 +90,7 @@ When an assistant writes a letter, minutes, a report or a table, TUNAS offers it
 - **Clean copy:** citation markers such as [1] are removed from the saved document; the sources stay in the chat.
 - **The document itself:** when the user asks for a document, or to turn earlier content into one, the answer is the complete document, and chat around it is left out of the saved file.
 - **From the user, not the AI:** letters and documents are written from the user and their organisation, using the Branding letterhead as the sender, or placeholders such as [Nama Jabatan] when it is not set. The assistant never signs as itself.
+- **Richer with TERAS:** on the notebook alone, TUNAS makes clean Word, Excel and PDF files. Connected to TERAS, the same request is made by TERAS: PowerPoint, CSV and Markdown as well, the organisation's own document templates and branding, and Rich documents with a cover page, charts from the data and every page checked. The notebook sets the limit; TERAS lifts it.
 - **Where:** "Your document is ready" appears under answers that look like documents, and **Save as Word, PDF or Excel** is on every answer. After saving, open the file or its folder.
 
 ## 8. TUNAS models and engine

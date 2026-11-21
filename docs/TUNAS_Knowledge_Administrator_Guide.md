@@ -1,9 +1,9 @@
 # S.A.L.T TUNAS: Administrator Guide
 
-TUNAS 0.4.1 · November 2026 · https://www.salt.ci
+TUNAS 0.5.1 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.4.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
+This is the knowledge copy of the TUNAS Administrator Guide for AI knowledge bases (TUNAS 0.5.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Day-to-day use is in the TUNAS User Guide.
 
 This guide is for IT departments, trainers, resellers and OEM partners who install TUNAS on many computers, brand it, set the organisation's rules, and look after it.
 
@@ -27,13 +27,33 @@ TUNAS installs per user, with no administrator rights.
 - **Updating:** run the new installer for each user. All data in `%LOCALAPPDATA%\TUNAS` is kept.
 - **Uninstalling** asks whether to delete chats, assistants, branding and models too.
 
+### On macOS (from 0.5.0)
+
+TUNAS for Mac comes as a `.dmg` per kind of Mac: `mac_apple-silicon` (engine on Metal graphics) and `mac_intel` (engine on the processor). Users drag TUNAS into Applications.
+
+| What | Where |
+|---|---|
+| The app, its AI engine and model list | `/Applications/TUNAS.app` |
+| Chats, assistants, settings, knowledge, models, logs, personal brand | `~/Library/Application Support/TUNAS` (same layout as on Windows) |
+| Machine-wide organisation and OEM brand | `/Library/Application Support/TUNAS/brand/org` and `.../brand/oem` |
+| Machine-wide policy | `/Library/Application Support/TUNAS/policy.json` |
+| TERAS and cloud keys | The user's macOS Keychain, service name "TUNAS" |
+
+- **Not yet signed by Apple.** Until the packages are signed and notarised, remove the download quarantine once per Mac: `xattr -dr com.apple.quarantine /Applications/TUNAS.app` (or as part of your deployment script).
+- Writing to `/Library/Application Support` needs an administrator, so users can't change the machine-wide brand or policy.
+- `.tunasbrand` files open with TUNAS by double-click.
+- On a Mac the Dock and Finder icon stays the TUNAS mark (`logo_as_icon` is a Windows option); the brand's logo shows inside TUNAS and on documents.
+- When TUNAS starts it stops any engine left running from an earlier session.
+- The 0.5.x packages are the first Mac builds; tell S.A.L.T CI about anything that behaves differently from Windows.
+
 ## 2. Requirements
 
 | Item | Details |
 |---|---|
 | Windows | Windows 10 or 11, 64-bit |
+| macOS | macOS 11 (Big Sur) or later; Apple silicon (M1 or later) or Intel (2013 or later, with AVX2) |
 | Memory | 8 GB recommended; 4 GB for Qwen 3.5 0.8B only |
-| Graphics | Optional. Any card with a working Vulkan driver can be used; TUNAS tests it before use and falls back to the processor |
+| Graphics | Optional. On Windows, any card with a working Vulkan driver can be used; TUNAS tests it before use and falls back to the processor |
 | Disk | About 1 to 3 GB per model, plus about 0.6 GB for the Knowledge reading model |
 | Network | Only to download models, or for TERAS and cloud providers. Not needed otherwise |
 | Antivirus | The installer is not yet code-signed; some antivirus tools scan it first and may launch it twice. Allow-list it for mass rollouts |
@@ -128,8 +148,9 @@ Settings left out of the file count as allowed. The policy's source (machine, pa
 
 - **TERAS:** give users the organisation's TERAS address and a TERAS key for TUNAS. In **Settings › Connections › Connect to TERAS**, TUNAS lists the TERAS models by name; users pick them as an assistant's base model or per chat. Questions sent to TERAS are answered on the organisation's own server.
 - **Cloud providers:** off until the user switches on **Allow cloud providers**. The main providers are listed by name, and any OpenAI-compatible address can be added. Users bring their own keys and choose which models their assistants may use. Block with `allow_cloud: false`.
-- **Keys:** TERAS and cloud keys are kept encrypted with Windows' DPAPI, tied to the Windows user. They don't travel in branding packs and can't be read on another account or computer.
+- **Keys:** TERAS and cloud keys are kept encrypted with Windows' DPAPI, tied to the Windows user (on a Mac, in the user's Keychain). They don't travel in branding packs and can't be read on another account or computer.
 - **TERAS tools and files:** TUNAS asks TERAS for its tool and source events, shows the person what TERAS is doing, and turns files TERAS makes (linked as `/api/files/…`) into download cards. The download uses the TERAS key; if TERAS refuses the key, the file opens in the browser, where the person signs in.
+- **Documents with TERAS models (from 0.5.1):** when the person asks a TERAS model for a document, TUNAS tells the model to make it with TERAS's `create_document` tool, so it gets TERAS's formats (Word, PDF, PowerPoint, Excel, CSV, Markdown), document templates and branding. With local and cloud models TUNAS makes the file itself. TERAS's audit log shows these calls under the key the person made for TUNAS.
 - **About me and TERAS:** the person's About me (Settings) is not sent to TERAS models, which use the person's own TERAS personalisation.
 - **Knowledge with remote models:** when an assistant on TERAS or a cloud model has knowledge sets, the question and the matching passages from the user's documents are sent with the question. Use local models for documents that must stay on the computer.
 
@@ -165,7 +186,7 @@ TUNAS can be the AI engine for other apps on the same computer, such as S.A.L.T 
 
 ## 10. Engines and graphics
 
-- TUNAS ships two builds of the llama.cpp engine: processor and Vulkan graphics.
+- TUNAS ships two builds of the llama.cpp engine: processor and Vulkan graphics. On Apple silicon Macs the graphics build uses Metal; Intel Macs have the processor build only.
 - **Run AI on** (Settings › General): Automatic, Graphics or Processor. Automatic tests the graphics card once, remembers the result, and uses the processor if the card fails or has too little memory.
 - On some computers with built-in graphics, the processor is faster. Compare with **Test speed** in Settings › Models.
 - Changing Run AI on restarts the engine with the new choice.

@@ -1,13 +1,15 @@
 # S.A.L.T TUNAS: User Guide
 
-TUNAS 0.4.1 · November 2026 · https://www.salt.ci
+TUNAS 0.5.1 · November 2026 · https://www.salt.ci
 S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi
 
-This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.4.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
+This is the knowledge copy of the TUNAS User Guide for AI knowledge bases (TUNAS 0.5.1). What TUNAS is, and what is not available yet, is in the TUNAS Product Brief (knowledge version). Rolling TUNAS out across an organisation is in the TUNAS Administrator Guide.
 
-This guide is for the person using TUNAS on their own Windows computer.
+This guide is for the person using TUNAS on their own Windows computer or Mac.
 
 ## 1. Installing TUNAS
+
+### On Windows
 
 1. Unzip the package and run the TUNAS installer (`TUNAS_Setup_<version>.exe`). It installs for you alone and needs no administrator password.
 2. Some antivirus tools scan a new installer before it runs, and may start it a second time after the scan. If a second installer window appears after the first one finishes, close it.
@@ -16,6 +18,24 @@ This guide is for the person using TUNAS on their own Windows computer.
 **Updating:** run the new installer over the old one. Chats, assistants, knowledge, branding and models are kept.
 
 **Uninstalling:** from Windows Settings › Apps. The uninstaller asks whether to also delete your chats, assistants, branding and downloaded models; choose No to keep them for a later reinstall.
+
+### On a Mac (from TUNAS 0.5.0)
+
+TUNAS runs on macOS 11 (Big Sur) or later. There are two packages; pick the one for your Mac (Apple menu › About This Mac shows the chip):
+- `TUNAS_<version>_mac_apple-silicon.dmg` for Macs with an M1 chip or later (the AI runs on the graphics chip);
+- `TUNAS_<version>_mac_intel.dmg` for Macs with an Intel processor (the AI runs on the processor).
+
+1. Open the `.dmg` and drag **TUNAS** into **Applications**.
+2. The Mac packages are not yet signed by Apple, so macOS blocks them the first time. Open **Terminal** and run this once:
+   `xattr -dr com.apple.quarantine /Applications/TUNAS.app`
+3. Open TUNAS from Applications. It opens into setup.
+4. The first time TUNAS saves a TERAS or cloud key, macOS asks to let TUNAS use the Keychain. Choose **Always Allow**.
+
+**Updating:** drag the new TUNAS into Applications and replace the old one, then run the Terminal line again. Your chats, models and settings are kept in your home folder (`Library/Application Support/TUNAS`).
+
+**Uninstalling:** drag TUNAS from Applications to the Bin. To delete your chats and models too, delete the `TUNAS` folder in your home folder's `Library/Application Support`.
+
+The Mac version is new: the 0.5.x packages are the first Mac builds.
 
 ## 2. First-time setup
 
@@ -43,6 +63,7 @@ This guide is for the person using TUNAS on their own Windows computer.
 
 ### Chatting with a TERAS model
 - **TERAS at work:** when the TERAS model uses a tool, the answer shows it as it happens, such as "Making the document…" or "Searching the web…", with a tick when a step is done.
+- **Documents from TERAS** (from 0.5.1): ask a TERAS model for a document and TERAS makes the file with its own document tool, in the format you asked for: Word, PDF, PowerPoint, Excel, CSV or Markdown. It uses your organisation's TERAS templates and branding.
 - **Files from TERAS:** a document TERAS makes appears as a card under the answer with a **Download** button. TUNAS saves it where you choose. If TERAS asks for your sign-in for that file, it opens in your browser.
 - **Sources:** TERAS's own sources are listed with yours. With a TERAS model, passages from your own folders are numbered from [51].
 - **Time:** under the answer you see how long it took and how many tool steps TERAS used.
@@ -134,6 +155,8 @@ On the Knowledge page, each set shows its folders and files and how far reading 
 - **The sender:** letters are written from you and your organisation, never from the assistant. Fill in the letterhead organisation and address in **Settings › Branding › More options**; without them, the assistant writes placeholders such as [Nama Jabatan] for you to fill in.
 - **File name:** taken from the document's heading or a letter's subject line (PERKARA, Subject).
 - Choose where to save it; TUNAS then opens the saved file.
+
+**With a TERAS model,** TERAS makes the file itself (section 3, Chatting with a TERAS model), with more formats and your organisation's templates. TUNAS's own card appears only if TERAS gives no file.
 
 Small models can make mistakes in names, addresses and dates. Check every document before sending it.
 
