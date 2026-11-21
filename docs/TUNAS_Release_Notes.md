@@ -30,6 +30,7 @@ For TERAS 0.25.6, which fixes the document tool failures on TERAS's side (TERAS 
   - Rich document on: `rich_document: true` reached TERAS, the four steps showed as they ran, and the rich file's card appeared;
   - requests to TERAS carried no answer-length limit (title requests keep their short limit);
   - a saved chat reopened with its file cards and sources.
+- **Mac package:** one zip, `TUNAS_0.5.2_mac.zip`, with both disk images (Apple silicon and Intel), `README_Mac.txt` and these release notes. Each disk image also has **READ ME FIRST.txt** beside TUNAS, with the one Terminal command an unsigned Mac app needs.
 - Not tested here: a real TERAS 0.25.6. Please run the 10-request test from the memo.
 - Install over 0.5.1 directly. Everything is kept.
 

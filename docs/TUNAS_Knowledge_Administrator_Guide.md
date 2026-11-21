@@ -29,7 +29,7 @@ TUNAS installs per user, with no administrator rights.
 
 ### On macOS (from 0.5.0)
 
-TUNAS for Mac comes as a `.dmg` per kind of Mac: `mac_apple-silicon` (engine on Metal graphics) and `mac_intel` (engine on the processor). Users drag TUNAS into Applications.
+TUNAS for Mac comes as one zip, `TUNAS_<version>_mac.zip`, with `README_Mac.txt`, the release notes and a `.dmg` per kind of Mac (each disk image also carries READ ME FIRST.txt): `mac_apple-silicon` (engine on Metal graphics) and `mac_intel` (engine on the processor). Users drag TUNAS into Applications.
 
 | What | Where |
 |---|---|

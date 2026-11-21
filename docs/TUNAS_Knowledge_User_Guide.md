@@ -21,11 +21,11 @@ This guide is for the person using TUNAS on their own Windows computer or Mac.
 
 ### On a Mac (from TUNAS 0.5.0)
 
-TUNAS runs on macOS 11 (Big Sur) or later. There are two packages; pick the one for your Mac (Apple menu › About This Mac shows the chip):
+TUNAS runs on macOS 11 (Big Sur) or later. The Mac package `TUNAS_<version>_mac.zip` holds a README, the release notes and two disk images; pick the one for your Mac (Apple menu › About This Mac shows the chip):
 - `TUNAS_<version>_mac_apple-silicon.dmg` for Macs with an M1 chip or later (the AI runs on the graphics chip);
 - `TUNAS_<version>_mac_intel.dmg` for Macs with an Intel processor (the AI runs on the processor).
 
-1. Open the `.dmg` and drag **TUNAS** into **Applications**.
+1. Open the `.dmg` and drag **TUNAS** into **Applications**. The disk image also has **READ ME FIRST.txt** with these steps.
 2. The Mac packages are not yet signed by Apple, so macOS blocks them the first time. Open **Terminal** and run this once:
    `xattr -dr com.apple.quarantine /Applications/TUNAS.app`
 3. Open TUNAS from Applications. It opens into setup.
