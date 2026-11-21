@@ -10,11 +10,13 @@
   let renameText = $state('');
 
   function newChat() {
+    app.navOpen = false;
     app.chatId = null;
     app.view = 'chat';
   }
 
   function openChat(c) {
+    app.navOpen = false;
     app.chatId = c.id;
     app.assistantId = c.assistant_id;
     app.view = 'chat';
@@ -110,8 +112,8 @@
   </div>
 
   <nav>
-    <button class:active={app.view === 'assistants'} onclick={() => (app.view = 'assistants')}><Icon name="user" size={17} /> My assistants</button>
-    <button class:active={app.view === 'knowledge'} onclick={() => (app.view = 'knowledge')}><Icon name="book" size={17} /> Knowledge</button>
+    <button class:active={app.view === 'assistants'} onclick={() => { app.view = 'assistants'; app.navOpen = false; }}><Icon name="user" size={17} /> My assistants</button>
+    <button class:active={app.view === 'knowledge'} onclick={() => { app.view = 'knowledge'; app.navOpen = false; }}><Icon name="book" size={17} /> Knowledge</button>
   </nav>
 
   <div class="foot">

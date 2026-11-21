@@ -577,6 +577,7 @@ pub fn apply_to_system(app: &tauri::AppHandle) -> Result<()> {
         let _ = std::fs::remove_file(&ico_path);
     }
 
+    #[cfg(desktop)]
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.set_title(&st.effective_name);
         match &window_png {

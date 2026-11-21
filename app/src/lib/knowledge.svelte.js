@@ -66,10 +66,26 @@ export async function ensureSearchModel() {
 }
 
 /** Pick a folder, ask for consent, and make a knowledge set from it. Returns the new set id or null. */
+// Android lets an app open only the files the person picks, so there a knowledge set is made from
+// picked documents, copied into TUNAS. Elsewhere TUNAS reads the folder where it is.
+export const isAndroid = () => app.info?.os === 'android';
+const DOC_FILTER = [{ name: 'Documents', extensions: ['pdf', 'docx', 'xlsx', 'xls', 'pptx', 'txt', 'md', 'csv', 'html'] }];
+
 export async function newSetFromFolder(name) {
-  const folder = await pickFolder('Choose a folder for this knowledge set');
-  if (!folder) return null;
-  if (!(await askConsent([folder]))) return null;
+  let folder;
+  if (isAndroid()) {
+    const files = await pickFiles(DOC_FILTER, 'Choose documents for this knowledge set');
+    if (!files.length) return null;
+    try {
+      folder = await api.knowledge_copy_in({ paths: files });
+      await api.folder_allow({ path: folder });
+    } catch (e) { toast(String(e), 'error', 8000); return null; }
+    name = name || 'My documents';
+  } else {
+    folder = await pickFolder('Choose a folder for this knowledge set');
+    if (!folder) return null;
+    if (!(await askConsent([folder]))) return null;
+  }
   try {
     const id = await api.knowledge_create({ name: name || baseName(folder), paths: [folder] });
     await refreshKnowledge();
@@ -84,6 +100,18 @@ export async function newSetFromFolder(name) {
 
 /** Add a folder or files to an existing set (with consent). */
 export async function addToSet(id, kind = 'folder') {
+  if (isAndroid()) {
+    const files = await pickFiles(DOC_FILTER, 'Choose documents to add');
+    if (!files.length) return;
+    try {
+      const folder = await api.knowledge_copy_in({ paths: files });
+      await api.folder_allow({ path: folder });
+      await api.knowledge_add_source({ id, path: folder });
+      await refreshKnowledge();
+      await ensureSearchModel();
+    } catch (e) { toast(String(e), 'error', 8000); }
+    return;
+  }
   const paths = kind === 'folder' ? [await pickFolder('Choose a folder to add')].filter(Boolean)
     : await pickFiles([{ name: 'Documents', extensions: ['pdf', 'docx', 'xlsx', 'xls', 'pptx', 'txt', 'md', 'csv', 'html'] }], 'Choose files to add');
   if (!paths.length) return;

@@ -43,9 +43,9 @@
   <div class="page-head">
     <div class="grow">
       <h1>Knowledge</h1>
-      <p>Folders of your own documents that your assistants can answer from. TUNAS reads them where they are on this machine. Nothing is copied or sent anywhere.</p>
+      <p>{app.info?.os === 'android' ? 'Your own documents that your assistants can answer from. TUNAS keeps a copy of the documents you pick on this device. Nothing is sent anywhere.' : 'Folders of your own documents that your assistants can answer from. TUNAS reads them where they are on this machine. Nothing is copied or sent anywhere.'}</p>
     </div>
-    <button class="btn primary" onclick={() => newSetFromFolder()}><Icon name="plus" size={16} /> New from folder</button>
+    <button class="btn primary" onclick={() => newSetFromFolder()}><Icon name="plus" size={16} /> {app.info?.os === 'android' ? 'New from documents' : 'New from folder'}</button>
   </div>
 
   {#if !kn.model_ready && kn.sets.length}
@@ -113,8 +113,8 @@
             </div>
           {/each}
           <div class="row small" style="gap:12px;margin-top:6px">
-            <button class="link" onclick={() => addToSet(s.id, 'folder')}><Icon name="plus" size={13} /> Add folder</button>
-            <button class="link" onclick={() => addToSet(s.id, 'files')}><Icon name="plus" size={13} /> Add files</button>
+            {#if app.info?.os !== 'android'}<button class="link" onclick={() => addToSet(s.id, 'folder')}><Icon name="plus" size={13} /> Add folder</button>{/if}
+            <button class="link" onclick={() => addToSet(s.id, 'files')}><Icon name="plus" size={13} /> {app.info?.os === 'android' ? 'Add documents' : 'Add files'}</button>
           </div>
         </div>
 
@@ -142,7 +142,7 @@
       Share knowledge with your whole team with TERAS.
     </p>
   {/if}
-  <Folders embedded={true} />
+  {#if app.info?.os !== 'android'}<Folders embedded={true} />{/if}
 </div>
 
 <style>

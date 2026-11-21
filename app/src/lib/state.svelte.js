@@ -2,6 +2,8 @@
 import { api, listen } from './api.js';
 
 export const app = $state({
+  // Phones and narrow windows: the side bar slides in over the screen.
+  navOpen: false,
   info: null,
   brand: null,
   assistants: [],
@@ -131,6 +133,7 @@ function clearProgress(id, ms) {
 }
 
 export function openSettings(tab = 'general') {
+  app.navOpen = false;
   if (app.view !== 'settings') app.backView = app.view;
   app.settingsTab = tab;
   app.view = 'settings';

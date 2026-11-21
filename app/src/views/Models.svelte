@@ -232,6 +232,7 @@
 
   <div class="section-title">Offline and advanced</div>
   <div class="tri">
+    {#if app.info?.os !== 'android'}
     <div class="card tight col">
       <div class="row"><Icon name="folder" /><b>Import from a folder or USB stick</b></div>
       <p class="small mute">For machines without internet. TUNAS finds catalogue models in the folder, checks each file and copies it in.</p>
@@ -242,6 +243,7 @@
       <p class="small mute">Copy the models on this machine to a folder, to install them on other machines without downloading.</p>
       <button class="btn sm" disabled={importing} onclick={exportModels}>Copy models to…</button>
     </div>
+    {/if}
     <div class="card tight col">
       <div class="row"><Icon name="file" /><b>Add your own model (GGUF)</b></div>
       <p class="small mute">Any GGUF model file. You are responsible for its licence; large models may be slow on this machine.</p>

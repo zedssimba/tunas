@@ -51,9 +51,13 @@
   {#if app.view === 'setup'}
     <Setup />
   {:else}
-    <div class="shell">
+    <div class="shell" class:navopen={app.navOpen}>
       <Sidebar />
+      {#if app.navOpen}<button class="navscrim" aria-label="Close the menu" onclick={() => (app.navOpen = false)}></button>{/if}
       <main>
+        {#if app.view === 'assistants' || app.view === 'knowledge'}
+          <div class="mbar"><button class="icon-btn" aria-label="Menu" onclick={() => (app.navOpen = true)}><Icon name="menu" size={20} /></button><b class="ellipsis">{app.brand?.effective_name || 'TUNAS'}</b></div>
+        {/if}
         {#if app.view === 'chat'}<Chat />
         {:else if app.view === 'assistants'}<Assistants />
         {:else if app.view === 'knowledge'}<Knowledge />
@@ -110,7 +114,19 @@
 
 <style>
   .shell { display: flex; height: 100%; }
-  main { flex: 1; min-width: 0; height: 100%; background: var(--bg); }
+  main { flex: 1; min-width: 0; height: 100%; background: var(--bg); display: flex; flex-direction: column; }
+  main > :global(*:not(.mbar)) { flex: 1; min-height: 0; }
+  .mbar { display: none; }
+  .navscrim { display: none; }
+  /* Phones and narrow windows: the side bar becomes a drawer. */
+  @media (max-width: 760px) {
+    .shell :global(aside) { position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; transform: translateX(-105%); transition: transform .2s ease; box-shadow: var(--shadow); max-width: 86vw; }
+    .shell.navopen :global(aside) { transform: none; }
+    .navscrim { display: block; position: fixed; inset: 0; z-index: 39; background: rgba(11, 16, 34, .4); }
+    .mbar { display: flex; flex: none; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
+    .toasts { left: 12px; right: 12px; bottom: 12px; }
+    .toast { max-width: none; }
+  }
   .overlay { position: fixed; inset: 0; background: rgba(11, 16, 34, .45); display: grid; place-items: center; z-index: 50; }
   .dialog { width: 460px; max-width: calc(100vw - 40px); box-shadow: var(--shadow); }
   .toasts { position: fixed; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 60; }

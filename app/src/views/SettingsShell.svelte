@@ -62,4 +62,14 @@
   .tab b { display: block; font-weight: 600; }
   .sub { display: block; font-size: 11.5px; color: var(--faint); }
   section { flex: 1; min-width: 0; height: 100%; }
+  /* Phones: the settings menu becomes a row of tabs above the page. */
+  @media (max-width: 760px) {
+    .shell { flex-direction: column; }
+    nav { width: auto; flex-direction: row; align-items: center; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 6px 8px; gap: 4px; flex: none; }
+    .head { flex-direction: row; align-items: center; padding: 0 4px 0 0; }
+    .head h2 { display: none; }
+    .tab { white-space: nowrap; padding: 6px 10px; align-items: center; }
+    .sub { display: none; }
+    section { height: auto; flex: 1; min-height: 0; }
+  }
 </style>

@@ -13,6 +13,7 @@ mod knowledge;
 mod models;
 mod paths;
 mod secret;
+mod userfiles;
 
 use parking_lot::Mutex;
 use serde::Serialize;
@@ -147,7 +148,10 @@ async fn model_import_folder(app: AppHandle, st: State<'_, AppState>, path: Stri
 async fn model_add_custom(app: AppHandle, st: State<'_, AppState>, path: String, name: String) -> R<db::InstalledModel> {
     let db = st.db.clone();
     let tr = st.transfers.clone();
-    tokio::task::spawn_blocking(move || models::add_custom(&app, &db, &tr, &PathBuf::from(path), &name))
+    tokio::task::spawn_blocking(move || -> anyhow::Result<db::InstalledModel> {
+        let p = userfiles::local_in(&app, &path)?;
+        models::add_custom(&app, &db, &tr, &p, &name)
+    })
         .await
         .map_err(e)?
         .map_err(e)
@@ -301,11 +305,11 @@ fn messages_delete_from(st: State<AppState>, chat_id: String, message_id: String
 // ---------------- files ----------------
 
 #[tauri::command]
-async fn files_extract(paths: Vec<String>, max_chars: usize) -> Vec<Result<extract::Extracted, String>> {
+async fn files_extract(app: AppHandle, paths: Vec<String>, max_chars: usize) -> Vec<Result<extract::Extracted, String>> {
     tokio::task::spawn_blocking(move || {
         paths
             .iter()
-            .map(|p| extract::extract(&PathBuf::from(p), max_chars).map_err(e))
+            .map(|p| userfiles::local_in(&app, p).map_err(e).and_then(|lp| extract::extract(&lp, max_chars).map_err(e)))
             .collect()
     })
     .await
@@ -324,16 +328,47 @@ fn brand_state() -> brand::BrandState {
     brand::state()
 }
 
+/// Android: documents picked for Knowledge are copied into TUNAS's own folder (Android lets an app read
+/// only the files the person picks, not whole folders). Returns the folder, or adds to `into` when given.
 #[tauri::command]
-async fn brand_check_logo(path: String) -> brand::LogoCheck {
-    tokio::task::spawn_blocking(move || brand::check_logo(&PathBuf::from(path))).await.unwrap_or_default()
+async fn knowledge_copy_in(app: AppHandle, paths: Vec<String>, into: Option<String>) -> R<String> {
+    tokio::task::spawn_blocking(move || -> anyhow::Result<String> {
+        let dir = match into {
+            Some(d) => PathBuf::from(d),
+            None => paths::data_dir().join("knowledge-files").join(uuid::Uuid::new_v4().simple().to_string()),
+        };
+        std::fs::create_dir_all(&dir)?;
+        for p in &paths {
+            let local = userfiles::local_in(&app, p)?;
+            let name = local.file_name().map(|n| n.to_os_string()).unwrap_or_default();
+            let dest = dir.join(&name);
+            if std::fs::rename(&local, &dest).is_err() {
+                std::fs::copy(&local, &dest)?;
+            }
+        }
+        Ok(dir.display().to_string())
+    })
+    .await
+    .map_err(e)?
+    .map_err(e)
+}
+
+#[tauri::command]
+async fn brand_check_logo(app: AppHandle, path: String) -> brand::LogoCheck {
+    tokio::task::spawn_blocking(move || match userfiles::local_in(&app, &path) {
+        Ok(p) => brand::check_logo(&p),
+        Err(_) => brand::LogoCheck::default(),
+    })
+    .await
+    .unwrap_or_default()
 }
 
 #[tauri::command]
 async fn brand_save(app: AppHandle, layer: String, brand: brand::Brand, logo_path: Option<String>, remove_logo: bool) -> R<brand::BrandState> {
     let a2 = app.clone();
     tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-        brand::save_layer(&layer, brand, logo_path.map(PathBuf::from), remove_logo)?;
+        let logo = match logo_path { Some(p) => Some(userfiles::local_in(&a2, &p)?), None => None };
+        brand::save_layer(&layer, brand, logo, remove_logo)?;
         brand::apply_to_system(&a2)?;
         Ok(())
     })
@@ -365,7 +400,7 @@ async fn brand_clear(app: AppHandle, layer: String) -> R<brand::BrandState> {
 async fn brand_import_pack(app: AppHandle, st: State<'_, AppState>, path: String) -> R<brand::PackReport> {
     let a2 = app.clone();
     let imported = tokio::task::spawn_blocking(move || -> anyhow::Result<brand::ImportedPack> {
-        let p = brand::import_pack(&PathBuf::from(path))?;
+        let p = brand::import_pack(&userfiles::local_in(&a2, &path)?)?;
         brand::apply_to_system(&a2)?;
         Ok(p)
     })
@@ -409,6 +444,7 @@ async fn brand_import_pack(app: AppHandle, st: State<'_, AppState>, path: String
 
 #[tauri::command]
 async fn brand_export_pack(
+    app: AppHandle,
     st: State<'_, AppState>,
     path: String,
     layer: String,
@@ -422,7 +458,11 @@ async fn brand_export_pack(
         .filter(|a| assistant_ids.contains(&a.id))
         .map(|a| brand::PackAssistant { name: a.name, icon: a.icon, color: a.color, persona: a.persona })
         .collect();
-    tokio::task::spawn_blocking(move || brand::export_pack(&layer, &PathBuf::from(path), list, policy, &issuer))
+    tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
+        let out = userfiles::local_out(&path, "tunasbrand");
+        brand::export_pack(&layer, &out.path, list, policy, &issuer)?;
+        userfiles::finish_out(&app, &out)
+    })
         .await
         .map_err(e)?
         .map_err(e)
@@ -659,7 +699,6 @@ fn pack_from_args(args: &[String]) -> Option<String> {
     args.iter().skip(1).find(|a| a.to_lowercase().ends_with(".tunasbrand")).cloned()
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 
 // ---------------------------------------------------------------- knowledge and folder access
 
@@ -778,8 +817,12 @@ fn open_file(st: State<AppState>, path: String) -> R<()> {
 
 /// Write an answer as a Word, Excel or PDF file at `path` (chosen by the user in a save dialog).
 #[tauri::command]
-async fn doc_export(markdown: String, format: String, path: String, title: String, letterhead: bool) -> R<()> {
-    tokio::task::spawn_blocking(move || documents::export(&markdown, &format, std::path::Path::new(&path), &title, letterhead))
+async fn doc_export(app: AppHandle, markdown: String, format: String, path: String, title: String, letterhead: bool) -> R<()> {
+    tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
+        let out = userfiles::local_out(&path, &format);
+        documents::export(&markdown, &format, &out.path, &title, letterhead)?;
+        userfiles::finish_out(&app, &out)
+    })
         .await
         .map_err(e)?
         .map_err(e)
@@ -802,7 +845,7 @@ fn teras_file_url(st: &AppState, provider_id: &str, file_path: &str) -> Result<(
 /// Download a file TERAS made into `save_to` (chosen by the user), with the TERAS key.
 /// "auth" in the error means TERAS would not give the file to the key (open it in the browser instead).
 #[tauri::command]
-async fn teras_download(st: State<'_, AppState>, provider_id: String, file_path: String, save_to: String) -> R<()> {
+async fn teras_download(app: AppHandle, st: State<'_, AppState>, provider_id: String, file_path: String, save_to: String) -> R<()> {
     let (url, key) = teras_file_url(&st, &provider_id, &file_path)?;
     let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(120)).build().map_err(e)?;
     let mut req = client.get(url);
@@ -818,8 +861,10 @@ async fn teras_download(st: State<'_, AppState>, provider_id: String, file_path:
         return Err(format!("TERAS answered {code} for this file."));
     }
     let bytes = resp.bytes().await.map_err(e)?;
-    std::fs::write(&save_to, &bytes).map_err(e)?;
-    Ok(())
+    let ext = file_path.rsplit('.').next().unwrap_or("bin").to_string();
+    let out = userfiles::local_out(&save_to, &ext);
+    std::fs::write(&out.path, &bytes).map_err(e)?;
+    userfiles::finish_out(&app, &out).map_err(e)
 }
 
 /// Open a file TERAS made in the browser (the person signs in to TERAS there if needed).
@@ -839,6 +884,7 @@ fn open_written(path: String) -> R<()> {
     tauri_plugin_opener::open_path(&path, None::<&str>).map_err(e)
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let conn = db::open().expect("could not open the TUNAS database");
     let args: Vec<String> = std::env::args().collect();
@@ -851,20 +897,27 @@ pub fn run() {
         knowledge: knowledge::Knowledge::open().expect("could not open the TUNAS knowledge index"),
     };
 
-    tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            if let Some(w) = app.get_webview_window("main") {
-                let _ = w.unminimize();
-                let _ = w.set_focus();
-            }
-            if let Some(p) = pack_from_args(&argv) {
-                let _ = app.emit("open-pack", p);
-            }
-        }))
+    let builder = tauri::Builder::default();
+    // One TUNAS at a time on desktops (a second start brings the first to the front). Android does this itself.
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+        if let Some(w) = app.get_webview_window("main") {
+            let _ = w.unminimize();
+            let _ = w.set_focus();
+        }
+        if let Some(p) = pack_from_args(&argv) {
+            let _ = app.emit("open-pack", p);
+        }
+    }));
+    builder
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .manage(state)
         .setup(|app| {
+            // Files copied in from Android's file picker are only needed while they are read.
+            let _ = std::fs::remove_dir_all(paths::data_dir().join("inbox"));
+            let _ = std::fs::remove_dir_all(paths::data_dir().join("outbox"));
             #[cfg(unix)]
             engine::stop_stale_engines();
             app.state::<AppState>().knowledge.start_indexer(app.handle().clone());
@@ -885,6 +938,7 @@ pub fn run() {
             // Apply the brand to the window title and icon before the window appears, so the taskbar icon
             // does not change a few seconds after start.
             let _ = brand::apply_to_system(&h);
+            #[cfg(desktop)]
             if let Some(w) = h.get_webview_window("main") {
                 let _ = w.show();
                 let _ = w.set_focus();
@@ -899,7 +953,7 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            doc_export, open_written, teras_download, teras_open, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
+            doc_export, open_written, knowledge_copy_in, teras_download, teras_open, folders_list, folder_allow, folder_revoke, folder_is_allowed, knowledge_list, knowledge_create, knowledge_rename, knowledge_delete, knowledge_pause, knowledge_add_source, knowledge_remove_source, knowledge_reindex, knowledge_failed, knowledge_for_assistant, knowledge_set_for_assistant, knowledge_kick, open_file,
             app_info,
             setting_get,
             setting_set,

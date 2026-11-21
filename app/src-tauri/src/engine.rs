@@ -16,6 +16,19 @@ use tauri::{AppHandle, Emitter};
 /// The engine kinds: "cpu", and "vulkan" for the graphics build. On macOS the graphics build uses Metal
 /// (Apple silicon); the kind keeps its name so settings, logs and the interface stay the same everywhere.
 pub fn server_exe(kind: &str) -> PathBuf {
+    // Android: one processor build, shipped as a native library so the system lets TUNAS run it.
+    #[cfg(target_os = "android")]
+    {
+        let dir = crate::paths::android_lib_dir();
+        if kind != "cpu" {
+            return dir.join("no-graphics-engine");
+        }
+        // Phones from about 2019 on have the dot-product instructions (asimddp): the faster build.
+        let fast = dir.join("libllama_server_dp.so");
+        let dp = std::fs::read_to_string("/proc/cpuinfo").map(|c| c.lines().any(|l| l.starts_with("Features") && l.split_whitespace().any(|f| f == "asimddp"))).unwrap_or(false);
+        return if dp && fast.exists() { fast } else { dir.join("libllama_server.so") };
+    }
+    #[allow(unreachable_code)]
     let name = if cfg!(windows) { "llama-server.exe" } else { "llama-server" };
     crate::paths::engine_dir(kind).join(name)
 }
@@ -316,7 +329,8 @@ pub fn stop_stale_engines() {
     sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
     for p in sys.processes().values() {
         if let Some(exe) = p.exe() {
-            if exe.starts_with(&root) && exe.file_name().map(|n| n == "llama-server").unwrap_or(false) {
+            let ours = if cfg!(target_os = "android") { exe.starts_with(crate::paths::app_dir()) } else { exe.starts_with(&root) };
+            if ours && exe.file_name().map(|n| n == "llama-server" || n == "libllama_server.so" || n == "libllama_server_dp.so").unwrap_or(false) {
                 let _ = p.kill();
             }
         }

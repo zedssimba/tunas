@@ -1,0 +1,135 @@
+# TUNAS for Android: builds the AI engine (llama.cpp) for arm64 phones in two versions, then the app as an
+# unsigned APK (it is signed with TUNAS's own key outside GitHub). A second job installs it on an Android
+# emulator, starts it, checks the engine runs, and keeps screenshots and the log.
+name: Android build
+
+on:
+  workflow_dispatch:
+
+env:
+  LLAMA_COMMIT: 08c252e
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: ver
+        run: echo "v=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+
+      - name: Android NDK
+        run: |
+          echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          ls "$ANDROID_NDK_LATEST_HOME"
+
+      - name: Build the engine (llama.cpp ${{ env.LLAMA_COMMIT }}) for arm64 phones
+        run: |
+          git clone --filter=blob:none https://github.com/ggml-org/llama.cpp /tmp/llama
+          cd /tmp/llama && git checkout "$LLAMA_COMMIT"
+          COMMON="-G Ninja -DCMAKE_TOOLCHAIN_FILE=$NDK_HOME/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-28 -DANDROID_STL=c++_static -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DLLAMA_CURL=OFF -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_UI=OFF -DLLAMA_USE_PREBUILT_UI=OFF -DLLAMA_UI_GZIP=OFF -DGGML_OPENMP=OFF -DGGML_NATIVE=OFF"
+          # Two versions: any arm64 phone, and the faster one for phones with dot-product instructions (about 2019 on).
+          cmake -S . -B b-base $COMMON -DGGML_CPU_ARM_ARCH=armv8-a
+          cmake -S . -B b-dp $COMMON -DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+fp16
+          cmake --build b-base --target llama-server -j 4
+          cmake --build b-dp --target llama-server -j 4
+          E=$GITHUB_WORKSPACE/app/src-tauri/gen/android/app/src/main/engineLibs/arm64-v8a
+          mkdir -p "$E"
+          STRIP=$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip
+          $STRIP -o "$E/libllama_server.so" b-base/bin/llama-server
+          $STRIP -o "$E/libllama_server_dp.so" b-dp/bin/llama-server
+          ls -la "$E"
+          $NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf -d "$E/libllama_server.so" | grep NEEDED
+
+      - name: Build TUNAS for Android
+        working-directory: app
+        run: |
+          npm ci
+          npx tauri android build --target aarch64 --apk
+          find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -exec ls -la {} \;
+
+      - name: Collect the unsigned APK
+        run: |
+          mkdir -p out
+          APK=$(find app/src-tauri/gen/android/app/build/outputs/apk -name "*release*.apk" | head -1)
+          cp "$APK" "out/TUNAS_${{ steps.ver.outputs.v }}_android-unsigned.apk"
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-unsigned
+          path: out/*.apk
+
+  emulator-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk-unsigned
+          path: apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Sign a test copy with a throwaway key
+        run: |
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          keytool -genkeypair -keystore /tmp/test.jks -storepass testtest -keypass testtest -alias t -keyalg RSA -keysize 2048 -validity 30 -dname "CN=test" >/dev/null 2>&1
+          $BT/apksigner sign --ks /tmp/test.jks --ks-pass pass:testtest --out /tmp/tunas-test.apk apk/*.apk
+          $BT/apksigner verify /tmp/tunas-test.apk && echo signed
+
+      - name: Run on an Android emulator (arm64 app through Android's ARM translation)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          ram-size: 4096M
+          disk-size: 6G
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            mkdir -p /tmp/shots
+            adb install -r /tmp/tunas-test.apk
+            adb shell am start -n ci.salt.tunas/.MainActivity
+            sleep 25
+            adb exec-out screencap -p > /tmp/shots/01-start.png
+            sleep 20
+            adb exec-out screencap -p > /tmp/shots/02-after-45s.png
+            LIBDIR=$(adb shell dumpsys package ci.salt.tunas | grep -m1 legacyNativeLibraryDir | sed 's/.*=//' | tr -d '\r')
+            echo "native lib dir: $LIBDIR"
+            adb shell ls -la "$LIBDIR/arm64" > /tmp/shots/libdir.txt 2>&1 || true
+            adb shell "$LIBDIR/arm64/libllama_server.so --version" > /tmp/shots/engine-version.txt 2>&1 || true
+            adb shell "$LIBDIR/arm64/libllama_server_dp.so --version" >> /tmp/shots/engine-version.txt 2>&1 || true
+            adb shell cat /proc/cpuinfo | grep -m1 -i features > /tmp/shots/cpu.txt || true
+            adb logcat -d > /tmp/shots/logcat.txt
+            cat /tmp/shots/libdir.txt /tmp/shots/engine-version.txt
+            grep -iE "tunas|rust|panic|FATAL" /tmp/shots/logcat.txt | tail -60 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-results
+          path: /tmp/shots

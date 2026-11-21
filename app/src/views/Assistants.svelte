@@ -147,7 +147,7 @@
                   <button aria-label="Remove" onclick={() => (editSets = editSets.filter((x) => x !== id))}><Icon name="x" size={12} /></button></span>
               {/if}
             {/each}
-            <button class="pill" onclick={newSet}><Icon name="folder" size={13} /> New from folder</button>
+            <button class="pill" onclick={newSet}><Icon name="folder" size={13} /> {app.info?.os === 'android' ? 'New from documents' : 'New from folder'}</button>
             {#if kn.sets.some((x) => !editSets.includes(x.id))}
               <span class="addwrap">
                 <button class="pill" onclick={() => (addOpen = !addOpen)}><Icon name="plus" size={13} /> Add existing</button>

@@ -142,7 +142,7 @@
         </div>
         <div class="src">
           <label class="srcopt" class:sel={source === 'online'}><input type="radio" bind:group={source} value="online" /><Icon name="download" /><div><b>Download</b><div class="small mute">{fmtBytes(totalSize)} from the internet. You can keep going while it downloads.</div></div></label>
-          <label class="srcopt" class:sel={source === 'folder'}><input type="radio" bind:group={source} value="folder" /><Icon name="folder" /><div><b>From a folder or USB stick</b><div class="small mute">No internet needed. Checked and copied in.</div></div></label>
+          {#if app.info?.os !== 'android'}<label class="srcopt" class:sel={source === 'folder'}><input type="radio" bind:group={source} value="folder" /><Icon name="folder" /><div><b>From a folder or USB stick</b><div class="small mute">No internet needed. Checked and copied in.</div></div></label>{/if}
         </div>
         {#if importReport}{#each importReport.failed as f}<div class="small" style="color:var(--err)">{f}</div>{/each}{/if}
         <div class="nav">

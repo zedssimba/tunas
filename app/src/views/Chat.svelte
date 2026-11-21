@@ -532,6 +532,7 @@
 
 <div class="chat-view">
   <header>
+    <button class="icon-btn navbtn" aria-label="Menu" onclick={() => (app.navOpen = true)}><Icon name="menu" size={20} /></button>
     <div class="picker">
       <button class="who" onclick={() => (pickerOpen = !pickerOpen)}>
         <span class="av" style="background:{assistant?.color || 'var(--brand1)'}"><Icon name={assistant?.icon} size={15} stroke={2} /></span>
@@ -806,7 +807,7 @@
                   <span class="grow">{ks.name}<span class="d">{assistantSets.includes(ks.id) ? 'Part of this assistant' : setLabel(ks)}</span></span>
                 </button>
               {/each}
-              <button class="mi" onclick={newChatSet}><Icon name="folder" size={14} /><span class="grow">New from folder…<span class="d">Read a folder on this machine, with your permission</span></span></button>
+              <button class="mi" onclick={newChatSet}><Icon name="folder" size={14} /><span class="grow">{app.info?.os === 'android' ? 'New from documents…' : 'New from folder…'}<span class="d">{app.info?.os === 'android' ? 'Pick documents on this device' : 'Read a folder on this machine, with your permission'}</span></span></button>
             </div>
             <button class="scrim" aria-label="Close" onclick={() => (kOpen = false)}></button>
           {/if}
@@ -934,4 +935,25 @@
   .composer.drag { border-color: var(--brand1); border-style: dashed; }
   .dropzone { position: absolute; inset: 0; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; background: color-mix(in srgb, var(--brand1) 10%, var(--panel)); color: var(--brand1); font-weight: 600; }
   .foot { text-align: center; margin-top: 6px; }
+  .navbtn { display: none; }
+  /* Phones and narrow windows */
+  @media (max-width: 760px) {
+    .navbtn { display: inline-grid; flex: none; }
+    header { padding: 8px 8px; gap: 4px; flex-wrap: nowrap; }
+    header .pill { font-size: 0; padding: 6px; gap: 0; }
+    .who { padding: 4px 6px 4px 4px; gap: 6px; max-width: 42vw; }
+    .mchip { max-width: 34vw; padding: 0 8px; }
+    .thread { padding: 16px 12px 14px; gap: 16px; }
+    .welcome { padding: 3vh 0 6px; }
+    .welcome h1 { font-size: 21px; }
+    .sugs { grid-template-columns: 1fr; }
+    .bubble { max-width: 92%; }
+    .msg .av.big { display: none; }
+    .tools { opacity: 1; }
+    .doccard { flex-wrap: wrap; }
+    .composer-wrap { padding: 6px 8px 8px; }
+    .richbtn span { display: none; }
+    .menu.think { width: min(330px, 92vw); }
+    .foot { display: none; }
+  }
 </style>
