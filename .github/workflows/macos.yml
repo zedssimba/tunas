@@ -100,26 +100,50 @@ jobs:
           codesign -dv "$APP" 2>&1 | head -5
           test -x "$APP/Contents/Resources/engine/${{ steps.ver.outputs.v }}/cpu/llama-server"
 
-      - name: Add the README to the disk image, and make the package zip
+      - name: Add the README to the disk image
         run: |
           V=${{ steps.ver.outputs.v }}
           NAME="TUNAS_${V}_mac_${{ matrix.label }}"
           SRC=$(ls app/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg | head -1)
-          # The README sits beside TUNAS and Applications when the disk image is opened.
-          hdiutil convert "$SRC" -format UDRW -o /tmp/rw.dmg
-          hdiutil resize -size +2m /tmp/rw.dmg
-          MNT=$(hdiutil attach /tmp/rw.dmg -nobrowse -noautoopen | awk -F'\t' '/\/Volumes\//{print $NF}' | tail -1)
-          cp installer/README_Mac.txt "$MNT/READ ME FIRST.txt"
-          ls -la "$MNT"
+          # Copy everything on the disk image (TUNAS, the Applications link, the window layout),
+          # add the README beside them, and make the disk image again.
+          MNT=$(hdiutil attach "$SRC" -readonly -nobrowse -noautoopen | awk -F'\t' '/\/Volumes\//{print $NF}' | tail -1)
+          VOL=$(basename "$MNT")
+          mkdir -p /tmp/stage
+          ditto "$MNT" /tmp/stage
           hdiutil detach "$MNT"
-          mkdir -p pkg out
-          hdiutil convert /tmp/rw.dmg -format UDZO -imagekey zlib-level=9 -o "pkg/${NAME}.dmg"
-          cp installer/README_Mac.txt pkg/README_Mac.txt
-          cp docs/TUNAS_Release_Notes.md pkg/
-          (cd pkg && zip -q "../out/${NAME}.zip" "${NAME}.dmg" README_Mac.txt TUNAS_Release_Notes.md)
+          cp installer/README_Mac.txt "/tmp/stage/READ ME FIRST.txt"
+          ls -la /tmp/stage
+          mkdir -p out
+          hdiutil create -volname "$VOL" -srcfolder /tmp/stage -fs HFS+ -format UDZO -imagekey zlib-level=9 "out/${NAME}.dmg"
           ls -la out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: TUNAS_${{ steps.ver.outputs.v }}_mac_${{ matrix.label }}
-          path: out/*
+          name: dmg-${{ matrix.label }}
+          path: out/*.dmg
+
+  package:
+    # One zip for both kinds of Mac: the two disk images, the README and the release notes.
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dl
+          merge-multiple: true
+      - name: Make the Mac package
+        run: |
+          V=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")
+          mkdir -p pkg
+          cp dl/*.dmg pkg/
+          cp installer/README_Mac.txt pkg/
+          cp docs/TUNAS_Release_Notes.md pkg/
+          (cd pkg && zip -q "../TUNAS_${V}_mac.zip" *)
+          unzip -l "TUNAS_${V}_mac.zip"
+          echo "V=$V" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TUNAS_${{ env.V }}_mac
+          path: TUNAS_*_mac.zip
