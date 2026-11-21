@@ -45,9 +45,9 @@ def main():
     site = os.path.join(root, "site")
     vdir = os.path.join(site, "tunas", o.version)
     os.makedirs(vdir)
-    for f in ("index.html",):
+    for f in ("index.html", "products.json"):
         shutil.copy(os.path.join(HERE, "site", f), site)
-    for f in ("salt.png", "tunas-mark.svg"):
+    for f in ("salt.png", "salt-ci-tech.png", "tunas-mark.svg"):
         p = os.path.join(HERE, "site", f)
         if os.path.exists(p):
             shutil.copy(p, site)

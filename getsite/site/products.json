@@ -1,0 +1,24 @@
+{
+  "products": [
+    {
+      "id": "tunas",
+      "name": "TUNAS",
+      "mark": "tunas-mark.svg",
+      "tagline": "Personal AI for your own notebook, PC or phone. It runs on the device, offline and private, on its own or with your organisation's TERAS.",
+      "badge": "",
+      "latest": "tunas/latest.json",
+      "platforms": [
+        ["windows", "Windows", "Windows 10 and 11, 64-bit"],
+        ["mac_apple_silicon", "Mac with Apple silicon", "M1 and later"],
+        ["mac_intel", "Mac with Intel", "2013 and later"],
+        ["android", "Android", "Phones and tablets, Android 9 or later"]
+      ],
+      "note": "Already have TUNAS? It checks for a new version once a day and offers <b>Update</b> by itself.",
+      "install": [
+        "<b>Windows 10 or 11:</b> run the installer. It installs for you alone, with no administrator password. If SmartScreen warns, choose <i>More info</i>, then <i>Run anyway</i>.",
+        "<b>Mac (macOS 11 or later):</b> open the disk image and drag TUNAS into Applications. This build is not yet signed by Apple: run this once in Terminal, then open TUNAS:<br><code>xattr -dr com.apple.quarantine /Applications/TUNAS.app</code>",
+        "<b>Android 9 or later (64-bit):</b> open the downloaded file and allow installing apps from your browser or Files app. If Play Protect warns, choose <i>More details</i>, then <i>Install anyway</i>."
+      ]
+    }
+  ]
+}

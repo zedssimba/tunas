@@ -3,22 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S.A.L.T CI downloads · TUNAS</title>
+<title>S.A.L.T CI Downloads</title>
+<link rel="icon" href="salt.png">
 <style>
-  :root { --navy: #0E1530; --ink: #141C3F; --mute: #5B6385; --line: #E3E6F0; --brand1: #3D6BE0; --brand2: #6D4FE0; --gold: #D9A400; }
+  :root { --ink: #141C3F; --mute: #5B6385; --line: #E3E6F0; --brand1: #3D6BE0; --brand2: #6D4FE0; --cyan: #5BE3F5; }
   * { box-sizing: border-box; }
   body { margin: 0; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #F5F6FB; }
-  header { background: linear-gradient(135deg, #0B1230 0%, #1B2A6B 60%, #3A2A8A 100%); color: #fff; padding: 34px 20px 46px; }
-  .wrap { max-width: 860px; margin: 0 auto; }
-  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: .04em; font-size: 13px; color: #E9C85A; }
-  .brand img { height: 46px; }
-  h1 { margin: 18px 0 6px; font-size: 34px; display: flex; align-items: center; gap: 14px; }
-  h1 img { height: 48px; border-radius: 12px; }
+  header { background: radial-gradient(1200px 400px at 85% -10%, rgba(91, 227, 245, .18), transparent 60%), linear-gradient(135deg, #070C22 0%, #0E1A4A 55%, #1C1F5E 100%); color: #fff; padding: 30px 20px 64px; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .logo { display: block; height: 52px; width: auto; max-width: 100%; }
+  header h1 { margin: 26px 0 6px; font-size: 30px; letter-spacing: .01em; }
   header p { margin: 0; color: #C9D0EE; max-width: 640px; }
-  main { margin-top: -26px; }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: 0 6px 24px rgba(20, 28, 63, .06); }
-  .ver { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-  .ver b { font-size: 18px; }
+  nav { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+  nav a { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 999px; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); color: #fff; text-decoration: none; font-weight: 600; font-size: 13.5px; }
+  nav a img { height: 22px; width: 22px; border-radius: 6px; }
+  nav a:hover { background: rgba(255, 255, 255, .16); }
+  main { margin-top: -34px; }
+  section.product { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px; box-shadow: 0 6px 24px rgba(20, 28, 63, .06); margin-bottom: 22px; scroll-margin-top: 16px; }
+  .phead { display: flex; gap: 16px; align-items: flex-start; }
+  .phead > img { height: 56px; width: 56px; border-radius: 14px; flex: none; }
+  .phead h2 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .badge { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #0B5A3A; background: #D8F5E6; border-radius: 999px; padding: 2px 10px; }
+  .phead p { margin: 4px 0 0; color: var(--mute); }
+  .ver { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 18px 0 12px; }
+  .ver b { font-size: 16px; }
   .ver a { color: var(--brand1); font-weight: 600; text-decoration: none; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
   .dl { display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
@@ -26,72 +34,91 @@
   .dl .sub { color: var(--mute); font-size: 13px; }
   .dl a.btn { margin-top: 6px; align-self: flex-start; background: linear-gradient(135deg, var(--brand1), var(--brand2)); color: #fff; text-decoration: none; font-weight: 600; padding: 8px 16px; border-radius: 10px; }
   .dl.mine { border-color: var(--brand1); box-shadow: 0 0 0 2px rgba(61, 107, 224, .15); }
+  .dl.mine h3::after { content: "Your device"; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--brand1); background: #E8EEFC; border-radius: 999px; padding: 2px 8px; vertical-align: 2px; }
   .hint { font-size: 13px; color: var(--mute); }
+  details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+  details ul { margin: 10px 0 0; padding-left: 18px; }
+  details li { margin-bottom: 8px; }
   code { background: #F0F2F8; padding: 2px 6px; border-radius: 6px; font-size: 12.5px; word-break: break-all; }
-  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--mute); margin: 26px 0 10px; }
-  ul { margin: 0; padding-left: 18px; }
-  footer { text-align: center; color: var(--mute); font-size: 12.5px; padding: 30px 16px 40px; }
+  footer { text-align: center; color: var(--mute); font-size: 12.5px; padding: 18px 16px 40px; }
   footer a { color: var(--mute); }
+  @media (max-width: 560px) {
+    header { padding: 22px 16px 56px; }
+    .logo { height: 40px; }
+    header h1 { font-size: 24px; }
+    section.product { padding: 18px 16px; }
+    .phead > img { height: 44px; width: 44px; }
+    .phead h2 { font-size: 20px; }
+  }
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <div class="brand"><img src="salt.png" alt="S.A.L.T CI"> S.A.L.T CI DOWNLOADS</div>
-    <h1><img src="tunas-mark.svg" alt=""> TUNAS</h1>
-    <p>Personal AI for your own notebook, PC or phone: it runs on the device, offline and private, on its own or with your organisation's TERAS.</p>
+    <img class="logo" src="salt-ci-tech.png" alt="S.A.L.T CI Technology">
+    <h1>Downloads</h1>
+    <p>Apps from S.A.L.T CI for your computer and phone. Pick a product below; your device's download is marked.</p>
+    <nav id="nav"></nav>
   </div>
 </header>
-<main class="wrap">
-  <div class="card">
-    <div class="ver"><b id="ver">TUNAS</b><span id="date" class="hint"></span><a id="notes" href="tunas/TUNAS_Release_Notes.md">What's new</a></div>
-    <div class="grid" id="grid"></div>
-    <p class="hint" style="margin-top:14px">Already have TUNAS? It checks for a new version once a day and offers <b>Update</b> by itself.</p>
-  </div>
-
-  <h2>Installing</h2>
-  <div class="card">
-    <ul>
-      <li><b>Windows 10 or 11:</b> run the installer. It installs for you alone, with no administrator password.</li>
-      <li><b>Mac (macOS 11 or later):</b> open the disk image and drag TUNAS into Applications. This build is not yet signed by Apple: run this once in Terminal, then open TUNAS:<br><code>xattr -dr com.apple.quarantine /Applications/TUNAS.app</code></li>
-      <li><b>Android 9 or later (64-bit):</b> open the downloaded file and allow installing apps from your browser or Files app. If Play Protect warns, choose <i>More details</i>, then <i>Install anyway</i>.</li>
-    </ul>
-  </div>
-</main>
+<main class="wrap" id="products"></main>
 <footer>
   S.A.L.T CI · Owned by S.A.L.T. CI TECHNOLOGY · Distributed by Pemangkin Teknologi<br>
   <a href="https://www.salt.ci">www.salt.ci</a> · info@salt.ci · <a href="https://www.pemangkin.tech">www.pemangkin.tech</a> · info@pemangkin.tech<br>
   S.A.L.T CI and its components are proprietary technology of S.A.L.T. CI TECHNOLOGY, distributed and commercialised by Pemangkin Teknologi.
 </footer>
 <script>
-  const PLAT = [
-    ['windows', 'Windows', 'Windows 10 and 11, 64-bit'],
-    ['mac_apple_silicon', 'Mac with Apple silicon', 'M1 and later'],
-    ['mac_intel', 'Mac with Intel', '2013 and later'],
-    ['android', 'Android', 'Phones and tablets, Android 9 or later'],
-  ];
   const ua = navigator.userAgent;
-  const mine = /Android/i.test(ua) ? 'android' : /Windows/i.test(ua) ? 'windows' : /Mac OS X/i.test(ua) ? 'mac' : '';
+  const mine = /Android/i.test(ua) ? 'android' : /Windows/i.test(ua) ? 'windows' : /Mac OS X/i.test(ua) ? 'mac' : /Linux/i.test(ua) ? 'linux' : '';
+  const isMine = (k) => !!mine && k.startsWith(mine);
   const mb = (n) => (n / 1048576).toFixed(0) + ' MB';
-  fetch('tunas/latest.json', { cache: 'no-store' }).then((r) => r.json()).then((l) => {
-    document.getElementById('ver').textContent = 'TUNAS ' + l.version;
-    document.getElementById('date').textContent = l.date ? '· ' + l.date : '';
-    const g = document.getElementById('grid');
-    const order = [...PLAT].sort((a, b) => (mine && b[0].startsWith(mine)) - (mine && a[0].startsWith(mine)));
-    for (const [k, name, sub] of order) {
-      const f = l.files[k];
-      if (!f) continue;
-      const d = document.createElement('div');
-      d.className = 'dl' + (mine && k.startsWith(mine) ? ' mine' : '');
-      d.innerHTML = '<h3></h3><div class="sub"></div><a class="btn">Download</a><div class="hint"></div>';
-      d.querySelector('h3').textContent = name;
-      d.querySelector('.sub').textContent = sub + ' · ' + mb(f.size);
-      d.querySelector('a').href = 'tunas/' + f.url;
-      d.querySelector('.hint').textContent = 'SHA-256 ' + f.sha256.slice(0, 16) + '…';
-      d.querySelector('.hint').title = f.sha256;
-      g.appendChild(d);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const base = (p) => p.latest.replace(/[^/]*$/, '');
+
+  function section(p) {
+    const s = el('section', 'product'); s.id = p.id;
+    const h = el('div', 'phead');
+    if (p.mark) { const i = el('img'); i.src = p.mark; i.alt = ''; h.appendChild(i); }
+    const t = el('div'); const h2 = el('h2', null, p.name);
+    if (p.badge) h2.appendChild(el('span', 'badge', p.badge));
+    t.appendChild(h2); t.appendChild(el('p', null, p.tagline)); h.appendChild(t); s.appendChild(h);
+    const ver = el('div', 'ver'); const vb = el('b', null, p.name); ver.appendChild(vb);
+    const date = el('span', 'hint'); ver.appendChild(date); s.appendChild(ver);
+    const grid = el('div', 'grid'); s.appendChild(grid);
+    if (p.note) { const n = el('p', 'hint'); n.style.marginTop = '14px'; n.innerHTML = p.note; s.appendChild(n); }
+    if (p.install && p.install.length) {
+      const d = el('details'); d.appendChild(el('summary', null, 'How to install'));
+      const ul = el('ul'); for (const li of p.install) { const x = el('li'); x.innerHTML = li; ul.appendChild(x); }
+      d.appendChild(ul); s.appendChild(d);
     }
-  }).catch(() => { document.getElementById('grid').textContent = 'The download list could not be loaded.'; });
+    fetch(p.latest, { cache: 'no-store' }).then((r) => r.json()).then((l) => {
+      vb.textContent = p.name + ' ' + l.version;
+      if (l.date) date.textContent = '· ' + l.date;
+      if (l.notes) { const a = el('a', null, "What's new"); a.href = base(p) + l.notes; ver.appendChild(a); }
+      const order = [...p.platforms].sort((a, b) => isMine(b[0]) - isMine(a[0]));
+      for (const [k, name, sub] of order) {
+        const f = l.files[k]; if (!f) continue;
+        const d = el('div', 'dl' + (isMine(k) ? ' mine' : ''));
+        d.appendChild(el('h3', null, name));
+        d.appendChild(el('div', 'sub', sub + ' · ' + mb(f.size)));
+        const a = el('a', 'btn', 'Download'); a.href = base(p) + f.url; d.appendChild(a);
+        const hs = el('div', 'hint', 'SHA-256 ' + f.sha256.slice(0, 16) + '…'); hs.title = f.sha256; d.appendChild(hs);
+        grid.appendChild(d);
+      }
+    }).catch(() => { grid.textContent = 'The download list could not be loaded.'; });
+    return s;
+  }
+
+  fetch('products.json', { cache: 'no-store' }).then((r) => r.json()).then(({ products }) => {
+    const main = document.getElementById('products'), nav = document.getElementById('nav');
+    for (const p of products) {
+      main.appendChild(section(p));
+      const a = el('a'); a.href = '#' + p.id;
+      if (p.mark) { const i = el('img'); i.src = p.mark; i.alt = ''; a.appendChild(i); }
+      a.appendChild(document.createTextNode(p.name + (p.badge ? ' · ' + p.badge : ''))); nav.appendChild(a);
+    }
+  }).catch(() => { document.getElementById('products').textContent = 'The product list could not be loaded.'; });
 </script>
 </body>
 </html>
